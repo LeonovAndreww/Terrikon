@@ -142,6 +142,7 @@ struct decoder_audio
     audio_output_t *aout;
     vlc_aout_stream *stream;
     bool drained;
+    float track_volume; /* protected by p_fifo lock, reapplied to new streams */
 };
 
 struct decoder_spu
@@ -703,6 +704,8 @@ static int ModuleThread_UpdateAudioFormat( decoder_t *p_dec )
         p_owner->audio.aout = p_aout;
         p_owner->audio.stream = p_astream;
         p_owner->audio.drained = false;
+        if( p_astream != NULL )
+            vlc_aout_stream_SetTrackVolume( p_astream, p_owner->audio.track_volume );
 
         DecoderUpdateFormatLocked( p_owner );
         aout_FormatPrepare( &p_owner->fmt.audio );
@@ -2266,6 +2269,7 @@ CreateDecoder( vlc_object_t *p_parent, const struct vlc_input_decoder_cfg *cfg )
             p_owner->audio.aout = NULL;
             p_owner->audio.stream = NULL;
             p_owner->audio.drained = false;
+            p_owner->audio.track_volume = 1.f;
             p_dec->cbs = &dec_audio_cbs;
             break;
         case SPU_ES:
@@ -2905,6 +2909,19 @@ void vlc_input_decoder_ChangeRate( vlc_input_decoder_t *owner, float rate )
 {
     vlc_fifo_Lock( owner->p_fifo );
     owner->rate = rate;
+    vlc_fifo_Unlock( owner->p_fifo );
+}
+
+void vlc_input_decoder_SetTrackVolume( vlc_input_decoder_t *owner, float volume )
+{
+    if( owner->cat != AUDIO_ES )
+        return;
+
+    vlc_fifo_Lock( owner->p_fifo );
+    owner->audio.track_volume = volume;
+    /* The stream is only replaced or deleted with the fifo lock held */
+    if( owner->audio.stream != NULL )
+        vlc_aout_stream_SetTrackVolume( owner->audio.stream, volume );
     vlc_fifo_Unlock( owner->p_fifo );
 }
 

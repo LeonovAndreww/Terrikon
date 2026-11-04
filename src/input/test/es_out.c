@@ -109,6 +109,13 @@ void vlc_input_decoder_ChangeDelay(
     (void)owner; (void)delay;
 }
 
+void vlc_input_decoder_SetTrackVolume(
+    vlc_input_decoder_t *owner,
+    float volume)
+{
+    (void)owner; (void)volume;
+}
+
 void vlc_input_decoder_ChangePause(
     vlc_input_decoder_t *owner,
     bool paused,

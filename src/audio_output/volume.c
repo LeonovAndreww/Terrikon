@@ -41,6 +41,7 @@ struct aout_volume
     audio_replay_gain_t replay_gain;
     _Atomic float gain_factor;
     _Atomic float output_factor;
+    _Atomic float track_factor; /* per-track volume, see aout_volume_SetTrackVolume() */
     module_t *module;
 };
 
@@ -61,6 +62,7 @@ aout_volume_t *aout_volume_New(vlc_object_t *parent,
     vol->module = NULL;
     atomic_init(&vol->gain_factor, 1.f);
     atomic_init(&vol->output_factor, 1.f);
+    atomic_init(&vol->track_factor, 1.f);
 
     //audio_volume_t *obj = &vol->object;
 
@@ -121,7 +123,16 @@ void aout_volume_SetVolume(aout_volume_t *vol, float factor)
 }
 
 /**
- * Applies replay gain and software volume to an audio buffer.
+ * Sets the volume of this track only, on top of the output volume.
+ * Can be called from any thread.
+ */
+void aout_volume_SetTrackVolume(aout_volume_t *vol, float factor)
+{
+    atomic_store_explicit(&vol->track_factor, factor, memory_order_relaxed);
+}
+
+/**
+ * Applies replay gain, software volume and track volume to an audio buffer.
  */
 int aout_volume_Amplify(aout_volume_t *vol, block_t *block)
 {
@@ -129,7 +140,8 @@ int aout_volume_Amplify(aout_volume_t *vol, block_t *block)
         return -1;
 
     float amp = atomic_load_explicit(&vol->output_factor, memory_order_relaxed)
-              * atomic_load_explicit(&vol->gain_factor, memory_order_relaxed);
+              * atomic_load_explicit(&vol->gain_factor, memory_order_relaxed)
+              * atomic_load_explicit(&vol->track_factor, memory_order_relaxed);
 
     vol->object.amplify(&vol->object, block, amp);
     return 0;

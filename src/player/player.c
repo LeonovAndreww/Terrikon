@@ -1901,6 +1901,46 @@ vlc_player_GetEsIdDelay(vlc_player_t *player, vlc_es_id_t *es_id)
     return trackpriv ? trackpriv->delay : VLC_TICK_MAX;
 }
 
+int
+vlc_player_SetEsIdVolume(vlc_player_t *player, vlc_es_id_t *es_id,
+                         float volume)
+{
+    struct vlc_player_input *input = vlc_player_get_input_locked(player);
+    if (!input)
+        return VLC_EGENERIC;
+
+    struct vlc_player_track_priv *trackpriv =
+        vlc_player_input_FindTrackById(input, es_id, NULL);
+    if (trackpriv == NULL || trackpriv->t.fmt.i_cat != AUDIO_ES)
+        return VLC_EGENERIC;
+
+    if (volume < 0.f)
+        volume = 0.f;
+    else if (volume > 2.f)
+        volume = 2.f;
+    trackpriv->volume = volume;
+
+    const input_control_param_t param = { .es_volume = { es_id, volume } };
+    int ret = input_ControlPush(input->thread, INPUT_CONTROL_SET_ES_VOLUME,
+                                &param);
+    if (ret == VLC_SUCCESS)
+        vlc_player_osd_Message(player, _("%s volume: %d%%"),
+                               trackpriv->t.name, (int)(volume * 100.f + .5f));
+    return ret;
+}
+
+float
+vlc_player_GetEsIdVolume(vlc_player_t *player, vlc_es_id_t *es_id)
+{
+    struct vlc_player_input *input = vlc_player_get_input_locked(player);
+    if (!input)
+        return 1.f;
+
+    struct vlc_player_track_priv *trackpriv =
+        vlc_player_input_FindTrackById(input, es_id, NULL);
+    return trackpriv ? trackpriv->volume : 1.f;
+}
+
 static struct {
     const char var[sizeof("video")];
     const char sout_var[sizeof("sout-video")];

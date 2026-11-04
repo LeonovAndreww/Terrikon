@@ -103,6 +103,7 @@ aout_volume_t *aout_volume_New(vlc_object_t *, const audio_replay_gain_t *);
 #define aout_volume_New(o, g) aout_volume_New(VLC_OBJECT(o), g)
 int aout_volume_SetFormat(aout_volume_t *, vlc_fourcc_t);
 void aout_volume_SetVolume(aout_volume_t *, float);
+void aout_volume_SetTrackVolume(aout_volume_t *, float);
 int aout_volume_Amplify(aout_volume_t *, block_t *);
 void aout_volume_Delete(aout_volume_t *);
 
@@ -175,6 +176,9 @@ void vlc_aout_stream_Drain(vlc_aout_stream *stream);
 /* Contrary to other vlc_aout_stream_*() functions, this function can be called from
  * any threads */
 bool vlc_aout_stream_IsDrained(vlc_aout_stream *stream);
+/* Per-track volume (linear, 1.0 = unchanged), applied on top of the output
+ * volume. Can be called from any thread. */
+void vlc_aout_stream_SetTrackVolume(vlc_aout_stream *stream, float volume);
 /* Called from output.c */
 void vlc_aout_stream_NotifyTiming(vlc_aout_stream *stream, vlc_tick_t system_ts,
                                   vlc_tick_t audio_ts);

@@ -70,6 +70,9 @@ enum es_out_query_private_e
     /* Set delay for an ES identifier */
     ES_OUT_PRIV_SET_ES_DELAY,                       /* arg1=vlc_es_id_t *, res=cannot fail */
 
+    /* Set volume for an audio ES identifier */
+    ES_OUT_PRIV_SET_ES_VOLUME,                      /* arg1=vlc_es_id_t *, arg2=double res=cannot fail */
+
     /* Set delay for a ES category */
     ES_OUT_PRIV_SET_DELAY,                          /* arg1=es_category_e,      res=cannot fail */
 
@@ -236,6 +239,14 @@ es_out_SetEsDelay(struct vlc_input_es_out *out,
                   vlc_tick_t i_delay)
 {
     int i_ret = es_out_PrivControl(out, ES_OUT_PRIV_SET_ES_DELAY, es, i_delay);
+    assert( !i_ret );
+}
+
+static inline void
+es_out_SetEsVolume(struct vlc_input_es_out *out, vlc_es_id_t *es, float volume)
+{
+    int i_ret = es_out_PrivControl(out, ES_OUT_PRIV_SET_ES_VOLUME, es,
+                                   (double)volume);
     assert( !i_ret );
 }
 

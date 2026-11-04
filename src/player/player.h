@@ -35,6 +35,7 @@ struct vlc_player_track_priv
     struct vlc_player_track t;
     vout_thread_t *vout; /* weak reference */
     vlc_tick_t delay;
+    float volume; /* AUDIO_ES only, 1.0 = unchanged */
     /* only valid if selected and if category is VIDEO_ES or SPU_ES */
     enum vlc_vout_order vout_order;
     /* Used to save or not the track selection */

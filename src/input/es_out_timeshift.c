@@ -838,6 +838,7 @@ static int PrivControlLocked(struct vlc_input_es_out *p_tsout,
     case ES_OUT_PRIV_STOP_ALL_ES:
     case ES_OUT_PRIV_START_ALL_ES:
     case ES_OUT_PRIV_SET_ES_DELAY:
+    case ES_OUT_PRIV_SET_ES_VOLUME:
     case ES_OUT_PRIV_SET_DELAY:
     case ES_OUT_PRIV_SET_RECORD_STATE:
     case ES_OUT_PRIV_SET_VBI_PAGE:

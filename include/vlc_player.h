@@ -2035,6 +2035,31 @@ vlc_player_SetEsIdDelay(vlc_player_t *player, vlc_es_id_t *es_id,
                         vlc_tick_t delay, enum vlc_player_whence whence);
 
 /**
+ * Set the volume of one audio track
+ *
+ * This volume is applied on top of the player volume, which makes it possible
+ * to balance several audio tracks played at the same time.
+ *
+ * @param player locked player instance
+ * @param es_id an audio ES ID
+ * @param volume linear volume in [0.0, 2.0], 1.0 leaves the track unchanged
+ * @return VLC_SUCCESS or VLC_EGENERIC if es_id is not an audio track
+ */
+VLC_API int
+vlc_player_SetEsIdVolume(vlc_player_t *player, vlc_es_id_t *es_id,
+                         float volume);
+
+/**
+ * Get the volume of one audio track
+ *
+ * @param player locked player instance
+ * @param es_id an audio ES ID
+ * @return the track volume, 1.0 by default
+ */
+VLC_API float
+vlc_player_GetEsIdVolume(vlc_player_t *player, vlc_es_id_t *es_id);
+
+/**
  * Helper to get the audio delay
  */
 static inline vlc_tick_t

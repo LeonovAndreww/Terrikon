@@ -2336,6 +2336,11 @@ static bool Control( input_thread_t *p_input,
             es_out_SetEsDelay(priv->p_es_out_display, param.es_delay.id,
                               param.es_delay.delay);
             break;
+        case INPUT_CONTROL_SET_ES_VOLUME:
+            assert(param.es_volume.id);
+            es_out_SetEsVolume(priv->p_es_out_display, param.es_volume.id,
+                               param.es_volume.volume);
+            break;
 
         case INPUT_CONTROL_SET_TITLE:
         case INPUT_CONTROL_SET_TITLE_NEXT:

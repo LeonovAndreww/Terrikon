@@ -1003,6 +1003,12 @@ void vlc_aout_stream_Flush(vlc_aout_stream *stream)
     stream_Reset(stream);
 }
 
+void vlc_aout_stream_SetTrackVolume(vlc_aout_stream *stream, float volume)
+{
+    if (stream->volume != NULL)
+        aout_volume_SetTrackVolume(stream->volume, volume);
+}
+
 void vlc_aout_stream_NotifyGain(vlc_aout_stream *stream, float gain)
 {
     if (stream->volume != NULL)

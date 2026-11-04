@@ -469,6 +469,11 @@ typedef union
         vlc_es_id_t *id;
         vlc_tick_t delay;
     } es_delay;
+    struct
+    {
+        vlc_es_id_t *id;
+        float volume;
+    } es_volume;
     struct {
         vlc_es_id_t *id;
         unsigned page;
@@ -630,6 +635,7 @@ enum input_control_e
 
     INPUT_CONTROL_SET_CATEGORY_DELAY,
     INPUT_CONTROL_SET_ES_DELAY,
+    INPUT_CONTROL_SET_ES_VOLUME,
 
     INPUT_CONTROL_ADD_SLAVE,
     INPUT_CONTROL_SET_SUBS_FPS,

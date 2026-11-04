@@ -146,6 +146,7 @@ struct es_out_id_t
 
     vlc_tick_t i_pts_level;
     vlc_tick_t delay;
+    float volume; /* per-track volume, AUDIO_ES only */
 
     /* Fields for ES created by decoders */
     struct VLC_VECTOR(es_out_id_t *) sub_es_vec;
@@ -936,6 +937,17 @@ static void EsOutSetEsDelay(es_out_sys_t *p_sys, es_out_id_t *es, vlc_tick_t del
     EsOutDecoderChangeDelay(p_sys, es);
 
     EsOutUpdateDelayJitter(p_sys);
+}
+
+static void EsOutSetEsVolume(es_out_id_t *es, float volume)
+{
+    if (es->fmt.i_cat != AUDIO_ES)
+        return;
+
+    es->volume = volume;
+
+    if (es->p_dec)
+        vlc_input_decoder_SetTrackVolume(es->p_dec, volume);
 }
 
 static void EsOutSetDelay(es_out_sys_t *p_sys, int i_cat, vlc_tick_t i_delay)
@@ -2529,6 +2541,7 @@ static es_out_id_t *EsOutAddLocked(es_out_sys_t *p_sys,
     es->mouse_being_dragged = false;
     es->i_pts_level = VLC_TICK_INVALID;
     es->delay = VLC_TICK_MAX;
+    es->volume = 1.f;
 
     vlc_list_append(&es->node, es->p_master ? &p_sys->es_slaves : &p_sys->es);
 
@@ -2697,6 +2710,8 @@ static void EsOutCreateDecoder(es_out_sys_t *p_sys, es_out_id_t *p_es)
     p_es->p_dec = dec;
 
     EsOutDecoderChangeDelay(p_sys, p_es);
+    if (dec != NULL && p_es->fmt.i_cat == AUDIO_ES && p_es->volume != 1.f)
+        vlc_input_decoder_SetTrackVolume(dec, p_es->volume);
 
     EsOutUpdateDelayJitter(p_sys);
 }
@@ -4188,6 +4203,14 @@ static int EsOutVaPrivControlLocked(es_out_sys_t *p_sys, input_source_t *source,
         es_out_id_t *es = vlc_es_id_get_out( es_id );
         const vlc_tick_t delay = va_arg(args, vlc_tick_t);
         EsOutSetEsDelay(p_sys, es, delay);
+        return VLC_SUCCESS;
+    }
+    case ES_OUT_PRIV_SET_ES_VOLUME:
+    {
+        vlc_es_id_t *es_id = va_arg( args, vlc_es_id_t * );
+        es_out_id_t *es = vlc_es_id_get_out( es_id );
+        const float volume = va_arg( args, double );
+        EsOutSetEsVolume(es, volume);
         return VLC_SUCCESS;
     }
     case ES_OUT_PRIV_SET_DELAY:

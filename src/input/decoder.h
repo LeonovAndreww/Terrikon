@@ -102,6 +102,14 @@ void vlc_input_decoder_ChangePause( vlc_input_decoder_t *, bool b_paused, vlc_ti
 void vlc_input_decoder_ChangeRate( vlc_input_decoder_t *dec, float rate );
 
 /**
+ * Changes the volume of an audio decoder's track only.
+ *
+ * \param dec decoder (ignored if it is not an audio decoder)
+ * \param volume linear volume, 1.0 leaves the track unchanged
+ */
+void vlc_input_decoder_SetTrackVolume( vlc_input_decoder_t *dec, float volume );
+
+/**
  * This function makes the decoder start waiting for a valid data block from its fifo.
  */
 void vlc_input_decoder_StartWait( vlc_input_decoder_t * );
