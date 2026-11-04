@@ -1310,9 +1310,10 @@ void PlayerController::setRate( float new_rate )
         return;
 
     msg_Dbg( d->p_intf, "setRate %f", new_rate);
-    vlc_player_locker lock{ d->m_player };
-    if ( vlc_player_CanChangeRate( d->m_player ) )
     {
+        vlc_player_locker lock{ d->m_player };
+        if ( !vlc_player_CanChangeRate( d->m_player ) )
+            return;
         vlc_player_ChangeRate( d->m_player, new_rate );
 
         // Until the timer notifies the change, we need to still change
@@ -1320,8 +1321,10 @@ void PlayerController::setRate( float new_rate )
         // For position, it is supposed to be interpolated but for rate
         // the new value can be taken as is:
         d->m_rate = new_rate;
-        emit rateChanged(d->m_rate);
     }
+    // Emit with the player unlocked: the player lock is not recursive and a
+    // receiver may lock it again
+    emit rateChanged(d->m_rate);
 }
 
 void PlayerController::slower()
@@ -1464,8 +1467,10 @@ void PlayerController::setAudioDelay(VLCDuration delay)
 /*Q_INVOKABLE*/void PlayerController::addAudioDelay(VLCDuration delay)
 {
     Q_D(PlayerController);
-    vlc_player_locker lock{ d->m_player };
-    vlc_player_SetAudioDelay( d->m_player, delay.toVLCTick(), VLC_PLAYER_WHENCE_RELATIVE );
+    {
+        vlc_player_locker lock{ d->m_player };
+        vlc_player_SetAudioDelay( d->m_player, delay.toVLCTick(), VLC_PLAYER_WHENCE_RELATIVE );
+    }
     emit audioDelayChanged(delay);
 }
 
@@ -1481,8 +1486,10 @@ void PlayerController::setSubtitleDelay(VLCDuration delay)
 /*Q_INVOKABLE*/void PlayerController::addSubtitleDelay(VLCDuration delay)
 {
     Q_D(PlayerController);
-    vlc_player_locker lock{ d->m_player };
-    vlc_player_SetSubtitleDelay( d->m_player, delay.toVLCTick(), VLC_PLAYER_WHENCE_RELATIVE);
+    {
+        vlc_player_locker lock{ d->m_player };
+        vlc_player_SetSubtitleDelay( d->m_player, delay.toVLCTick(), VLC_PLAYER_WHENCE_RELATIVE);
+    }
     emit subtitleDelayChanged(delay);
 }
 
@@ -1500,12 +1507,14 @@ void PlayerController::setSecondarySubtitleDelay(VLCDuration delay)
 /*Q_INVOKABLE*/void PlayerController::addSecondarySubtitleDelay(VLCDuration delay)
 {
     Q_D(PlayerController);
-    vlc_player_locker lock{ d->m_player };
-    if (d->m_secondarySpuEsId.get() != NULL) {
+    {
+        vlc_player_locker lock{ d->m_player };
+        if (d->m_secondarySpuEsId.get() == NULL)
+            return;
         vlc_player_SetEsIdDelay(d->m_player, d->m_secondarySpuEsId.get(),
                                 delay.toVLCTick(), VLC_PLAYER_WHENCE_RELATIVE);
-        emit secondarySubtitleDelayChanged(delay);
     }
+    emit secondarySubtitleDelayChanged(delay);
 }
 
 int PlayerController::getAudioDelayMS() const
@@ -2149,14 +2158,19 @@ void PlayerControllerPrivate::onArtFetchEnded(input_item_t *p_item, bool)
 {
     Q_Q(PlayerController);
 
-    vlc_player_locker lock{ m_player };
-    bool b_current_item = (p_item == vlc_player_GetCurrentMedia( m_player ));
-    /* No input will signal the cover art to update,
-         * let's do it ourself */
-    if ( b_current_item )
-        UpdateArt( p_item );
-    else
-        emit q->artChanged( p_item );
+    {
+        vlc_player_locker lock{ m_player };
+        /* No input will signal the cover art to update,
+         * let's do it ourself. UpdateArt() stays under the lock: it is also
+         * called from player callbacks, and this runs on the preparser
+         * thread. */
+        if ( p_item == vlc_player_GetCurrentMedia( m_player ) )
+        {
+            UpdateArt( p_item );
+            return;
+        }
+    }
+    emit q->artChanged( p_item );
 }
 
 const QString PlayerController::decodeArtURL( input_item_t *p_item )
