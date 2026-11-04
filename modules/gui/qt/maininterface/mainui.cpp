@@ -92,6 +92,9 @@
 #endif
 #include "mainctx_submodels.hpp"
 
+#include "terrikon/media_tools.hpp"
+#include "terrikon/selftest.hpp"
+
 static bool g_qmlTypesAreRegistered = false;
 
 using  namespace vlc::playlist;
@@ -107,6 +110,8 @@ MainUI::MainUI(qt_intf_t *p_intf, MainCtx *mainCtx, QWindow* interfaceWindow,  Q
     assert(m_interfaceWindow);
 
     registerQMLTypes();
+
+    terrikon::runSelfTestIfRequested(this);
 
     // FIXME: Since Qt 6.6, Qt follows a different approach for scrolling. This new approach has
     //        caused a lot of frustration (QTBUG-116388, QTBUG-129948, QTBUG-120038). However,
@@ -451,6 +456,20 @@ void MainUI::registerQMLTypes()
         qmlRegisterType<CSDThemeImage>(uri, versionMajor, versionMinor, "CSDThemeImage");
         qmlRegisterType<ViewBlockingRectangle>( uri, versionMajor, versionMinor, "ViewBlockingRectangle" );
         qmlRegisterTypesAndRevisions<PointingToolTipAttached>( uri, versionMajor );
+
+        qmlRegisterModule(uri, versionMajor, versionMinor);
+        qmlProtectModule(uri, versionMajor);
+    }
+
+    {
+        const char* uri = "VLC.Terrikon";
+        const int versionMajor = 1;
+        const int versionMinor = 0;
+
+        // @uri VLC.Terrikon
+        qmlRegisterType<terrikon::ClipExporter>(uri, versionMajor, versionMinor, "ClipExporter");
+        qmlRegisterType<terrikon::WaveformLoader>(uri, versionMajor, versionMinor, "WaveformLoader");
+        qmlRegisterType<terrikon::ThumbnailStrip>(uri, versionMajor, versionMinor, "ThumbnailStrip");
 
         qmlRegisterModule(uri, versionMajor, versionMinor);
         qmlProtectModule(uri, versionMajor);
