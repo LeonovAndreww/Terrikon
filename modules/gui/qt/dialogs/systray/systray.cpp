@@ -46,9 +46,9 @@ VLCSystray::VLCSystray(MainCtx* ctx, QObject* parent)
         iconVLC = QIcon::fromTheme( "vlc", QIcon( ":/logo/vlc256.png" ) );
 
     setIcon(iconVLC);
-    setToolTip( qtr( "VLC media player" ));
+    setToolTip( QStringLiteral("Terrikon"));
 
-    m_menu = std::make_unique<VLCMenu>( qtr( "VLC media player"), m_intf );
+    m_menu = std::make_unique<VLCMenu>( QStringLiteral("Terrikon"), m_intf );
     m_menu->setIcon( iconVLC );
     setContextMenu(m_menu.get());
     update();
@@ -118,7 +118,7 @@ void VLCSystray::updateTooltipName( const QString& name )
 {
     if( name.isEmpty() )
     {
-        setToolTip( qtr( "VLC media player" ) );
+        setToolTip( QStringLiteral("Terrikon") );
     }
     else
     {
@@ -128,7 +128,7 @@ void VLCSystray::updateTooltipName( const QString& name )
             ( m_notificationSetting == NOTIFICATION_MINIMIZED && (windowVisiblity == QWindow::Hidden || windowVisiblity == QWindow::Minimized)))
         {
             const auto showMessageTemplate = [this, &name](const auto &icon) {
-                showMessage( qtr( "VLC media player" ), name, icon, 3000 );
+                showMessage( QStringLiteral("Terrikon"), name, icon, 3000 );
             };
 
             assert(m_intf);
