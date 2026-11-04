@@ -48,6 +48,11 @@ class TrackListModel : public QAbstractListModel
     Q_PROPERTY(bool multiSelect READ getMultiSelect WRITE setMultiSelect NOTIFY multiSelectChanged FINAL)
 
 public:
+    enum TrackListRoles {
+        /* per-track volume of audio tracks, 1.0 = unchanged */
+        VolumeRole = Qt::UserRole + 1,
+    };
+
     TrackListModel(vlc_player_t* player, QObject* parent = nullptr);
 
     Qt::ItemFlags flags(const QModelIndex &) const  override;
@@ -92,6 +97,7 @@ private:
         //vlc_es_id_t *m_id = NULL;
         ::vlc::vlc_shared_data_ptr<vlc_es_id_t, &vlc_es_id_Hold, &vlc_es_id_Release> m_id;
         bool m_selected = false;
+        float m_volume = 1.f;
     };
     QList<Data> m_data;
     bool m_multiSelect = false; // subtitles and audio

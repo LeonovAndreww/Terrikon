@@ -88,6 +88,7 @@ RowLayout {
         TrackColumn {
             title: qsTr("Audio")
             tracksModel: Player.audioTracks
+            showVolume: true
             menuIcon: VLCIcons.expand
             menuText: qsTr("Menu")
             onMenuAction: (menuPos)  => {
@@ -121,6 +122,10 @@ RowLayout {
         required property var tracksModel
         required property string menuIcon
         required property string menuText
+
+        // show a volume slider under each selected track when several
+        // tracks can be selected at once (audio only)
+        property bool showVolume: false
 
         signal menuAction(point position)
 
@@ -221,13 +226,50 @@ RowLayout {
                 Keys.onPressed: (event) => Navigation.defaultKeyAction(event)
 
                 delegate: Widgets.CheckedDelegate {
+                    id: trackDelegate
+
                     readonly property bool isModelChecked: model.checked
+                    readonly property bool volumeVisible: tracksListContainer.showVolume
+                                                          && tracksListContainer.tracksModel.multiSelect
+                                                          && model.checked
+                    readonly property real volumeBlockHeight: volumeVisible
+                                                              ? volumeSlider.implicitHeight + VLCStyle.margin_small
+                                                              : 0
                     clip: true
 
                     focus: true
                     text: model.display
                     width: tracksListContainer.width - VLCStyle.margin_xxxsmall
-                    height: VLCStyle.dp(40, VLCStyle.scale)
+                    height: VLCStyle.dp(40, VLCStyle.scale) + volumeBlockHeight
+                    bottomPadding: volumeBlockHeight
+
+                    Widgets.SliderExt {
+                        id: volumeSlider
+
+                        visible: trackDelegate.volumeVisible
+
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.bottom: parent.bottom
+                        anchors.leftMargin: VLCStyle.margin_xxlarge
+                        anchors.rightMargin: VLCStyle.margin_large
+                        anchors.bottomMargin: VLCStyle.margin_xsmall
+
+                        from: 0
+                        to: 2
+                        stepSize: 0.05
+                        value: model.volume
+
+                        wheelEnabled: true
+                        toolTipFollowsMouse: true
+                        toolTipTextProvider: function (value) {
+                            return Math.round(value * 100) + "%"
+                        }
+
+                        onMoved: model.volume = value
+
+                        Accessible.name: qsTr("Volume of %1").arg(model.display)
+                    }
                     opacity: hovered || activeFocus || checked ? 1 : .6
                     font.weight: hovered
                                  || activeFocus ? Font.DemiBold : Font.Normal

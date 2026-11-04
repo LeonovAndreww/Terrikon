@@ -48,6 +48,8 @@ QVariant TrackListModel::data(const QModelIndex &index, int role) const
         return m_data[row].m_title;
     else if (role == Qt::CheckStateRole)
         return QVariant::fromValue<bool>(m_data[row].m_selected);
+    else if (role == VolumeRole)
+        return QVariant::fromValue<float>(m_data[row].m_volume);
     return QVariant{};
 }
 
@@ -56,6 +58,20 @@ bool TrackListModel::setData(const QModelIndex &index, const QVariant &value, in
     int row = index.row();
     if (row >= m_data.size())
         return false;
+    if ( role == VolumeRole )
+    {
+        if (!value.canConvert<float>())
+            return false;
+        float volume = value.toFloat();
+        {
+            vlc_player_locker lock{ m_player };
+            if (vlc_player_SetEsIdVolume(m_player, m_data[row].m_id.get(), volume) != VLC_SUCCESS)
+                return false;
+            m_data[row].m_volume = vlc_player_GetEsIdVolume(m_player, m_data[row].m_id.get());
+        }
+        emit dataChanged(index, index, { VolumeRole });
+        return true;
+    }
     if ( role != Qt::CheckStateRole )
         return false;
     if (!value.canConvert<bool>())
@@ -153,6 +169,7 @@ QHash<int, QByteArray> TrackListModel::roleNames() const
 {
     QHash<int, QByteArray> roleNames = this->QAbstractListModel::roleNames();
     roleNames[Qt::CheckStateRole] = QByteArrayLiteral("checked");
+    roleNames[VolumeRole] = QByteArrayLiteral("volume");
     return roleNames;
 }
 
