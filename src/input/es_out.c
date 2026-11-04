@@ -4443,8 +4443,12 @@ input_EsOutNew(input_thread_t *p_input, input_source_t *main_source, float rate,
     EsOutPropsInit( &p_sys->video, true, p_input, input_type,
                     ES_OUT_ES_POLICY_AUTO,
                     "video-track-id", "video-track", NULL, NULL );
+    /* AUTO allows several audio tracks at once ("audio-track-id" with a
+     * comma-separated list, or a multi-track selection from the player).
+     * Each extra track gets its own aout from the input resource and a
+     * slave clock, so it stays in sync with the master audio track. */
     EsOutPropsInit( &p_sys->audio, true, p_input, input_type,
-                    ES_OUT_ES_POLICY_EXCLUSIVE,
+                    ES_OUT_ES_POLICY_AUTO,
                     "audio-track-id", "audio-track", "audio-language", "audio" );
     EsOutPropsInit( &p_sys->sub,  false, p_input, input_type,
                     ES_OUT_ES_POLICY_AUTO,

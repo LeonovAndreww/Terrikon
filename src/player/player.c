@@ -482,7 +482,7 @@ vlc_player_SelectEsIdList(vlc_player_t *player,
     static const size_t max_tracks_by_cat[] = {
         [UNKNOWN_ES] = 0,
         [VIDEO_ES] = UINT_MAX,
-        [AUDIO_ES] = 1,
+        [AUDIO_ES] = UINT_MAX,
         [SPU_ES] = 2,
         [DATA_ES] = 0,
     };
