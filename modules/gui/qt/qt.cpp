@@ -1275,10 +1275,8 @@ static void *Thread( void *obj )
     app.setApplicationDisplayName( QStringLiteral("Terrikon") );
     app.setApplicationVersion( QString::fromUtf8(VERSION_MESSAGE) );
 
-    if( QDate::currentDate().dayOfYear() >= QT_XMAS_JOKE_DAY && var_InheritBool( p_intf, "qt-icon-change" ) )
-        app.setWindowIcon( QIcon::fromTheme( "vlc-xmas", QIcon( ":/logo/vlc128-xmas.png" ) ) );
-    else
-        app.setWindowIcon( QIcon::fromTheme( "vlc", QIcon( ":/logo/vlc256.png" ) ) );
+    /* Terrikon's own icon, not the "vlc" one of the desktop icon theme */
+    app.setWindowIcon( QIcon( ":/logo/vlc256.png" ) );
 
     app.setDesktopFileName( PACKAGE );
 

@@ -39,11 +39,7 @@ VLCSystray::VLCSystray(MainCtx* ctx, QObject* parent)
 
     m_notificationSetting = var_InheritInteger(m_intf, "qt-notification");
 
-    QIcon iconVLC;
-    if( m_ctx->useXmasCone() )
-        iconVLC = QIcon::fromTheme( "vlc-xmas", QIcon( ":/logo/vlc128-xmas.png" ) );
-    else
-        iconVLC = QIcon::fromTheme( "vlc", QIcon( ":/logo/vlc256.png" ) );
+    QIcon iconVLC( ":/logo/vlc256.png" );
 
     setIcon(iconVLC);
     setToolTip( QStringLiteral("Terrikon"));
