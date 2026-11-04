@@ -386,6 +386,8 @@ class QmlAudioMenu : public QmlTrackMenu
 {
     Q_OBJECT
 
+    SIMPLE_MENU_PROPERTY(PlayerController *, player, nullptr)
+
 public:
     QmlAudioMenu(QObject * parent = nullptr);
 

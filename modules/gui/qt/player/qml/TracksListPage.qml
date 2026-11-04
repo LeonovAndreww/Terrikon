@@ -275,6 +275,7 @@ RowLayout {
     QmlAudioMenu {
         id: menuAudio
 
+        player: Player
         ctx: MainCtx
 
         onTriggered: {

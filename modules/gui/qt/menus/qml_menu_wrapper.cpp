@@ -810,6 +810,19 @@ void QmlAudioMenu::beforePopup(QMenu * menu) /* override */
     {
         emit triggered(Synchronize);
     });
+
+    menu->addSeparator();
+
+    QAction * action = menu->addAction(qtr("Select multiple"), this, [this]()
+    {
+        TrackListModel * tracks = this->m_player->getAudioTracks();
+
+        tracks->setMultiSelect(!(tracks->getMultiSelect()));
+    });
+
+    action->setCheckable(true);
+
+    action->setChecked(m_player->getAudioTracks()->getMultiSelect());
 }
 
 QmlAudioContextMenu::QmlAudioContextMenu(QObject *parent)

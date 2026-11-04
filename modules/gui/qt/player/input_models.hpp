@@ -94,7 +94,7 @@ private:
         bool m_selected = false;
     };
     QList<Data> m_data;
-    bool m_multiSelect = false; // this only work for subtitles
+    bool m_multiSelect = false; // subtitles and audio
 };
 
 /**
