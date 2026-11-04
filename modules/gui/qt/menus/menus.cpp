@@ -413,7 +413,23 @@ void VLCMenuBar::AudioMenu( qt_intf_t *p_intf, QMenu * current )
 {
     if( current->isEmpty() )
     {
-        current->addMenu(new CheckableListMenu(qtr( "Audio &Track" ), THEMIM->getAudioTracks(), QActionGroup::ExclusionPolicy::ExclusiveOptional, current));
+        TrackListModel *audioTracks = THEMIM->getAudioTracks();
+        const auto trackPolicy = [](bool multiSelect) {
+            return multiSelect ? QActionGroup::ExclusionPolicy::None
+                               : QActionGroup::ExclusionPolicy::ExclusiveOptional;
+        };
+        CheckableListMenu *trackMenu = new CheckableListMenu(qtr( "Audio &Track" ), audioTracks,
+                                                             trackPolicy(audioTracks->getMultiSelect()), current);
+        current->addMenu(trackMenu);
+
+        /* Several audio tracks can play at once, each with its own volume */
+        QAction *multiSelect = current->addAction( qtr( "Play &Several Tracks at Once" ) );
+        multiSelect->setCheckable( true );
+        multiSelect->setChecked( audioTracks->getMultiSelect() );
+        QObject::connect( multiSelect, &QAction::toggled, audioTracks, &TrackListModel::setMultiSelect );
+        QObject::connect( audioTracks, &TrackListModel::multiSelectChanged, multiSelect, &QAction::setChecked );
+        QObject::connect( audioTracks, &TrackListModel::multiSelectChanged, trackMenu,
+                          [trackMenu, trackPolicy](bool multi) { trackMenu->setExclusionPolicy(trackPolicy(multi)); } );
 
         current->addMenu(new CheckableListMenu(qtr( "&Audio Device" ), THEMIM->getAudioDevices(), QActionGroup::ExclusionPolicy::Exclusive, current));
 

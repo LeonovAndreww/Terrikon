@@ -28,6 +28,7 @@
 #include "medialibrary/mlrecentmediamodel.hpp"
 
 class QAbstractListModel;
+class ListMenuHelper;
 
 /*
  * Construct a menu from a QAbstractListModel with Qt::DisplayRole and Qt::CheckStateRole
@@ -45,8 +46,13 @@ public:
      */
     CheckableListMenu(QString title, QAbstractListModel* model, QActionGroup::ExclusionPolicy grouping = QActionGroup::ExclusionPolicy::None, QWidget *parent = nullptr);
 
+    void setExclusionPolicy(QActionGroup::ExclusionPolicy grouping);
+
 protected:
     QAbstractListModel* m_model = nullptr;
+
+private:
+    ListMenuHelper* m_helper = nullptr;
 };
 
 class QQuickImageResponse;

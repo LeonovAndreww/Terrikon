@@ -156,11 +156,16 @@ CheckableListMenu::CheckableListMenu(QString title, QAbstractListModel* model , 
 {
     this->setTitle(title);
 
-    ListMenuHelper* helper = new ListMenuHelper(this, model, nullptr, this);
-    helper->getActionGroup()->setExclusionPolicy(grouping);
-    connect(helper, &ListMenuHelper::select, this, [this](int row, bool checked){
+    m_helper = new ListMenuHelper(this, model, nullptr, this);
+    m_helper->getActionGroup()->setExclusionPolicy(grouping);
+    connect(m_helper, &ListMenuHelper::select, this, [this](int row, bool checked){
         m_model->setData(m_model->index(row), checked, Qt::CheckStateRole);
     });
+}
+
+void CheckableListMenu::setExclusionPolicy(QActionGroup::ExclusionPolicy grouping)
+{
+    m_helper->getActionGroup()->setExclusionPolicy(grouping);
 }
 
 // ListMenuHelper
