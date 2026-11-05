@@ -17,6 +17,8 @@
  *****************************************************************************/
 #include "controlbar_profile_model.hpp"
 
+#include <algorithm>
+
 #include <QSettings>
 #include <QChar>
 
@@ -452,6 +454,86 @@ decltype (ControlbarProfileModel::m_defaults)
                         }
                     }
                 }
+            },
+            {
+                /* Terrikon: like web players, playback on the left, the
+                 * rest on the right, the time in the row */
+                Style::SIDES_STYLE,
+                N_("Sides Style"),
+                {
+                    {
+                        PlayerControlbarModel::Videoplayer,
+                        {
+                            {
+                                {
+                                    ControlListModel::PLAY_BUTTON,
+                                    ControlListModel::PREVIOUS_BUTTON,
+                                    ControlListModel::NEXT_BUTTON,
+                                    ControlListModel::VOLUME,
+                                    ControlListModel::TIME_WIDGET
+                                },
+                                {
+
+                                },
+                                {
+                                    ControlListModel::LANG_BUTTON,
+                                    ControlListModel::BOOKMARK_BUTTON,
+                                    ControlListModel::CLIP_BUTTON,
+                                    ControlListModel::EXTENDED_BUTTON,
+                                    ControlListModel::NAVIGATION_BUTTONS,
+                                    ControlListModel::COMPACT_PLAYER_BUTTON,
+                                    ControlListModel::FULLSCREEN_BUTTON
+                                }
+                            }
+                        }
+                    },
+                    {
+                        PlayerControlbarModel::Audioplayer,
+                        {
+                            {
+                                {
+                                    ControlListModel::PLAY_BUTTON,
+                                    ControlListModel::PREVIOUS_BUTTON,
+                                    ControlListModel::NEXT_BUTTON,
+                                    ControlListModel::VOLUME,
+                                    ControlListModel::TIME_WIDGET
+                                },
+                                {
+
+                                },
+                                {
+                                    ControlListModel::LANG_BUTTON,
+                                    ControlListModel::BOOKMARK_BUTTON,
+                                    ControlListModel::RANDOM_BUTTON,
+                                    ControlListModel::LOOP_BUTTON,
+                                    ControlListModel::EXTENDED_BUTTON,
+                                    ControlListModel::FULLSCREEN_BUTTON
+                                }
+                            }
+                        }
+                    },
+                    {
+                        PlayerControlbarModel::Miniplayer,
+                        {
+                            {
+                                {
+                                    ControlListModel::ARTWORK_INFO
+                                },
+                                {
+                                    ControlListModel::RANDOM_BUTTON,
+                                    ControlListModel::PREVIOUS_BUTTON,
+                                    ControlListModel::PLAY_BUTTON,
+                                    ControlListModel::NEXT_BUTTON,
+                                    ControlListModel::LOOP_BUTTON
+                                },
+                                {
+                                    ControlListModel::VOLUME,
+                                    ControlListModel::PLAYER_SWITCH_BUTTON
+                                }
+                            }
+                        }
+                    }
+                }
             }
         };
 
@@ -837,12 +919,38 @@ bool ControlbarProfileModel::reload()
     bool ok = false;
     int index = m_settings->value(SETTINGS_KEY_SELECTEDPROFILE).toInt(&ok);
 
+    m_settings->endGroup();
+
+    /* Terrikon: built-in profiles saved under their English name (before
+     * the interface was translated) take the translated one */
+    for (ControlbarProfile *profile : m_profiles)
+        for (const auto &style : m_defaults)
+            if (profile->name() == QLatin1String(style.name))
+                profile->setName(qfut(style.name));
+
+    /* Terrikon: profiles saved before the sides style existed get it */
+    for (const auto &style : m_defaults)
+    {
+        if (style.id != Style::SIDES_STYLE)
+            continue;
+        const QString name = qfut(style.name);
+        const bool known = std::any_of(m_profiles.cbegin(), m_profiles.cend(),
+                                       [&name](const ControlbarProfile *p) { return p->name() == name; });
+        if (!known)
+        {
+            const auto profile = newProfile(name);
+            if (profile)
+            {
+                profile->injectModel(style.modelData);
+                profile->resetDirty();
+            }
+        }
+    }
+
     if (ok)
         setSelectedProfile(index);
     else
         setSelectedProfile(0);
-
-    m_settings->endGroup();
 
     return true;
 }

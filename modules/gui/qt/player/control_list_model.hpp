@@ -83,7 +83,7 @@ public:
         PROGRAM_BUTTON,
         NAVIGATION_BOX,
         COMPACT_PLAYER_BUTTON,
-        RESERVED_0X2C,
+        TIME_WIDGET, /* "0:42 / 2:35", for bars laid out like web players */
         RESERVED_0X2D,
         RESERVED_0X2E,
         RESERVED_0X2F,
@@ -128,6 +128,10 @@ public:
     QHash<int, QByteArray> roleNames() const override;
 
     QVector<int> getControls() const;
+    Q_INVOKABLE bool contains(int control) const
+    {
+        return m_controls.contains(static_cast<ControlType>(control));
+    }
     void setControls(const QVector<int>& list);
 
     bool operator==(const ControlListModel& model) const

@@ -141,9 +141,11 @@ T.Pane {
                 color: theme.fg.primary
                 font: timeTextMetrics.font
 
-                // Out of the way of the waveforms shown over the bar
-                opacity: (trackPositionSlider._pointerOver
-                          && textPosition === ControlBar.TimeTextPosition.AboveSlider) ? 0 : 1
+                // Out of the way of the waveforms shown over the bar, and not
+                // shown twice when the time is in the row of buttons
+                opacity: ((trackPositionSlider._pointerOver
+                           && textPosition === ControlBar.TimeTextPosition.AboveSlider)
+                          || playerControlLayout.hasTimeWidget) ? 0 : 1
                 Behavior on opacity { NumberAnimation { duration: VLCStyle.duration_short } }
                 horizontalAlignment: Text.AlignHCenter
 

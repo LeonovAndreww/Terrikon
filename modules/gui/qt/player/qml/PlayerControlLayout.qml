@@ -36,6 +36,17 @@ FocusScope {
 
     property int identifier: -1
 
+    // The time is in the row of buttons (layouts like web players)
+    readonly property bool hasTimeWidget: {
+        const m = model
+        if (!m)
+            return false
+        void m.left?.count
+        void m.center?.count
+        void m.right?.count
+        return [m.left, m.center, m.right].some(l => l && l.contains(ControlListModel.TIME_WIDGET))
+    }
+
     readonly property PlayerControlbarModel model: {
         if (!!MainCtx.controlbarProfileModel.currentModel)
             return MainCtx.controlbarProfileModel.currentModel.getModel(identifier)

@@ -39,6 +39,9 @@
 
 #include "maininterface/mainctx.hpp"                     /* View modifications */
 #include "maininterface/mainctx_submodels.hpp"
+#include "dialogs/toolbar/controlbar_profile_model.hpp"
+#include "dialogs/toolbar/controlbar_profile.hpp"
+#include <QActionGroup>
 #include "dialogs/dialogs_provider.hpp"                   /* Dialogs display */
 #include "dialogs/help/help.hpp"
 #include "player/player_controller.hpp"                      /* Input Management */
@@ -352,6 +355,27 @@ void VLCMenuBar::ViewMenu(qt_intf_t *p_intf, QMenu *menu)
     action->setChecked( mi->hasGridView() );
 
     menu->addMenu( new CheckableListMenu(qtr( "&Color Scheme" ), mi->getColorScheme(), QActionGroup::ExclusionPolicy::Exclusive, menu) );
+
+    /* Terrikon: where the player buttons go (centred, on the sides...) */
+    if ( ControlbarProfileModel *profiles = mi->controlbarProfileModel() )
+    {
+        QMenu *layouts = menu->addMenu( qtr( "Player &Buttons" ) );
+        QActionGroup *group = new QActionGroup( layouts );
+        for ( int i = 0; i < profiles->rowCount(); ++i )
+        {
+            const ControlbarProfile *profile = profiles->getProfile( i );
+            if ( !profile )
+                continue;
+            QAction *pick = layouts->addAction( profile->name() );
+            pick->setCheckable( true );
+            pick->setChecked( profiles->selectedProfile() == i );
+            group->addAction( pick );
+            connect( pick, &QAction::triggered, profiles, [profiles, i]() {
+                profiles->setSelectedProfile( i );
+                profiles->save( false );
+            } );
+        }
+    }
 
     menu->addSeparator();
 
