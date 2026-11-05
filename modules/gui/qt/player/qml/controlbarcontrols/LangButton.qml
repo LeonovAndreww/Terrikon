@@ -47,31 +47,37 @@ Widgets.IconToolButton {
 
     enabled: menuLoader.status === Loader.Ready
 
-    description: qsTr("Languages and tracks")
+    description: qsTr("Audio and subtitles")
 
     AccessibleCompat.id: "langButton"
 
     // Events
 
-    onClicked: menuLoader.item.open()
+    // The press that closes an open menu (outside of it) comes right
+    // before this click; it must not open it again
+    property double _closedAt: 0
+
+    onClicked: {
+        if (menuLoader.item.opened)
+            menuLoader.item.close()
+        else if (Date.now() - _closedAt > 300)
+            menuLoader.item.open()
+    }
 
     // Children
 
     Loader {
         id: menuLoader
 
-        sourceComponent: TracksMenu {
+        sourceComponent: TracksPopover {
             id: menu
 
-            parent: root._parentItem
+            parent: root
 
             x: 0
-            y: (parent.positionSliderY - height)
-            z: 1
+            y: -height - VLCStyle.margin_small
 
             focus: true
-
-            colorContext.palette: root.colorContext.palette
 
             onOpened: {
                 root.requestLockUnlockAutoHide(true)
@@ -79,6 +85,7 @@ Widgets.IconToolButton {
             }
 
             onClosed: {
+                root._closedAt = Date.now()
                 root.requestLockUnlockAutoHide(false)
                 root.forceActiveFocus()
                 root.menuOpened(null)

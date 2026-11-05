@@ -28,6 +28,7 @@ ColumnLayout {
     id: root
 
     required property ColorContext colorContext
+    property bool showTitle: true
 
     spacing: VLCStyle.margin_xsmall
 
@@ -83,6 +84,7 @@ ColumnLayout {
     }
 
     Widgets.SubtitleLabel {
+        visible: root.showTitle
         Layout.fillWidth: true
         text: qsTr("Subtitle style")
         color: root.colorContext.fg.primary

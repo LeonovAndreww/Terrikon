@@ -22,21 +22,24 @@ import QtQuick.Templates as T
 import VLC.MainInterface
 import VLC.Widgets as Widgets
 import VLC.Util
+import VLC.Terrikon
 import VLC.Style
 import VLC.Player
 
 T.Pane {
     id: root
 
+    signal requestLockUnlockAutoHide(bool lock)
+
     property bool paintOnly: false
 
     readonly property color sliderColor: {
         const theme = volControl.colorContext
-        return (volControl.position > _fullvolpos) ? theme.fg.negative : theme.fg.primary
+        return (_player.volume > 1) ? theme.fg.negative : theme.fg.primary
     }
 
     readonly property var _player: paintOnly ? ({ muted: false, volume: .5 }) : Player
-    readonly property int _maxvol: MainCtx.maxVolume
+    readonly property int _maxvol: 100
     readonly property real _fullvolpos: 100 / _maxvol
     readonly property real _maxvolpos: _maxvol / 100
 
@@ -74,11 +77,47 @@ T.Pane {
                 else
                     return VLCIcons.volume_high
             }
-            description: qsTr("Mute")
+            description: qsTr("Mute") + TerrikonActions.hint("vol-mute")
 
             AccessibleCompat.id: "muteButton"
 
             onClicked: Player.muted = !Player.muted
+
+            // Tracks, several at once and boost: hovering the speaker, or
+            // a right click, opens them
+            HoverHandler {
+                id: speakerHover
+                enabled: !root.paintOnly
+                onHoveredChanged: {
+                    if (hovered)
+                        openTimer.restart()
+                    else
+                        openTimer.stop()
+                }
+            }
+
+            TapHandler {
+                enabled: !root.paintOnly
+                acceptedButtons: Qt.RightButton
+                onTapped: audioPopover.open()
+            }
+
+            Timer {
+                id: openTimer
+                interval: 350
+                onTriggered: audioPopover.open()
+            }
+
+            AudioPopover {
+                id: audioPopover
+
+                buttonHovered: speakerHover.hovered
+                x: (volumeBtn.width - width) / 2
+                y: -height - VLCStyle.margin_small
+
+                onOpened: root.requestLockUnlockAutoHide(true)
+                onClosed: root.requestLockUnlockAutoHide(false)
+            }
 
             Accessible.onIncreaseAction: {
                 Player.muted = false
