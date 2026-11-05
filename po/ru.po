@@ -32614,7 +32614,6 @@ msgstr "Отметка удалена"
 #~ msgstr[1] ""
 #~ "Не были показаны %u модуля, имеющие только расширенные параметры.\n"
 #~ msgstr[2] ""
-msgstr[3] ""
 #~ "Не были показаны %u модулей, имеющие только расширенные параметры.\n"
 #~ msgstr[3] ""
 #~ "Не были показаны %u модулей, имеющие только расширенные параметры.\n"
@@ -33915,7 +33914,6 @@ msgstr[3] ""
 #~ msgstr[0] "В плейлисте только %u элемент"
 #~ msgstr[1] "В плейлисте только %u элемента"
 #~ msgstr[2] "В плейлисте только %u элементов"
-msgstr[3] "В плейлисте только %u элементов"
 #~ msgstr[3] "В плейлисте только %u элементов"
 
 #~ msgid "+-[Streaming]"
@@ -44108,3 +44106,31 @@ msgstr[3] "В плейлисте только %u элементов"
 
 #~ msgid "Autoplay"
 #~ msgstr "Автовоспроизведение"
+
+#: terrikon
+msgid "Sides Style"
+msgstr "По краям"
+
+#: terrikon
+msgid "Player &Buttons"
+msgstr "&Кнопки плеера"
+
+#: terrikon
+msgid "Sound waves along the seek bar"
+msgstr "Звуковые волны над полосой перемотки"
+
+#: terrikon
+msgid "How the sound of the playing audio tracks is drawn along the seek bar."
+msgstr "Как рисовать звук играющих дорожек вдоль полосы перемотки."
+
+#: terrikon
+msgid "Smooth line"
+msgstr "Плавная линия"
+
+#: terrikon
+msgid "Mirrored"
+msgstr "Зеркально"
+
+#: terrikon
+msgid "Above and below the bar (two tracks)"
+msgstr "Над и под полосой (две дорожки)"
