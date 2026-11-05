@@ -28,7 +28,7 @@ Item {
     id: root
 
     property real barHeight: VLCStyle.dp(5, VLCStyle.scale)
-    property color color: "#9F7BFF"
+    property color color: "white"
 
     // True while an edge is being dragged; the seek bar then ignores the pointer
     readonly property bool dragging: _pressedEdges > 0

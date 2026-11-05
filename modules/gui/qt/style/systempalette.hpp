@@ -181,6 +181,9 @@ private:
 
     ColorSchemeModel::ColorScheme m_source = ColorSchemeModel::ColorScheme::Day;
     bool m_accentChosen = false;
+    // Black and white instead of a colour: near white on dark, near
+    // black on light, with dark text on accent buttons in the dark scheme
+    bool m_mono = false;
     bool m_isDark = false;
     bool m_hasCSDImage = false;
 

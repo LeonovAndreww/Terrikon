@@ -313,6 +313,12 @@ void SystemPalette::componentComplete()
         {
             // Use default
         }
+        else if (!strcmp(accentColor, "mono"))
+        {
+            orange500 = QColor("#ededed");
+            orange800 = QColor("#1f1f1f");
+            m_mono = true;
+        }
 #if QT_VERSION >= QT_VERSION_CHECK(6, 6, 0)
         else if (!strcmp(accentColor, "system"))
         {
@@ -595,7 +601,7 @@ void SystemPalette::makeLightPalette()
     {
         C::ColorSet CS = C::ButtonAccent;
         setColor(CS, C::Bg, C::Primary, C::Normal, orange800);
-        setColor(CS, C::Bg, C::Primary, C::Pressed, QColor("#e65609"));  //FIXME not a predef
+        setColor(CS, C::Bg, C::Primary, C::Pressed, m_mono ? QColor("#3a3a3a") : QColor("#e65609"));  //FIXME not a predef
         setColor(CS, C::Bg, C::Primary, C::Disabled, setColorAlpha(Qt::black, 0.2));
 
         setColor(CS, C::Fg, C::Primary, C::Normal, Qt::white);
@@ -807,10 +813,10 @@ void SystemPalette::makeDarkPalette()
     {
         C::ColorSet CS = C::ButtonAccent;
         setColor(CS, C::Bg, C::Primary, C::Normal, orange500);
-        setColor(CS, C::Bg, C::Primary, C::Pressed, QColor("#e67a30"));  //FIXME not a predef
+        setColor(CS, C::Bg, C::Primary, C::Pressed, m_mono ? QColor("#c8c8c8") : QColor("#e67a30"));  //FIXME not a predef
         setColor(CS, C::Bg, C::Primary, C::Disabled, setColorAlpha(Qt::white, 0.2));
 
-        setColor(CS, C::Fg, C::Primary, C::Normal, Qt::white);
+        setColor(CS, C::Fg, C::Primary, C::Normal, m_mono ? QColor("#141414") : QColor(Qt::white));
         setColor(CS, C::Fg, C::Primary, C::Disabled, setColorAlpha(Qt::white, 0.3));
 
         setColor(CS, C::Decoration, C::Border, C::Normal, Qt::transparent);

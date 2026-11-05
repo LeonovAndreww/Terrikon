@@ -217,8 +217,8 @@ T.Control {
                 return VLCIcons.play_filled
         }
 
-        color: cursorInside ? theme.accent
-                            : "black"  //foreground is always black
+        // The inner disc is always white: dark grey on hover, black otherwise
+        color: cursorInside ? "#555555" : "black"
 
         font.pixelSize: Math.round(parent.height / 1.7)
 
@@ -260,10 +260,8 @@ T.Control {
 
             radius: width / 2
 
-            gradient: Gradient {
-                GradientStop { position: 0.0; color: "#e25b01" }
-                GradientStop { position: 1.0; color: "#f89a06" }
-            }
+            // The ring takes the accent (black and white by default)
+            color: theme.accent
 
             Widgets.RoundedRectangleShadow {
                 id: hoverShadow
