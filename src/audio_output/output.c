@@ -857,9 +857,13 @@ int aout_VolumeUpdate (audio_output_t *aout, int value, float *volp)
 
     if (vol >= 0.f)
     {
+        /* Steps stop at 100%: going louder is a deliberate choice, made
+         * by setting the volume, never by an accidental wheel or key. */
+        const float top = vol > 1.f ? vol : 1.f;
+
         vol += (value * stepSize);
         vol = (roundf (vol / stepSize)) * stepSize;
-        vol = clampf(vol, 0.f, AOUT_VOLUME_MAX / defaultVolume);
+        vol = clampf(vol, 0.f, value > 0 ? top : AOUT_VOLUME_MAX / defaultVolume);
         if (volp != NULL)
             *volp = vol;
         ret = aout_VolumeSet (aout, vol);
