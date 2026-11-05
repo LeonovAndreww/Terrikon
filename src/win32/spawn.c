@@ -119,7 +119,7 @@ static int vlc_spawn_inner(pid_t *restrict pid, const char *path,
         return ret;
     wchar_t *cmdline = NULL;
 
-    if (fdv[0] == -1 || fdv[1] == -1) {
+    if (fdv[0] == -1 || fdv[1] == -1 || fdv[2] == -1) {
         nulfd = _open("\\\\.\\NUL", O_RDWR);
         if (unlikely(nulfd == -1))
             goto error;
@@ -132,6 +132,11 @@ static int vlc_spawn_inner(pid_t *restrict pid, const char *path,
             siEx.StartupInfo.hStdInput = nul_handle;
         if (fdv[1] == -1)
             siEx.StartupInfo.hStdOutput = nul_handle;
+        /* A standard handle left invalid makes CreateProcess() fail when
+         * the inherited handles are restricted to a list, which is what
+         * happens to a GUI process started without a console. */
+        if (fdv[2] == -1)
+            siEx.StartupInfo.hStdError = nul_handle;
     }
 
     if (fdv[0] != -1) {
@@ -225,7 +230,7 @@ error:
         CloseHandle(siEx.StartupInfo.hStdInput);
     if (fdv[1] != -1 && siEx.StartupInfo.hStdOutput != INVALID_HANDLE_VALUE)
         CloseHandle(siEx.StartupInfo.hStdOutput);
-    if (siEx.StartupInfo.hStdError != INVALID_HANDLE_VALUE)
+    if (fdv[2] != -1 && siEx.StartupInfo.hStdError != INVALID_HANDLE_VALUE)
         CloseHandle(siEx.StartupInfo.hStdError);
 
     if (siEx.lpAttributeList) {
