@@ -34,6 +34,59 @@ T.Button {
 
     readonly property bool _available: _segment.kind !== undefined && _segment.index !== _dismissedIndex
 
+    // True while the player controls are on screen: after its countdown the
+    // button only comes back with them, as on streaming sites
+    property bool controlsShown: false
+
+    // Seconds the button stays on its own once a chapter starts
+    readonly property int timeout: 8
+    // Countdown left, 1 to 0; drawn as a fill draining inside the button
+    property real _left: 1
+    property int _countdownFor: -1
+
+    readonly property bool _shown: _available && (_left > 0 || controlsShown || hovered)
+
+    on_SegmentChanged: {
+        // Out of the chapter: coming back to it (seeking) counts down again
+        if (_segment.index === undefined)
+            _countdownFor = -1
+        else if (_segment.index !== _countdownFor) {
+            _countdownFor = _segment.index
+            _left = 1
+            _runCountdown()
+        }
+    }
+
+    // Runs the rest of the countdown from where it stopped
+    function _runCountdown() {
+        countdown.stop()
+        countdown.duration = timeout * 1000 * _left
+        countdown.start()
+    }
+
+    NumberAnimation {
+        id: countdown
+        target: root
+        property: "_left"
+        to: 0
+    }
+
+    // Hovering holds the countdown; it goes on a moment after the pointer leaves
+    onHoveredChanged: {
+        if (hovered) {
+            resumeTimer.stop()
+            countdown.stop()
+        } else if (_left > 0) {
+            resumeTimer.restart()
+        }
+    }
+
+    Timer {
+        id: resumeTimer
+        interval: 1000
+        onTriggered: root._runCountdown()
+    }
+
     function _update() {
         _segment = Player.hasChapters ? Player.chapters.skippableAt(Player.position) : ({})
     }
@@ -58,8 +111,8 @@ T.Button {
     }
 
     visible: opacity > 0
-    opacity: _available ? 1 : 0
-    enabled: _available
+    opacity: _shown ? 1 : 0
+    enabled: _shown
 
     Behavior on opacity {
         NumberAnimation { duration: VLCStyle.duration_short }
@@ -102,5 +155,16 @@ T.Button {
         color: root.hovered ? "white" : Qt.rgba(1, 1, 1, 0.88)
         border.color: root.visualFocus ? "black" : "transparent"
         border.width: VLCStyle.dp(2, VLCStyle.scale)
+
+        // What is left of the countdown
+        Rectangle {
+            anchors.left: parent.left
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            width: parent.width * root._left
+            radius: parent.radius
+            color: Qt.rgba(0, 0, 0, 0.12)
+            visible: root._left > 0
+        }
     }
 }

@@ -1421,6 +1421,8 @@ FocusScope {
     }
 
     SkipChapterButton {
+        controlsShown: controlBar.state === "visible"
+
         anchors {
             right: parent.right
             bottom: (controlBar.state === "visible") ? controlBar.top : parent.bottom
