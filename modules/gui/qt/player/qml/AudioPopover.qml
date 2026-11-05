@@ -23,8 +23,8 @@ import VLC.Player
 import VLC.Style
 import VLC.Widgets as Widgets
 
-// Audio popover of the volume button: which track plays (or several at once,
-// each with its own volume) and a volume boost past 100%.
+// Audio popover of the volume button: which track plays, or several at
+// once, each with its own volume.
 T.Popup {
     id: root
 
@@ -124,14 +124,20 @@ T.Popup {
                     Layout.leftMargin: VLCStyle.margin_large
                     spacing: VLCStyle.margin_small
 
-                    Widgets.SliderExt {
-                        Layout.fillWidth: true
-                        from: 0
-                        to: 2
+                    OverdriveSlider {
+                        baseWidth: VLCStyle.dp(90, VLCStyle.scale)
+                        Layout.preferredWidth: implicitWidth
                         stepSize: 0.05
+                        extended: model.volume > 1
                         value: model.volume
                         onMoved: model.volume = value
+                        onToChanged: {
+                            if (!pressed)
+                                value = model.volume
+                        }
                     }
+
+                    Item { Layout.fillWidth: true }
 
                     Text {
                         Layout.preferredWidth: VLCStyle.dp(40, VLCStyle.scale)
@@ -151,45 +157,5 @@ T.Popup {
             onClicked: Player.audioTracks.multiSelect = checked
         }
 
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.topMargin: VLCStyle.margin_xxsmall
-            Layout.bottomMargin: VLCStyle.margin_xxsmall
-            height: 1
-            color: Qt.rgba(1, 1, 1, 0.1)
-        }
-
-        // Past 100% only here, on purpose
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: VLCStyle.margin_small
-
-            Text {
-                text: qsTr("Boost")
-                color: theme.fg.primary
-                font.pixelSize: VLCStyle.fontSize_normal
-            }
-
-            Widgets.SliderExt {
-                Layout.fillWidth: true
-                from: 0
-                to: 2
-                stepSize: 0.01
-                value: Player.volume
-                color: Player.volume > 1 ? theme.fg.negative : theme.fg.primary
-                onMoved: {
-                    Player.muted = false
-                    Player.volume = value
-                }
-            }
-
-            Text {
-                Layout.preferredWidth: VLCStyle.dp(40, VLCStyle.scale)
-                horizontalAlignment: Text.AlignRight
-                text: Math.round(Player.volume * 100) + "%"
-                color: Player.volume > 1 ? theme.fg.negative : theme.fg.secondary
-                font.pixelSize: VLCStyle.fontSize_small
-            }
-        }
     }
 }

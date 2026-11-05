@@ -774,6 +774,7 @@ qml_modules += {
        'player/qml/ClipCropFrame.qml',
        'player/qml/ClipPanel.qml',
        'player/qml/ClipRange.qml',
+       'player/qml/OverdriveSlider.qml',
        'player/qml/PipOverlay.qml',
        'player/qml/SeekPreview.qml',
        'player/qml/SkipChapterButton.qml',
