@@ -92,6 +92,7 @@
 #endif
 #include "mainctx_submodels.hpp"
 
+#include "terrikon/autoplay.hpp"
 #include "terrikon/clip_selection.hpp"
 #include "terrikon/compact_player.hpp"
 #include "terrikon/media_tools.hpp"
@@ -477,6 +478,8 @@ void MainUI::registerQMLTypes()
         qmlRegisterType<terrikon::WaveformLoader>(uri, versionMajor, versionMinor, "WaveformLoader");
         qmlRegisterType<terrikon::ThumbnailStrip>(uri, versionMajor, versionMinor, "ThumbnailStrip");
         qmlRegisterType<terrikon::WaveformView>(uri, versionMajor, versionMinor, "WaveformView");
+        qmlRegisterSingletonInstance<terrikon::Autoplay>(uri, versionMajor, versionMinor, "Autoplay",
+                                                         new terrikon::Autoplay(m_mainCtx->getIntf(), this));
         auto *clipSelection = new terrikon::ClipSelection(this);
         auto *momentMarks = new terrikon::MomentMarks(this);
         auto *compactPlayer = new terrikon::CompactPlayer(m_mainCtx, this);

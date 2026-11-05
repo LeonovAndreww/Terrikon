@@ -27,6 +27,7 @@ import VLC.Widgets as Widgets
 import VLC.Util
 import VLC.Playlist
 import VLC.Style
+import VLC.Terrikon
 
 T.Pane {
     id: root
@@ -62,7 +63,28 @@ T.Pane {
     verticalPadding: VLCStyle.margin_normal
 
     Accessible.role: Accessible.Pane
-    Accessible.name: qsTr("Play Queue")
+    Accessible.name: qsTr("Play queue")
+
+    // Clicking a column header sorts by it; again reverses the order
+    function _sortBy(key) {
+        if (MainPlaylistController.count < 2)
+            return
+        if (MainPlaylistController.sortKey === key)
+            MainPlaylistController.sortOrder =
+                (MainPlaylistController.sortOrder === PlaylistController.SORT_ORDER_ASC)
+                ? PlaylistController.SORT_ORDER_DESC : PlaylistController.SORT_ORDER_ASC
+        else {
+            MainPlaylistController.sortKey = key
+            MainPlaylistController.sortOrder = PlaylistController.SORT_ORDER_ASC
+        }
+        MainPlaylistController.sort()
+    }
+
+    function _sortArrow(key) {
+        if (MainPlaylistController.sortKey !== key)
+            return ""
+        return (MainPlaylistController.sortOrder === PlaylistController.SORT_ORDER_ASC) ? "  ▲" : "  ▼"
+    }
     AccessibleCompat.id: "playqueuePane"
 
     readonly property ColorContext colorContext: ColorContext {
@@ -145,10 +167,16 @@ T.Pane {
 
                     Layout.fillWidth: true
 
-                    text: qsTr("Play Queue")
+                    text: qsTr("Play queue")
                     color: theme.fg.primary
                     font.weight: Font.Bold
                     font.pixelSize: VLCStyle.dp(24, VLCStyle.scale)
+                }
+
+                Widgets.CheckBoxExt {
+                    text: qsTr("Autoplay")
+                    checked: Autoplay.enabled
+                    onClicked: Autoplay.enabled = checked
                 }
 
                 Widgets.SortControl {
@@ -294,8 +322,11 @@ T.Pane {
                 textFormat: Text.PlainText
 
                 verticalAlignment: Text.AlignVCenter
-                text: qsTr("Title")
-                color: theme.fg.secondary
+                text: qsTr("Title") + root._sortArrow(PlaylistController.SORT_KEY_TITLE)
+                color: titleHeaderHover.hovered ? theme.fg.primary : theme.fg.secondary
+
+                HoverHandler { id: titleHeaderHover; cursorShape: Qt.PointingHandCursor }
+                TapHandler { onTapped: root._sortBy(PlaylistController.SORT_KEY_TITLE) }
 
                 Accessible.role: Accessible.ColumnHeader
                 Accessible.name: text
@@ -305,7 +336,12 @@ T.Pane {
                 Layout.preferredWidth: durationMetric.width
 
                 text: VLCIcons.time
-                color: theme.fg.secondary
+                color: (durationHeaderHover.hovered
+                        || MainPlaylistController.sortKey === PlaylistController.SORT_KEY_DURATION)
+                       ? theme.fg.primary : theme.fg.secondary
+
+                HoverHandler { id: durationHeaderHover; cursorShape: Qt.PointingHandCursor }
+                TapHandler { onTapped: root._sortBy(PlaylistController.SORT_KEY_DURATION) }
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
                 font.pixelSize: VLCStyle.icon_playlistHeader
