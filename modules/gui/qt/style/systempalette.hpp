@@ -114,6 +114,10 @@ public:
     COLOR_DEFINITION(orange500, "#FF8800");
     COLOR_DEFINITION(orange800, "#FF610A");
 
+    // Played part and handle of sliders while no accent colour is chosen
+    COLOR_DEFINITION(sliderLight, "#141414");
+    COLOR_DEFINITION(sliderDark, "#FFFFFF");
+
     COLOR_DEFINITION(orange400, "#f89a06"); //FIXME name have been chosen randomly by me
     COLOR_DEFINITION(orange200, "#e29a06"); //FIXME name have been chosen randomly by me
 
@@ -176,6 +180,7 @@ private:
     MainCtx* m_ctx = nullptr;
 
     ColorSchemeModel::ColorScheme m_source = ColorSchemeModel::ColorScheme::Day;
+    bool m_accentChosen = false;
     bool m_isDark = false;
     bool m_hasCSDImage = false;
 

@@ -321,12 +321,14 @@ void SystemPalette::componentComplete()
 
             orange500 = palette.color(QPalette::Normal, QPalette::Accent);
             orange800 = orange500.lighter(150);
+            m_accentChosen = true;
         }
 #endif
         else
         {
             orange500 = QColor(accentColor);
             orange800 = orange500.lighter(150);
+            m_accentChosen = true;
         }
 
         free(accentColor);
@@ -633,7 +635,7 @@ void SystemPalette::makeLightPalette()
         C::ColorSet CS = C::Slider;
         setColor(CS, C::Bg, C::Primary, C::Normal, lightGrey400); //#EEEEEE on the designs
         setColor(CS, C::Bg, C::Secondary, C::Normal, setColorAlpha("#lightGrey400", 0.2));
-        setColor(CS, C::Fg, C::Primary, C::Normal, orange800);
+        setColor(CS, C::Fg, C::Primary, C::Normal, m_accentChosen ? orange800 : sliderLight);
         setColor(CS, C::Fg, C::Positive, C::Normal, "#0F7B0F");  //FIXME
         setColor(CS, C::Fg, C::Neutral, C::Normal, "#9D5D00");  //FIXME
         setColor(CS, C::Fg, C::Negative, C::Normal, "#C42B1C");  //FIXME
@@ -847,7 +849,7 @@ void SystemPalette::makeDarkPalette()
         setColor(CS, C::Bg, C::Primary, C::Focused, setColorAlpha("#929292", 0.4));
         setColor(CS, C::Bg, C::Primary, C::Hovered, setColorAlpha("#929292", 0.4));
 
-        setColor(CS, C::Fg, C::Primary, C::Normal, orange500);
+        setColor(CS, C::Fg, C::Primary, C::Normal, m_accentChosen ? orange500 : sliderDark);
         setColor(CS, C::Fg, C::Positive, C::Normal, "#0F7B0F");  //FIXME
         setColor(CS, C::Fg, C::Neutral, C::Normal, "#9D5D00");  //FIXME
         setColor(CS, C::Fg, C::Negative, C::Normal, "#C42B1C");  //FIXME
