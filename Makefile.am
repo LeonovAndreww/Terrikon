@@ -111,8 +111,8 @@ libvlccore: libcompat
 libvlc: libvlccore
 	cd lib && $(MAKE) $(AM_MAKEFLAGS) libvlc.la
 
-core: libvlc vlc$(EXEEXT)
-	cd bin && $(MAKE) $(AM_MAKEFLAGS) vlc$(EXEEXT) vlc-static$(EXEEXT)
+core: libvlc terrikon$(EXEEXT)
+	cd bin && $(MAKE) $(AM_MAKEFLAGS) terrikon$(EXEEXT) terrikon-static$(EXEEXT)
 
 doc:
 	cd doc && $(MAKE) $(AM_MAKEFLAGS) doc
@@ -150,14 +150,14 @@ nvlc: make-alias Makefile
 	$(AM_V_GEN)$(MKALIAS) ncurses
 
 if BUILD_VLC
-noinst_SCRIPTS = vlc$(EXEEXT)
+noinst_SCRIPTS = terrikon$(EXEEXT)
 endif
 
-vlc$(EXEEXT):
+terrikon$(EXEEXT):
 if HAVE_DARWIN
-	$(AM_V_GEN)$(LN_S) -f bin/vlc-osx-static vlc
+	$(AM_V_GEN)$(LN_S) -f bin/vlc-osx-static terrikon
 else
-	$(AM_V_GEN)$(LN_S) -f bin/vlc-static$(EXEEXT) vlc$(EXEEXT)
+	$(AM_V_GEN)$(LN_S) -f bin/terrikon-static$(EXEEXT) terrikon$(EXEEXT)
 endif
 
 TESTS = test/run_vlc.sh

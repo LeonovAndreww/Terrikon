@@ -19,7 +19,7 @@ BEGIN
       VALUE "ProductName", "Terrikon"
       VALUE "ProductVersion", VERSION_NUMBER_STR
       VALUE "InternalName", "terrikon"
-      VALUE "OriginalFilename", "vlc.exe"
+      VALUE "OriginalFilename", "terrikon.exe"
       VALUE "FileVersion", "@VERSION@"
       VALUE "FileDescription", "Terrikon"
       VALUE "LegalCopyright", "Copyright \251 @COPYRIGHT_YEARS@ VideoLAN and VLC Authors, Terrikon authors"

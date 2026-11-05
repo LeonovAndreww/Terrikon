@@ -46,7 +46,7 @@ if build_vlc and (host_system != 'darwin' or have_osx) and not have_win_store an
         )
     endif
 
-    executable('vlc',
+    executable('terrikon',
         vlc_sources + vlc_win_extra,
         link_with: [libvlc, libvlccore],
         link_args: gc_sections_linkargs,
@@ -60,7 +60,7 @@ if build_vlc and (host_system != 'darwin' or have_osx) and not have_win_store an
     vlc_top_builddir_def = '-DTOP_BUILDDIR="@0@"'.format(vlc_build_root)
     vlc_top_srcdir_def = '-DTOP_SRCDIR="@0@"'.format(vlc_src_root)
 
-    executable('vlc-static',
+    executable('terrikon-static',
         vlc_sources,
         link_with: [libvlc, libvlccore],
         link_args: gc_sections_linkargs,

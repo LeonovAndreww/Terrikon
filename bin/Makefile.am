@@ -5,8 +5,8 @@ if HAVE_OSX
 bin_PROGRAMS = vlc-osx
 noinst_PROGRAMS = vlc-osx-static
 else
-bin_PROGRAMS = vlc
-noinst_PROGRAMS = vlc-static
+bin_PROGRAMS = terrikon
+noinst_PROGRAMS = terrikon-static
 endif
 endif
 EXTRA_DIST = vlc_win32_rc.rc.in
@@ -25,27 +25,27 @@ AM_CFLAGS += -sMAIN_MODULE=1
 endif
 
 #
-# Main VLC executable
+# Main Terrikon executable
 #
-vlc_LDADD = ../lib/libvlc.la ../src/libvlccore.la
-vlc_CPPFLAGS = $(AM_CPPFLAGS)
+terrikon_LDADD = ../lib/libvlc.la ../src/libvlccore.la
+terrikon_CPPFLAGS = $(AM_CPPFLAGS)
 if !HAVE_WIN32
-vlc_SOURCES = vlc.c override.c
-vlc_LDADD += $(LIBDL)
+terrikon_SOURCES = vlc.c override.c
+terrikon_LDADD += $(LIBDL)
 else
-vlc_SOURCES = winvlc.c
-EXTRA_vlc_DEPENDENCIES = vlc_win32_rc.$(OBJEXT)
-vlc_LDFLAGS = -mwindows -Wc,-static
-vlc_LDADD += -lole32 vlc_win32_rc.$(OBJEXT)
+terrikon_SOURCES = winvlc.c
+EXTRA_terrikon_DEPENDENCIES = vlc_win32_rc.$(OBJEXT)
+terrikon_LDFLAGS = -mwindows -Wc,-static
+terrikon_LDADD += -lole32 vlc_win32_rc.$(OBJEXT)
 libbreakpad_wrapper_la_SOURCES = breakpad.cpp
 libbreakpad_wrapper_la_LIBADD = $(BREAKPAD_LIBS)
 libbreakpad_wrapper_la_LDFLAGS = -static
 libbreakpad_wrapper_la_CXXFLAGS = $(AM_CXXFLAGS) $(BREAKPAD_CFLAGS) -DBREAKPAD_URL=\"@BREAKPAD_URL@\"
 if HAVE_BREAKPAD
 noinst_LTLIBRARIES += libbreakpad_wrapper.la
-vlc_LDADD += libbreakpad_wrapper.la -lstdc++ -lwininet
-EXTRA_vlc_DEPENDENCIES += libbreakpad_wrapper.la
-vlc_CPPFLAGS += -DHAVE_BREAKPAD
+terrikon_LDADD += libbreakpad_wrapper.la -lstdc++ -lwininet
+EXTRA_terrikon_DEPENDENCIES += libbreakpad_wrapper.la
+terrikon_CPPFLAGS += -DHAVE_BREAKPAD
 endif
 endif
 
@@ -78,17 +78,17 @@ endif
 
 
 #
-# Static (debug) VLC executable
+# Static (debug) Terrikon executable
 #
-vlc_static_SOURCES = $(vlc_SOURCES)
-vlc_static_CFLAGS = $(AM_CFLAGS) \
+terrikon_static_SOURCES = $(terrikon_SOURCES)
+terrikon_static_CFLAGS = $(AM_CFLAGS) \
 	-DTOP_BUILDDIR=\"$(abs_top_builddir)\" \
 	-DTOP_SRCDIR=\"$(abs_top_srcdir)\" \
 	$(NULL)
-vlc_static_CPPFLAGS = $(vlc_CPPFLAGS)
-EXTRA_vlc_static_DEPENDENCIES = $(EXTRA_vlc_DEPENDENCIES)
-vlc_static_LDADD = $(vlc_LDADD)
-vlc_static_LDFLAGS = $(vlc_LDFLAGS) -no-install -static
+terrikon_static_CPPFLAGS = $(terrikon_CPPFLAGS)
+EXTRA_terrikon_static_DEPENDENCIES = $(EXTRA_terrikon_DEPENDENCIES)
+terrikon_static_LDADD = $(terrikon_LDADD)
+terrikon_static_LDFLAGS = $(terrikon_LDFLAGS) -no-install -static
 
 #
 # Root wrapper
@@ -130,10 +130,10 @@ endif
 if HAVE_PARTIAL_LINKING
 AM_CPPFLAGS += -DVLC_PARTIAL_LINKING -I $(builddir)/../modules/
 if !HAVE_WIN32
-vlc_SOURCES += vlc_static_modules.c
+terrikon_SOURCES += vlc_static_modules.c
 endif
 vlc_osx_SOURCES += vlc_static_modules.c
-vlc_LDADD += ../modules/libvlc_static_modules.la
+terrikon_LDADD += ../modules/libvlc_static_modules.la
 vlc_osx_LDADD += ../modules/libvlc_static_modules.la
 endif
 
