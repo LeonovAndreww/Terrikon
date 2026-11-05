@@ -1420,6 +1420,80 @@ FocusScope {
         }
     }
 
+    // Previous and next video: a tall band at mid-height along each side.
+    // The arrow shows when the pointer comes near; the whole band clicks.
+    component EdgeZone: Item {
+        id: zone
+
+        property bool forward: true
+        property bool available: false
+        // Pointer in scene coordinates, from the video surface
+        property point pointer: Qt.point(-1, -1)
+
+        readonly property bool _hot: {
+            const p = zone.mapFromItem(null, pointer.x, pointer.y)
+            return p.x >= 0 && p.x <= width && p.y >= 0 && p.y <= height
+        }
+
+        signal activated()
+
+        visible: available && !ClipSelection.active
+        width: VLCStyle.dp(96, VLCStyle.scale)
+        height: parent.height / 3
+        anchors.verticalCenter: parent.verticalCenter
+
+        // Takes the click only; the hover comes from the player (_pointer)
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.LeftButton
+            onClicked: zone.activated()
+        }
+
+        Rectangle {
+            anchors.centerIn: parent
+            width: VLCStyle.dp(56, VLCStyle.scale)
+            height: width
+            radius: width / 2
+            color: Qt.rgba(0, 0, 0, 0.45)
+            opacity: zone._hot ? 1 : 0
+            Behavior on opacity { NumberAnimation { duration: VLCStyle.duration_short } }
+
+            Text {
+                anchors.centerIn: parent
+                text: zone.forward ? VLCIcons.next : VLCIcons.previous
+                color: "white"
+                font.family: VLCIcons.fontFamily
+                font.pixelSize: VLCStyle.icon_normal
+            }
+        }
+    }
+
+    // Where the pointer is, for the edge zones. Items on top take the hover
+    // from them, but a handler on the root sees every move.
+    HoverHandler {
+        id: rootHover
+    }
+
+    readonly property point _pointer: rootHover.hovered
+                                      ? rootPlayer.mapToItem(null, rootHover.point.position)
+                                      : Qt.point(-1, -1)
+
+    EdgeZone {
+        anchors.left: parent.left
+        pointer: rootPlayer._pointer
+        forward: false
+        available: MainPlaylistController.hasPrev
+        onActivated: MainPlaylistController.prev()
+    }
+
+    EdgeZone {
+        anchors.right: parent.right
+        pointer: rootPlayer._pointer
+        forward: true
+        available: MainPlaylistController.hasNext
+        onActivated: MainPlaylistController.next()
+    }
+
     SkipChapterButton {
         controlsShown: controlBar.state === "visible"
 
