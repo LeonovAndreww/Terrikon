@@ -1021,6 +1021,10 @@ static struct vlc_action const actions[] =
 static void
 handle_action(intf_thread_t *intf, vlc_action_id_t action_id)
 {
+    /* Terrikon actions belong to the Qt interface */
+    if (action_id >= ACTIONID_TERRIKON_FIRST && action_id <= ACTIONID_TERRIKON_LAST)
+        return;
+
     size_t action_idx;
     for (action_idx = 0; actions[action_idx].type != NULL_ACTION; ++action_idx)
         if (actions[action_idx].range.first <= action_id &&
