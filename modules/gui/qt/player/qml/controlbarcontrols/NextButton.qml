@@ -22,6 +22,7 @@ import VLC.Widgets as Widgets
 import VLC.Style
 import VLC.Playlist
 import VLC.Util
+import VLC.Terrikon
 
 Widgets.IconToolButton {
     id: nextBtn
@@ -29,7 +30,7 @@ Widgets.IconToolButton {
     text: VLCIcons.next
     enabled: MainPlaylistController.hasNext
     onClicked: MainPlaylistController.next()
-    description: qsTr("Next")
+    description: qsTr("Next") + TerrikonActions.hint("next")
 
     AccessibleCompat.id: "nextButton"
 }

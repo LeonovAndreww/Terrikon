@@ -22,6 +22,7 @@ import VLC.Widgets as Widgets
 import VLC.Style
 import VLC.Playlist
 import VLC.Util
+import VLC.Terrikon
 
 Widgets.IconToolButton {
     id: prevBtn
@@ -29,7 +30,7 @@ Widgets.IconToolButton {
     text: VLCIcons.previous
     enabled: MainPlaylistController.hasPrev
     onClicked: MainPlaylistController.prev()
-    description: qsTr("Previous")
+    description: qsTr("Previous") + TerrikonActions.hint("prev")
 
     AccessibleCompat.id: "previousButton"
 }

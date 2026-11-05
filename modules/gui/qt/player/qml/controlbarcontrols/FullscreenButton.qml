@@ -22,6 +22,7 @@ import VLC.Widgets as Widgets
 import VLC.Style
 import VLC.Player
 import VLC.Util
+import VLC.Terrikon
 
 Widgets.IconToolButton {
     id: fullScreenBtn
@@ -29,7 +30,7 @@ Widgets.IconToolButton {
     enabled: Player.hasVideoOutput
     text: Player.fullscreen ? VLCIcons.defullscreen :VLCIcons.fullscreen
     onClicked: Player.fullscreen = !Player.fullscreen
-    description: qsTr("fullscreen")
+    description: qsTr("Full screen") + TerrikonActions.hint("toggle-fullscreen")
 
     AccessibleCompat.id: "fullscreenButton"
 }

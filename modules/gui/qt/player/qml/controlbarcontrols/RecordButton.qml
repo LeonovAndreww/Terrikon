@@ -23,6 +23,7 @@ import VLC.Widgets as Widgets
 import VLC.Style
 import VLC.Player
 import VLC.Util
+import VLC.Terrikon
 
 Widgets.IconToolButton {
     id: control
@@ -31,7 +32,7 @@ Widgets.IconToolButton {
 
     color: "#FFFF0000" //red means recording
     text: VLCIcons.record
-    description: qsTr("record")
+    description: qsTr("Record") + TerrikonActions.hint("record")
 
     AccessibleCompat.id: "recordButton"
 

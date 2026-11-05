@@ -22,6 +22,7 @@ import VLC.Widgets as Widgets
 import VLC.Player
 import VLC.Style
 import VLC.Util
+import VLC.Terrikon
 
 
 Widgets.IconToolButton {
@@ -31,7 +32,7 @@ Widgets.IconToolButton {
 
     text: VLCIcons.next_frame
     onClicked: Player.frameNext()
-    description: qsTr("Next frame")
+    description: qsTr("Next frame") + TerrikonActions.hint("frame-next")
 
     AccessibleCompat.id: "frameButton"
 }

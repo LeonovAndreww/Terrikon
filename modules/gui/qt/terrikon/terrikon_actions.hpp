@@ -23,6 +23,7 @@
 #include "qt.hpp"
 
 #include <QObject>
+#include <QSizeF>
 #include <QString>
 
 namespace terrikon {
@@ -48,16 +49,29 @@ public:
     /* The key currently bound to a Terrikon action ("clip-toggle"...),
      * as written in the preferences, empty if none */
     Q_INVOKABLE QString keyFor(const QString &action) const;
+    /* " (k)" for a tool tip: the plainest key bound to any VLC action
+     * ("play-pause", "toggle-fullscreen", "clip-toggle"...), media
+     * keys left out; empty when there is none */
+    Q_INVOKABLE QString hint(const QString &action) const;
+    /* Displayed size of the playing video (pixel aspect applied), empty
+     * without video */
+    Q_INVOKABLE QSizeF videoSize() const;
 
 signals:
     /* The clip panel owns the export settings, so it does the export */
     void clipExportRequested();
+    /* A short message to show over the video for a key press: how far a
+     * jump went, which track is on, a mark set... */
+    void osd(const QString &text);
 
 private:
     /* Called on the thread that pressed the key */
     static int keyActionCallback(vlc_object_t *, const char *, vlc_value_t,
                                  vlc_value_t newval, void *data);
     void run(int action);
+    /* Messages for VLC's own actions the interface reports on */
+    void report(int action);
+    QString selectedTrackName(int category) const;
     double nowSeconds() const;
     double lengthSeconds() const;
 

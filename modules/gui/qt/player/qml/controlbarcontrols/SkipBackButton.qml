@@ -22,6 +22,7 @@ import VLC.Widgets as Widgets
 import VLC.Style
 import VLC.Player
 import VLC.Util
+import VLC.Terrikon
 
 Widgets.IconToolButton {
     id: stepBackBtn
@@ -30,7 +31,7 @@ Widgets.IconToolButton {
 
     text: VLCIcons.skip_back
     onClicked: Player.jumpBwd()
-    description: qsTr("Step back")
+    description: qsTr("Back 10 seconds") + TerrikonActions.hint("jump-short")
 
     AccessibleCompat.id: "skipBackButton"
 }

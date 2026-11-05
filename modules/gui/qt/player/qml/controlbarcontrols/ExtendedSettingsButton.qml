@@ -28,7 +28,7 @@ Widgets.IconToolButton {
 
     text: VLCIcons.effect_filter
 
-    description: qsTr("Extended settings")
+    description: qsTr("Effects and filters")
 
     AccessibleCompat.id: "extendedSettingsButton"
 

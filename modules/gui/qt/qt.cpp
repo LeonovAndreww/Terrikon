@@ -52,6 +52,8 @@ extern "C" char **environ;
 #endif
 
 #include <QApplication>
+#include <QColor>
+#include <QPalette>
 #include <QDate>
 #include <QMutex>
 #include <QtQuickControls2/QQuickStyle>
@@ -395,7 +397,7 @@ vlc_module_begin ()
     add_obsolete_integer( "qt-continue" )
 
 #ifdef UPDATE_CHECK
-    add_bool( "qt-updates-notif", true, UPDATER_TEXT,
+    add_bool( "qt-updates-notif", false, UPDATER_TEXT,
               UPDATER_LONGTEXT )
     add_integer_with_range( "qt-updates-days", 3, 0, 180,
               UPDATER_DAYS_TEXT, nullptr )
@@ -438,7 +440,7 @@ vlc_module_begin ()
 
     add_obsolete_string( "qt-slider-colours")
 
-    add_bool( "qt-privacy-ask", true, PRIVACY_TEXT, nullptr )
+    add_bool( "qt-privacy-ask", false, PRIVACY_TEXT, nullptr )
         change_private ()
 
     add_integer( "qt-fullscreen-screennumber", -1, FULLSCREEN_NUMBER_TEXT,
@@ -1446,6 +1448,28 @@ static void *Thread( void *obj )
         }
     }
 #undef QTSTYLE_KEY
+
+    /* Terrikon: the native menus (right click, the "more" button) look
+     * like the rest of the player, dark and roomy, rather than like the
+     * system's old menus. The palette is set too: menu icons are tinted
+     * from it. */
+    {
+        QPalette menuPalette = app.palette();
+        for (QPalette::ColorRole role : { QPalette::WindowText, QPalette::Text, QPalette::ButtonText })
+            menuPalette.setColor(role, QColor(0xee, 0xee, 0xee));
+        menuPalette.setColor(QPalette::Window, QColor(0x1f, 0x1f, 0x1f));
+        menuPalette.setColor(QPalette::Base, QColor(0x1f, 0x1f, 0x1f));
+        QApplication::setPalette(menuPalette, "QMenu");
+        app.setStyleSheet(QStringLiteral(
+            "QMenu { background-color: #1f1f1f; color: #eeeeee; border: 1px solid #3a3a3a;"
+            " padding: 6px 0px; }"
+            "QMenu::item { padding: 7px 32px 7px 30px; background: transparent; }"
+            "QMenu::item:selected { background-color: #343434; }"
+            "QMenu::item:disabled { color: #6f6f6f; }"
+            "QMenu::separator { height: 1px; background: #353535; margin: 5px 12px; }"
+            "QMenu::icon { padding-left: 10px; }"
+            "QMenu::indicator { width: 14px; height: 14px; left: 9px; }"));
+    }
 
     /* Launch */
     app.exec();

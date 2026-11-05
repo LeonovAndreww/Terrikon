@@ -301,6 +301,33 @@ FocusScope {
                         mouseDblClicked.connect(videoSurface.onMouseEvent)
                     }
 
+                    // Holding the left button plays at 2x until it is let go
+                    onMousePressed: (button) => {
+                        if (button === 0 && Player.playingState === Player.PLAYING_STATE_PLAYING)
+                            holdTimer.restart()
+                    }
+                    onMouseReleased: (button) => {
+                        if (button !== 0)
+                            return
+                        holdTimer.stop()
+                        if (rootPlayer._heldRate > 0) {
+                            rootPlayer._holdEndedAt = Date.now()
+                            Player.rate = rootPlayer._heldRate
+                            rootPlayer._heldRate = 0
+                        }
+                    }
+                    // A double click is a full screen toggle, not a hold
+                    onMouseDblClicked: holdTimer.stop()
+
+                    Timer {
+                        id: holdTimer
+                        interval: 400
+                        onTriggered: {
+                            rootPlayer._heldRate = Player.rate
+                            Player.rate = 2
+                        }
+                    }
+
                     Binding on cursorShape {
                         when: playerToolbarVisibilityFSM.started
                             && !playerToolbarVisibilityFSM.isVisible
@@ -1287,6 +1314,109 @@ FocusScope {
             left: parent.left
             right: parent.right
             margins: VLCStyle.margin_large
+        }
+    }
+
+    ClipCropFrame {
+        anchors.fill: parent
+    }
+
+    // Speed before a press and hold, 0 when not holding
+    property real _heldRate: 0
+    property double _holdEndedAt: 0
+
+    // Short messages for what keys and wheels do: a jump, the volume, the
+    // speed, a track, a mark. VLC's own text over the video is off.
+    Rectangle {
+        id: osdToast
+
+        property string text: ""
+
+        function show(message) {
+            text = message
+            opacity = 1
+            osdHideTimer.restart()
+        }
+
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.top: parent.top
+        anchors.topMargin: VLCStyle.margin_xlarge
+
+        visible: opacity > 0 && rootPlayer._heldRate === 0
+        opacity: 0
+        Behavior on opacity { NumberAnimation { duration: VLCStyle.duration_short } }
+
+        width: osdLabel.implicitWidth + VLCStyle.margin_normal * 2
+        height: osdLabel.implicitHeight + VLCStyle.margin_xsmall * 2
+        radius: height / 2
+        color: Qt.rgba(0, 0, 0, 0.6)
+
+        Text {
+            id: osdLabel
+            anchors.centerIn: parent
+            text: osdToast.text
+            color: "white"
+            font.pixelSize: VLCStyle.fontSize_large
+            font.weight: Font.DemiBold
+        }
+
+        Timer {
+            id: osdHideTimer
+            interval: 1200
+            onTriggered: osdToast.opacity = 0
+        }
+    }
+
+    Connections {
+        target: TerrikonActions
+        function onOsd(text) { osdToast.show(text) }
+    }
+
+    // The player sets volume and speed while starting: no message then
+    Timer {
+        id: osdArmTimer
+        interval: 2000
+        running: true
+    }
+
+    Connections {
+        target: Player
+        enabled: !osdArmTimer.running
+
+        function onVolumeChanged() {
+            osdToast.show(qsTr("Volume %1%").arg(Math.round(Player.volume * 100)))
+        }
+        function onMutedChanged() {
+            osdToast.show(Player.muted ? qsTr("Muted")
+                                       : qsTr("Volume %1%").arg(Math.round(Player.volume * 100)))
+        }
+        function onRateChanged() {
+            // press and hold has its own badge
+            if (rootPlayer._heldRate > 0 || Date.now() - rootPlayer._holdEndedAt < 600)
+                return
+            osdToast.show(qsTr("Speed %1×").arg(+Player.rate.toFixed(2)))
+        }
+        function onInputChanged() { osdArmTimer.restart() }
+    }
+
+    Rectangle {
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.top: parent.top
+        anchors.topMargin: VLCStyle.margin_xlarge
+
+        visible: rootPlayer._heldRate > 0
+        width: speedLabel.implicitWidth + VLCStyle.margin_normal * 2
+        height: speedLabel.implicitHeight + VLCStyle.margin_xsmall * 2
+        radius: height / 2
+        color: Qt.rgba(0, 0, 0, 0.6)
+
+        Text {
+            id: speedLabel
+            anchors.centerIn: parent
+            text: "2×  ▶▶"
+            color: "white"
+            font.pixelSize: VLCStyle.fontSize_large
+            font.weight: Font.DemiBold
         }
     }
 

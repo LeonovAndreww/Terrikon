@@ -26,7 +26,7 @@ import VLC.Util
 Widgets.ImageToolButton {
     id: control
 
-    text: qsTr("A to B Loop")
+    text: qsTr("A-B loop")
 
     sourceSize: Qt.size(VLCStyle.icon_toolbar, VLCStyle.icon_toolbar)
 

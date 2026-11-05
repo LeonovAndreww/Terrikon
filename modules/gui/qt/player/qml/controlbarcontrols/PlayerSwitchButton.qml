@@ -30,7 +30,7 @@ Widgets.IconToolButton {
         MainCtx.playerView = !MainCtx.playerView
     }
 
-    description: qsTr("Switch Player")
+    description: qsTr("Switch player")
 
     AccessibleCompat.id: "playerSwitchButton"
 }

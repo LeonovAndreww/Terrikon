@@ -22,6 +22,7 @@ import VLC.Widgets as Widgets
 import VLC.Style
 import VLC.Player
 import VLC.Util
+import VLC.Terrikon
 
 Widgets.IconToolButton {
     id: stepfwdBtn
@@ -30,7 +31,7 @@ Widgets.IconToolButton {
 
     text: VLCIcons.skip_for
     onClicked: Player.jumpFwd()
-    description: qsTr("Step forward")
+    description: qsTr("Forward 10 seconds") + TerrikonActions.hint("jump+short")
 
     AccessibleCompat.id: "skipForwardButton"
 }

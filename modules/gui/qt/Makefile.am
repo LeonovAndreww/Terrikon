@@ -287,6 +287,7 @@ libqt_plugin_la_SOURCES = \
 	style/defaultthemeproviders.hpp \
 	style/systempalettethemeprovider.cpp \
 	player/input_models.cpp player/input_models.hpp \
+	terrikon/autoplay.cpp terrikon/autoplay.hpp \
 	terrikon/clip_selection.cpp terrikon/clip_selection.hpp \
 	terrikon/compact_player.cpp terrikon/compact_player.hpp \
 	terrikon/media_tools.cpp terrikon/media_tools.hpp \
@@ -499,6 +500,7 @@ nodist_libqt_plugin_la_SOURCES = \
 	style/vlcicons.moc.cpp \
 	player/delay_estimator.moc.cpp \
 	player/input_models.moc.cpp \
+	terrikon/autoplay.moc.cpp \
 	terrikon/clip_selection.moc.cpp \
 	terrikon/compact_player.moc.cpp \
 	terrikon/media_tools.moc.cpp \
@@ -820,6 +822,9 @@ libqt_plugin_la_RES = \
 	pixmaps/icons/ic_album_cover.svg \
 	pixmaps/icons/ic_aspect_ratio.svg \
 	pixmaps/icons/atob.svg \
+	pixmaps/icons/clip.svg \
+	pixmaps/icons/compact_player.svg \
+	pixmaps/icons/compact_player_exit.svg \
 	pixmaps/icons/ic_audiosub.svg \
 	pixmaps/icons/back.svg \
 	pixmaps/icons/ic_fluent_bookmark.svg \
@@ -1193,8 +1198,11 @@ libqml_module_player_a_QML = \
 	player/qml/PlayerToolbarVisibilityFSM.qml \
 	player/qml/MinimalView.qml \
 	player/qml/ResumeDialog.qml \
+	player/qml/AudioPopover.qml \
+	player/qml/ClipCropFrame.qml \
 	player/qml/ClipPanel.qml \
 	player/qml/ClipRange.qml \
+	player/qml/PipOverlay.qml \
 	player/qml/SeekPreview.qml \
 	player/qml/SkipChapterButton.qml \
 	player/qml/SliderBar.qml \
@@ -1207,6 +1215,7 @@ libqml_module_player_a_QML = \
 	player/qml/TracksPageSpeed.qml \
 	player/qml/TracksPageSubtitle.qml \
 	player/qml/TracksPageSubtitleStyle.qml \
+	player/qml/TracksPopover.qml \
 	player/qml/TracksListPage.qml \
 	player/qml/ControlLayout.qml \
 	player/qml/ControlRepeater.qml \

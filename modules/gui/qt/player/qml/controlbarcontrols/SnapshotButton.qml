@@ -22,6 +22,7 @@ import VLC.Widgets as Widgets
 import VLC.Style
 import VLC.Player
 import VLC.Util
+import VLC.Terrikon
 
 Widgets.IconToolButton {
     id: snapshotBtn
@@ -29,7 +30,7 @@ Widgets.IconToolButton {
     enabled: Player.isStarted
     text: VLCIcons.snapshot
     onClicked: Player.snapshot()
-    description: qsTr("Snapshot")
+    description: qsTr("Snapshot") + TerrikonActions.hint("snapshot")
 
     AccessibleCompat.id: "snapshotButton"
 }

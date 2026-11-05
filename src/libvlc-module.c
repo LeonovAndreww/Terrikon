@@ -1823,7 +1823,7 @@ vlc_module_begin ()
         change_safe ()
     add_bool( "spu-fill", true, SPU_FULL_TEXT, SPU_FULL_LONGTEXT )
         change_safe ()
-    add_bool( "osd", true, OSD_TEXT, OSD_LONGTEXT )
+    add_bool( "osd", false, OSD_TEXT, OSD_LONGTEXT )
     add_module("text-renderer", "text renderer", "any",
                TEXTRENDERER_TEXT, TEXTRENDERER_LONGTEXT)
 
@@ -2469,12 +2469,12 @@ vlc_module_begin ()
 #   define KEY_RATE_FASTER_FINE   "]"
 #   define KEY_RATE_SLOWER_FINE   "["
 #ifdef _WIN32
-#   define KEY_PLAY_PAUSE         "Space"
+#   define KEY_PLAY_PAUSE         "Space\tk"
 #   define KEY_NEXT               "n"
 #   define KEY_PREV               "p"
 #   define KEY_STOP               "s"
 #else
-#   define KEY_PLAY_PAUSE         "Space\tMedia Play Pause"
+#   define KEY_PLAY_PAUSE         "Space\tk\tMedia Play Pause"
 #   define KEY_NEXT               "n\tMedia Next Track"
 #   define KEY_PREV               "p\tMedia Prev Track"
 #   define KEY_STOP               "s\tMedia Stop"
@@ -2483,8 +2483,8 @@ vlc_module_begin ()
 #   define KEY_POSITION           "t"
 #   define KEY_JUMP_MEXTRASHORT   "Shift+Left"
 #   define KEY_JUMP_PEXTRASHORT   "Shift+Right"
-#   define KEY_JUMP_MSHORT        "Alt+Left"
-#   define KEY_JUMP_PSHORT        "Alt+Right"
+#   define KEY_JUMP_MSHORT        "Alt+Left\tj"
+#   define KEY_JUMP_PSHORT        "Alt+Right\tl"
 #   define KEY_JUMP_MMEDIUM       "Ctrl+Left"
 #   define KEY_JUMP_PMEDIUM       "Ctrl+Right"
 #   define KEY_JUMP_MLONG         "Ctrl+Alt+Left"
@@ -2500,15 +2500,15 @@ vlc_module_begin ()
 #   define KEY_VOL_UP             "Ctrl+Up"
 #   define KEY_VOL_DOWN           "Ctrl+Down"
 #   define KEY_VOL_MUTE           "m"
-#   define KEY_FRAME_NEXT         "e"
+#   define KEY_FRAME_NEXT         "e\t."
 #else
 #   define KEY_VOL_UP             "Ctrl+Up\tVolume Up"
 #   define KEY_VOL_DOWN           "Ctrl+Down\tVolume Down"
 #   define KEY_VOL_MUTE           "m\tVolume Mute"
-#   define KEY_FRAME_NEXT         "e\tBrowser Next"
+#   define KEY_FRAME_NEXT         "e\t.\tBrowser Next"
 #endif
 
-#   define KEY_FRAME_PREVIOUS     "Shift+e"
+#   define KEY_FRAME_PREVIOUS     "Shift+e\t,"
 #   define KEY_SUBDELAY_UP        "h"
 #   define KEY_SUBDELAY_DOWN      "g"
 #   define KEY_SUBPOS_DOWN        NULL
@@ -2520,20 +2520,20 @@ vlc_module_begin ()
 #   define KEY_SUBSYNC_MARKSUB    "Shift+j"
 #   define KEY_SUBSYNC_APPLY      "Shift+k"
 #   define KEY_SUBSYNC_RESET      "Ctrl+Shift+k"
-#   define KEY_AUDIODELAY_UP      "k"
-#   define KEY_AUDIODELAY_DOWN    "j"
+#   define KEY_AUDIODELAY_UP      "Alt+k"
+#   define KEY_AUDIODELAY_DOWN    "Alt+j"
 #   define KEY_RANDOM             "r"
-#   define KEY_LOOP               "l"
+#   define KEY_LOOP               "Shift+l"
 
 #   define KEY_AUDIO_TRACK        "b"
 #   define KEY_SUBTITLE_TRACK     "v"
-#   define KEY_SUBTITLE_TOGGLE    "Shift+v"
+#   define KEY_SUBTITLE_TOGGLE    "Shift+v\tc"
 #   define KEY_SUBTITLE_CONTROL_S "Ctrl+Shift+v"
 #   define KEY_SUBTITLE_REVTRACK  "Alt+v"
 #   define KEY_PROGRAM_SID_NEXT   "x"
 #   define KEY_PROGRAM_SID_PREV   "Shift+x"
 #   define KEY_ASPECT_RATIO       "a"
-#   define KEY_CROP               "c"
+#   define KEY_CROP               "Shift+c"
 #   define KEY_TOGGLE_AUTOSCALE   "o"
 #   define KEY_SCALE_UP           "Alt+o"
 #   define KEY_SCALE_DOWN         "Alt+Shift+o"

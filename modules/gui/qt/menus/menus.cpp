@@ -531,13 +531,6 @@ void VLCMenuBar::NavigMenu( qt_intf_t *p_intf, QMenu *menu )
 
     menu->addSeparator();
 
-    if ( !VLCMenuBar::rendererMenu )
-        VLCMenuBar::rendererMenu = new RendererMenu( NULL, p_intf, p_intf->p_mainPlayerController );
-
-    menu->addMenu( VLCMenuBar::rendererMenu );
-    menu->addSeparator();
-
-
     PopupMenuControlEntries( menu, p_intf );
 
     RebuildNavigMenu( p_intf, menu );
@@ -559,8 +552,6 @@ void VLCMenuBar::RebuildNavigMenu( qt_intf_t *p_intf, QMenu *menu )
     ADD_ACTION( qtr("Next Chapter"), &PlayerController::chapterNext, &PlayerController::hasChaptersChanged, THEMIM->hasChapters() );
 
 #undef ADD_ACTION
-
-    PopupMenuPlaylistEntries( menu, p_intf );
 }
 
 /**
@@ -680,18 +671,6 @@ void VLCMenuBar::PopupMenuControlEntries( QMenu *menu, qt_intf_t *p_intf,
 
     if( !b_normal ) return;
 
-    action = menu->addAction( qtr( "&Jump Forward" ), THEMIM,
-             &PlayerController::jumpFwd );
-#ifndef __APPLE__ /* No icons in menus in Mac */
-    action->setIcon( ColorizedSvgIcon::colorizedIconForWidget( ":/menu/ic_fluent_skip_forward_10.svg", menu ) );
-#endif
-
-    action = menu->addAction( qtr( "Jump Bac&kward" ), THEMIM,
-             &PlayerController::jumpBwd );
-#ifndef __APPLE__ /* No icons in menus in Mac */
-    action->setIcon( ColorizedSvgIcon::colorizedIconForWidget( ":/menu/ic_fluent_skip_back_10.svg", menu ) );
-#endif
-
     action = menu->addAction( qfut( I_MENU_GOTOTIME ), THEDP, &DialogsProvider::gotoTimeDialog );
     action->setShortcut( QKeySequence( "Ctrl+T" ) );
 
@@ -767,30 +746,12 @@ QMenu* VLCMenuBar::PopupMenu( qt_intf_t *p_intf, bool show )
     QAction *action;
     bool b_isFullscreen = false;
 
-    PopupMenuPlaylistEntries( menu, p_intf );
-    menu->addSeparator();
-
     if( p_input )
     {
         QMenu *submenu;
         SharedVOutThread p_vout = THEMIM->getVout();
 
-        /* Add a fullscreen switch button, since it is the most used function */
-        if( p_vout )
-        {
-            menu->addAction(new BooleanPropertyAction(qtr( "&Fullscreen" ), THEMIM, "fullscreen", menu) );
-            menu->addSeparator();
-        }
-
-        /* Input menu */
-
-        /* Audio menu */
-        submenu = new QMenu( menu );
-        AudioMenu( p_intf, submenu );
-        action = menu->addMenu( submenu );
-        action->setText( qtr( "&Audio" ) );
-        if( action->menu()->isEmpty() )
-            action->setEnabled( false );
+        Q_UNUSED( p_vout );
 
         /* Video menu */
         submenu = new QMenu( menu );
@@ -799,12 +760,6 @@ QMenu* VLCMenuBar::PopupMenu( qt_intf_t *p_intf, bool show )
         action->setText( qtr( "&Video" ) );
         if( action->menu()->isEmpty() )
             action->setEnabled( false );
-
-        /* Subtitles menu */
-        submenu = new QMenu( menu );
-        SubtitleMenu( p_intf, submenu, true );
-        action = menu->addMenu( submenu );
-        action->setText( qtr( "Subti&tle") );
 
         /* Playback menu for chapters */
         submenu = new QMenu( menu );

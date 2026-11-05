@@ -22,6 +22,7 @@ import VLC.Widgets as Widgets
 import VLC.Player
 import VLC.Style
 import VLC.Util
+import VLC.Terrikon
 
 
 Widgets.IconToolButton {
@@ -31,7 +32,7 @@ Widgets.IconToolButton {
 
     text: VLCIcons.previous_frame
     onClicked: Player.framePrev()
-    description: qsTr("Previous frame")
+    description: qsTr("Previous frame") + TerrikonActions.hint("frame-previous")
 
     AccessibleCompat.id: "previousFrameButton"
 }

@@ -117,7 +117,6 @@ decltype (ControlbarProfileModel::m_defaults)
                                 },
                                 {
                                     ControlListModel::VOLUME,
-                                    ControlListModel::RENDERER_BUTTON,
                                     ControlListModel::COMPACT_PLAYER_BUTTON,
                                     ControlListModel::FULLSCREEN_BUTTON
                                 }
@@ -142,7 +141,6 @@ decltype (ControlbarProfileModel::m_defaults)
                                 },
                                 {
                                     ControlListModel::VOLUME,
-                                    ControlListModel::RENDERER_BUTTON,
                                     ControlListModel::FULLSCREEN_BUTTON
                                 }
                             }

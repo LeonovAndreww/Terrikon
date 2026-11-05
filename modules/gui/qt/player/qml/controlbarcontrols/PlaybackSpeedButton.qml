@@ -31,9 +31,9 @@ PopupIconToolButton {
 
     popup.width: VLCStyle.dp(256, VLCStyle.scale)
 
-    text: qsTr("Playback Speed")
+    text: qsTr("Playback speed")
 
-    description: qsTr("change playback speed")
+    description: qsTr("Playback speed")
 
     AccessibleCompat.id: "playbackSpeedButton"
 
