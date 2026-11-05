@@ -104,6 +104,7 @@ decltype (ControlbarProfileModel::m_defaults)
                                 {
                                     ControlListModel::LANG_BUTTON,
                                     ControlListModel::BOOKMARK_BUTTON,
+                                    ControlListModel::CLIP_BUTTON,
                                     ControlListModel::EXTENDED_BUTTON,
                                     ControlListModel::NAVIGATION_BUTTONS
                                 },
@@ -117,6 +118,7 @@ decltype (ControlbarProfileModel::m_defaults)
                                 {
                                     ControlListModel::VOLUME,
                                     ControlListModel::RENDERER_BUTTON,
+                                    ControlListModel::COMPACT_PLAYER_BUTTON,
                                     ControlListModel::FULLSCREEN_BUTTON
                                 }
                             }

@@ -24,6 +24,7 @@ import VLC.Widgets as Widgets
 import VLC.Style
 import VLC.Util
 import VLC.MainInterface
+import VLC.Terrikon
 
 T.ProgressBar {
     id: control
@@ -43,6 +44,18 @@ T.ProgressBar {
 
     property color backgroundColor: theme.bg.primary
     property real touchHandlerMargin: VLCStyle.touchHandlerMargin
+
+    // Pointer position along the bar while hovering, 0..1
+    readonly property real _hoverPosition: hoverHandler.hovered
+                                           ? Helpers.clamp(hoverHandler.point.position.x / control.width, 0, 1)
+                                           : control.visualPosition
+    readonly property bool _pointerOver: hoverHandler.hovered || dragHandler.active
+
+    // The waveforms sit right above the bar, the tool tip and the frame
+    // preview above them
+    readonly property real _overlayGap: VLCStyle.margin_xxsmall
+    readonly property real _tooltipLift: (trackWaveforms.shown && waveformLoader.trackCount > 0)
+                                         ? trackWaveforms.height + _overlayGap : 0
 
     Keys.onRightPressed: Player.jumpFwd()
     Keys.onLeftPressed: Player.jumpBwd()
@@ -94,7 +107,127 @@ T.ProgressBar {
     }
 
     Widgets.PointingToolTipAttached.pos: Qt.point(hoverHandler.hovered ? Helpers.clamp(hoverHandler.point.position.x, 0, control.availableWidth)
-                                                                       : (control.visualPosition * control.width), 0)
+                                                                       : (control.visualPosition * control.width),
+                                                  -control._tooltipLift)
+
+    // Thumbnails and waveforms of the playing file, built in the background
+    // by ffmpeg and cached on disk; only local files have them
+    ThumbnailStrip {
+        id: thumbnailStrip
+    }
+
+    WaveformLoader {
+        id: waveformLoader
+    }
+
+    Timer {
+        id: mediaToolsDelay
+
+        // Let playback start before ffmpeg competes for the disk
+        interval: 1500
+        onTriggered: {
+            thumbnailStrip.loadUrl(Player.url)
+            waveformLoader.loadUrl(Player.url)
+        }
+    }
+
+    function _reloadMediaTools() {
+        ClipSelection.close()
+        MomentMarks.loadUrl(Player.url)
+        thumbnailStrip.clear()
+        waveformLoader.clear()
+        mediaToolsDelay.restart()
+    }
+
+    TrackWaveforms {
+        id: trackWaveforms
+
+        loader: waveformLoader
+        position: control.visualPosition
+        shown: control._pointerOver
+
+        x: 0
+        width: control.width
+        height: VLCStyle.dp(28, VLCStyle.scale)
+        y: -height - control._overlayGap
+        z: 1
+    }
+
+    // Marked moments: a tick above the bar each; click to go there,
+    // right click to remove
+    Repeater {
+        model: (Player.length.valid() && Player.length.toSeconds() > 0) ? MomentMarks.times : []
+
+        MouseArea {
+            required property real modelData
+            required property int index
+
+            readonly property real _fraction: modelData / Player.length.toSeconds()
+
+            x: _fraction * control.width - width / 2
+            y: control.barHeight / 2 - height / 2
+            z: 1
+            width: VLCStyle.dp(10, VLCStyle.scale)
+            height: control.barHeight * 4
+
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
+            cursorShape: Qt.PointingHandCursor
+
+            onClicked: (mouse) => {
+                if (mouse.button === Qt.RightButton)
+                    MomentMarks.removeAt(index)
+                else
+                    Player.position = _fraction
+            }
+
+            Rectangle {
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.bottom: parent.verticalCenter
+                anchors.bottomMargin: -control.barHeight / 2
+                // Yellow: the played part is white and the clip range violet
+                width: VLCStyle.dp(3, VLCStyle.scale)
+                height: control.barHeight * 3
+                radius: width / 2
+                color: "#FFD84D"
+                border.color: Qt.rgba(0, 0, 0, 0.6)
+                border.width: 1
+            }
+        }
+    }
+
+    ClipRange {
+        id: clipRange
+
+        x: 0
+        y: 0
+        width: control.width
+        height: control.barHeight
+        barHeight: control.barHeight
+        z: 2
+    }
+
+    // Keeps the clip range inside the media
+    Binding {
+        target: ClipSelection
+        property: "mediaLength"
+        value: Player.length.valid() ? Player.length.toSeconds() : 0
+    }
+
+    SeekPreview {
+        id: seekPreview
+
+        strip: thumbnailStrip
+        seconds: control._hoverPosition * Player.length.toSeconds()
+        shown: control._pointerOver && Player.hasVideoOutput
+
+        x: Helpers.clamp(control._hoverPosition * control.width - width / 2, 0, Math.max(0, control.width - width))
+        y: {
+            const tip = Widgets.PointingToolTipAttached.instance
+            const tipTop = (tip && tip.visible) ? tip.y : -control._tooltipLift
+            return tipTop - control._overlayGap - height
+        }
+        z: 1
+    }
 
     FSM {
         id: fsm
@@ -191,10 +324,16 @@ T.ProgressBar {
     Connections {
         target: Player
         function onPositionChanged() {  fsm.playerUpdatePosition(Player.position) }
-        function onInputChanged() {  fsm.inputChanged() }
+        function onInputChanged() {
+            fsm.inputChanged()
+            control._reloadMediaTools()
+        }
     }
 
-    Component.onCompleted: value = Player.position
+    Component.onCompleted: {
+        value = Player.position
+        _reloadMediaTools()
+    }
 
     implicitHeight: control.barHeight
     height: implicitHeight

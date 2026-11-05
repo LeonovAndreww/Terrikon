@@ -30,6 +30,7 @@
 #include <QCoreApplication>
 #include <QCryptographicHash>
 #include <QDateTime>
+#include <QDesktopServices>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -116,7 +117,11 @@ ClipExporter::Plan ClipExporter::plan(const QVariantMap &params, const QString &
 {
     Plan p;
 
-    const QString input = params.value(QStringLiteral("input")).toString();
+    QString input = params.value(QStringLiteral("input")).toString();
+    /* The player hands out URLs; a plain Windows path is not one (its drive
+     * letter would parse as a scheme, but not as a local file URL) */
+    if (const QUrl url(input); url.isLocalFile())
+        input = url.toLocalFile();
     const double start = params.value(QStringLiteral("start")).toDouble();
     const double end = params.value(QStringLiteral("end")).toDouble();
     const double length = end - start;
@@ -339,6 +344,22 @@ bool ClipExporter::start(const QVariantMap &params)
     runPass();
     emit runningChanged();
     return true;
+}
+
+void ClipExporter::reveal(const QString &path) const
+{
+    if (path.isEmpty())
+        return;
+#ifdef _WIN32
+    /* Explorer wants the path quoted after the comma, not the whole
+     * argument, so bypass QProcess quoting */
+    QProcess explorer;
+    explorer.setProgram(QStringLiteral("explorer.exe"));
+    explorer.setNativeArguments(QStringLiteral("/select,\"%1\"").arg(QDir::toNativeSeparators(path)));
+    explorer.startDetached();
+#else
+    QDesktopServices::openUrl(QUrl::fromLocalFile(QFileInfo(path).absolutePath()));
+#endif
 }
 
 void ClipExporter::cancel()

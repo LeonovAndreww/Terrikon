@@ -308,6 +308,9 @@ RowLayout {
             else if (action === QmlSubtitleMenu.Synchronize) {
                 trackMenuController.requestSubtitlePage()
             }
+            else if (action === QmlSubtitleMenu.Style) {
+                trackMenuController.requestSubtitleStylePage()
+            }
             else if (action === QmlSubtitleMenu.Download) {
                 Player.openVLsub()
             }

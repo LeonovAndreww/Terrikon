@@ -122,6 +122,7 @@ T.Popup {
 
       signal requestAudioPage()
       signal requestSubtitlePage()
+      signal requestSubtitleStylePage()
       signal requestPlaybackSpeedPage()
       signal requestBack()
 
@@ -135,6 +136,10 @@ T.Popup {
 
       onRequestSubtitlePage: {
           stackView.push("qrc:///qt/qml/VLC/Player/TracksPageSubtitle.qml", {"trackMenuController": trackMenuController})
+      }
+
+      onRequestSubtitleStylePage: {
+          stackView.push("qrc:///qt/qml/VLC/Player/TracksPageSubtitleStyle.qml", {"trackMenuController": trackMenuController})
       }
 
       onRequestPlaybackSpeedPage: {

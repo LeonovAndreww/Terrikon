@@ -774,6 +774,11 @@ void QmlSubtitleMenu::beforePopup(QMenu * menu) /* override */
         emit triggered(Synchronize);
     });
 
+    menu->addAction(qtr("Style"), this, [this]()
+    {
+        emit triggered(Style);
+    });
+
     menu->addAction(ColorizedSvgIcon::colorizedIconForWidget(":/menu/download.svg", menu), qtr("Search online"), this, [this]()
     {
         emit triggered(Download);

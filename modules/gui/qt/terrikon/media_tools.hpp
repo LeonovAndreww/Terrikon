@@ -24,6 +24,7 @@
 #include <QProcess>
 #include <QString>
 #include <QStringList>
+#include <QUrl>
 #include <QVariant>
 #include <QVector>
 
@@ -65,6 +66,8 @@ public:
      *   copyToClipboard: put the resulting file on the clipboard */
     Q_INVOKABLE bool start(const QVariantMap &params);
     Q_INVOKABLE void cancel();
+    /* Shows a file in the system file manager, selected where possible */
+    Q_INVOKABLE void reveal(const QString &path) const;
 
     bool running() const { return m_process != nullptr; }
     double progress() const { return m_progress; }
@@ -115,6 +118,8 @@ public:
     ~WaveformLoader() override;
 
     Q_INVOKABLE void load(const QString &path);
+    /* Same for a media URL; anything but a local file clears */
+    Q_INVOKABLE void loadUrl(const QUrl &url) { load(url.isLocalFile() ? url.toLocalFile() : QString()); }
     Q_INVOKABLE void clear();
     /* "count" peaks (0..1) covering the whole track, empty if not loaded */
     Q_INVOKABLE QVariantList peaks(int track, int count) const;
@@ -167,6 +172,8 @@ public:
     ~ThumbnailStrip() override;
 
     Q_INVOKABLE void load(const QString &path);
+    /* Same for a media URL; anything but a local file clears */
+    Q_INVOKABLE void loadUrl(const QUrl &url) { load(url.isLocalFile() ? url.toLocalFile() : QString()); }
     Q_INVOKABLE void clear();
     /* { source (file URL of the sheet), x, y, width, height, time } of the
      * thumbnail closest before "seconds", empty map if none */

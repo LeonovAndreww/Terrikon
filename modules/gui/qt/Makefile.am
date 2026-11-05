@@ -287,8 +287,14 @@ libqt_plugin_la_SOURCES = \
 	style/defaultthemeproviders.hpp \
 	style/systempalettethemeprovider.cpp \
 	player/input_models.cpp player/input_models.hpp \
+	terrikon/clip_selection.cpp terrikon/clip_selection.hpp \
+	terrikon/compact_player.cpp terrikon/compact_player.hpp \
 	terrikon/media_tools.cpp terrikon/media_tools.hpp \
+	terrikon/moment_marks.cpp terrikon/moment_marks.hpp \
 	terrikon/selftest.cpp terrikon/selftest.hpp \
+	terrikon/subtitle_style.cpp terrikon/subtitle_style.hpp \
+	terrikon/terrikon_actions.cpp terrikon/terrikon_actions.hpp \
+	terrikon/waveform_view.cpp terrikon/waveform_view.hpp \
 	player/delay_estimator.cpp \
 	player/delay_estimator.hpp \
 	player/player_controller.cpp player/player_controller.hpp player/player_controller_p.hpp \
@@ -493,7 +499,13 @@ nodist_libqt_plugin_la_SOURCES = \
 	style/vlcicons.moc.cpp \
 	player/delay_estimator.moc.cpp \
 	player/input_models.moc.cpp \
+	terrikon/clip_selection.moc.cpp \
+	terrikon/compact_player.moc.cpp \
 	terrikon/media_tools.moc.cpp \
+	terrikon/moment_marks.moc.cpp \
+	terrikon/subtitle_style.moc.cpp \
+	terrikon/terrikon_actions.moc.cpp \
+	terrikon/waveform_view.moc.cpp \
 	player/player_controller.moc.cpp \
 	player/player_controlbar_model.moc.cpp \
 	player/control_list_model.moc.cpp \
@@ -1181,13 +1193,20 @@ libqml_module_player_a_QML = \
 	player/qml/PlayerToolbarVisibilityFSM.qml \
 	player/qml/MinimalView.qml \
 	player/qml/ResumeDialog.qml \
+	player/qml/ClipPanel.qml \
+	player/qml/ClipRange.qml \
+	player/qml/SeekPreview.qml \
+	player/qml/SkipChapterButton.qml \
 	player/qml/SliderBar.qml \
+	player/qml/SubtitleStyleSection.qml \
+	player/qml/TrackWaveforms.qml \
 	player/qml/TopBar.qml \
 	player/qml/TracksMenu.qml \
 	player/qml/TracksPage.qml \
 	player/qml/TracksPageAudio.qml \
 	player/qml/TracksPageSpeed.qml \
 	player/qml/TracksPageSubtitle.qml \
+	player/qml/TracksPageSubtitleStyle.qml \
 	player/qml/TracksListPage.qml \
 	player/qml/ControlLayout.qml \
 	player/qml/ControlRepeater.qml \
@@ -1242,6 +1261,8 @@ libqml_module_playercontrols_a_QML = \
 	player/qml/controlbarcontrols/SkipForwardButton.qml \
 	player/qml/controlbarcontrols/SlowerButton.qml \
 	player/qml/controlbarcontrols/SnapshotButton.qml \
+	player/qml/controlbarcontrols/ClipButton.qml \
+	player/qml/controlbarcontrols/CompactPlayerButton.qml \
 	player/qml/controlbarcontrols/SpacerWidget.qml \
 	player/qml/controlbarcontrols/StopButton.qml \
 	player/qml/controlbarcontrols/TeletextButton.qml \

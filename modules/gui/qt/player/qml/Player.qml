@@ -29,6 +29,7 @@ import VLC.Player
 import VLC.PlayerControls
 import VLC.Dialogs
 import VLC.Util
+import VLC.Terrikon
 
 FocusScope {
     id: rootPlayer
@@ -72,6 +73,16 @@ FocusScope {
 
     Component.onCompleted: MainCtx.preferHotkeys = true
     Component.onDestruction: MainCtx.preferHotkeys = false
+
+    // Terrikon keys (clip, marks, picture in picture) are VLC hotkeys,
+    // carried out by TerrikonActions. Escape closes an open clip panel,
+    // except in full screen, where it keeps leaving full screen.
+    Shortcut {
+        sequence: StandardKey.Cancel
+        enabled: ClipSelection.active && rootPlayer.visible && !CompactPlayer.active
+                 && MainCtx.intfMainWindow.visibility !== Window.FullScreen
+        onActivated: ClipSelection.close()
+    }
 
     Keys.priority: Keys.AfterItem
     Keys.onPressed: (event) => {
@@ -1276,6 +1287,15 @@ FocusScope {
             left: parent.left
             right: parent.right
             margins: VLCStyle.margin_large
+        }
+    }
+
+    SkipChapterButton {
+        anchors {
+            right: parent.right
+            bottom: (controlBar.state === "visible") ? controlBar.top : parent.bottom
+            rightMargin: VLCStyle.margin_xlarge + VLCStyle.applicationHorizontalMargin
+            bottomMargin: VLCStyle.margin_xlarge
         }
     }
 

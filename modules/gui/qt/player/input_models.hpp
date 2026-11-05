@@ -75,6 +75,9 @@ public:
 
     inline bool getMultiSelect() const { return m_multiSelect; }
 
+    /* [{ index, title, enabled, volume }] of every track, in order */
+    Q_INVOKABLE QVariantList trackStates() const;
+
 public slots:
     void setMultiSelect(bool multiSelect);
 
@@ -196,6 +199,11 @@ public:
     Q_INVOKABLE void selectChapter(int index);
 
     Q_INVOKABLE int getClosestChapterFromPos(float pos, float threshold) const;
+
+    /* If the chapter at "pos" (0..1) is one people skip, judging by its
+     * name: { kind: "opening" | "ending" | "recap" | "preview",
+     * index, end (position where it ends) }, else an empty map */
+    Q_INVOKABLE QVariantMap skippableAt(float pos) const;
 
 signals:
     void countChanged();

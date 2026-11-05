@@ -348,7 +348,8 @@ public: // Enums
     {
         Open,
         Synchronize,
-        Download
+        Download,
+        Style
     };
 
     Q_ENUM(Action)

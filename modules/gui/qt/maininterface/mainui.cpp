@@ -92,7 +92,13 @@
 #endif
 #include "mainctx_submodels.hpp"
 
+#include "terrikon/clip_selection.hpp"
+#include "terrikon/compact_player.hpp"
 #include "terrikon/media_tools.hpp"
+#include "terrikon/moment_marks.hpp"
+#include "terrikon/subtitle_style.hpp"
+#include "terrikon/terrikon_actions.hpp"
+#include "terrikon/waveform_view.hpp"
 #include "terrikon/selftest.hpp"
 
 static bool g_qmlTypesAreRegistered = false;
@@ -470,6 +476,18 @@ void MainUI::registerQMLTypes()
         qmlRegisterType<terrikon::ClipExporter>(uri, versionMajor, versionMinor, "ClipExporter");
         qmlRegisterType<terrikon::WaveformLoader>(uri, versionMajor, versionMinor, "WaveformLoader");
         qmlRegisterType<terrikon::ThumbnailStrip>(uri, versionMajor, versionMinor, "ThumbnailStrip");
+        qmlRegisterType<terrikon::WaveformView>(uri, versionMajor, versionMinor, "WaveformView");
+        auto *clipSelection = new terrikon::ClipSelection(this);
+        auto *momentMarks = new terrikon::MomentMarks(this);
+        auto *compactPlayer = new terrikon::CompactPlayer(m_mainCtx, this);
+        auto *actions = new terrikon::TerrikonActions(m_mainCtx->getIntf(), clipSelection,
+                                                      momentMarks, compactPlayer, this);
+        qmlRegisterSingletonInstance<terrikon::ClipSelection>(uri, versionMajor, versionMinor, "ClipSelection", clipSelection);
+        qmlRegisterSingletonInstance<terrikon::MomentMarks>(uri, versionMajor, versionMinor, "MomentMarks", momentMarks);
+        qmlRegisterSingletonInstance<terrikon::CompactPlayer>(uri, versionMajor, versionMinor, "CompactPlayer", compactPlayer);
+        qmlRegisterSingletonInstance<terrikon::TerrikonActions>(uri, versionMajor, versionMinor, "TerrikonActions", actions);
+        qmlRegisterSingletonInstance<terrikon::SubtitleStyle>(uri, versionMajor, versionMinor, "SubtitleStyle",
+                                                              new terrikon::SubtitleStyle(m_mainCtx->getIntf(), this));
 
         qmlRegisterModule(uri, versionMajor, versionMinor);
         qmlProtectModule(uri, versionMajor);

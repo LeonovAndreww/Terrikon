@@ -19,6 +19,8 @@
 
 #include "player/player_controller.hpp"
 
+#include <QRegularExpression>
+
 //***************************
 //  track list model
 //***************************
@@ -51,6 +53,22 @@ QVariant TrackListModel::data(const QModelIndex &index, int role) const
     else if (role == VolumeRole)
         return QVariant::fromValue<float>(m_data[row].m_volume);
     return QVariant{};
+}
+
+QVariantList TrackListModel::trackStates() const
+{
+    QVariantList states;
+    states.reserve(m_data.size());
+    for (qsizetype i = 0; i < m_data.size(); ++i)
+    {
+        states.append(QVariantMap{
+            { QStringLiteral("index"), int(i) },
+            { QStringLiteral("title"), m_data[i].m_title },
+            { QStringLiteral("enabled"), m_data[i].m_selected },
+            { QStringLiteral("volume"), double(m_data[i].m_volume) },
+        });
+    }
+    return states;
 }
 
 bool TrackListModel::setData(const QModelIndex &index, const QVariant &value, int role)
@@ -416,6 +434,56 @@ void ChapterListModel::selectChapter(int index)
         vlc_player_locker lock{ m_player };
         vlc_player_SelectChapter(m_player, m_title, index);
     }
+}
+
+/* Chapter names as release groups and encoders write them, in English and
+ * Russian: "OP", "Opening", "OP1 - Title", "Intro", "Опенинг",
+ * "ED", "Ending", "End Credits", "Титры"... A name only has to start
+ * with one of them. */
+static QString skippableKind(const QString &name)
+{
+    static const struct { const char *kind; QRegularExpression pattern; } kinds[] = {
+        { "opening", QRegularExpression(
+            QStringLiteral("^\\s*(op|opening|intro|опенинг|вступление|заставка)(\\d|\\b)"),
+            QRegularExpression::CaseInsensitiveOption | QRegularExpression::UseUnicodePropertiesOption) },
+        { "ending", QRegularExpression(
+            QStringLiteral("^\\s*(ed|ending|outro|end credits|credits|эндинг|титры|концовка)(\\d|\\b)"),
+            QRegularExpression::CaseInsensitiveOption | QRegularExpression::UseUnicodePropertiesOption) },
+        { "recap", QRegularExpression(
+            QStringLiteral("^\\s*(recap|previously|ранее|в предыдущ)"),
+            QRegularExpression::CaseInsensitiveOption | QRegularExpression::UseUnicodePropertiesOption) },
+        { "preview", QRegularExpression(
+            QStringLiteral("^\\s*(preview|next episode|next time|превью|анонс|в следующ)"),
+            QRegularExpression::CaseInsensitiveOption | QRegularExpression::UseUnicodePropertiesOption) },
+    };
+    for (const auto &entry : kinds)
+        if (entry.pattern.match(name).hasMatch())
+            return QString::fromLatin1(entry.kind);
+    return {};
+}
+
+QVariantMap ChapterListModel::skippableAt(float pos) const
+{
+    if (m_title == nullptr || m_title->chapter_count == 0 || m_title->length == 0)
+        return {};
+
+    const vlc_tick_t time = pos * m_title->length;
+    size_t current = 0;
+    while (current + 1 < m_title->chapter_count && m_title->chapters[current + 1].time <= time)
+        ++current;
+
+    const QString kind = skippableKind(qfu(m_title->chapters[current].name));
+    if (kind.isEmpty())
+        return {};
+
+    const float end = current + 1 < m_title->chapter_count
+                      ? m_title->chapters[current + 1].time / float(m_title->length)
+                      : 1.f;
+    return {
+        { QStringLiteral("kind"), kind },
+        { QStringLiteral("index"), int(current) },
+        { QStringLiteral("end"), end },
+    };
 }
 
 QString ChapterListModel::getNameAtPosition(float pos) const

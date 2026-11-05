@@ -69,7 +69,7 @@ public:
         PLAYBACK_SPEED_BUTTON,
         HIGH_RESOLUTION_TIME_WIDGET,
         FRAME_PREV_BUTTON,
-        RESERVED_0X1F,
+        CLIP_BUTTON,
 
         SPLITTER = 0x20,
         VOLUME,
@@ -82,7 +82,7 @@ public:
         NAVIGATION_BUTTONS,
         PROGRAM_BUTTON,
         NAVIGATION_BOX,
-        RESERVED_0X2B,
+        COMPACT_PLAYER_BUTTON,
         RESERVED_0X2C,
         RESERVED_0X2D,
         RESERVED_0X2E,
@@ -110,8 +110,8 @@ public:
     };
     Q_ENUM(ControlType)
 
-    static_assert(RESERVED_0X1F == 0x1F, "missaligned");
-    static_assert(RESERVED_0X2B == 0x2B, "missaligned");
+    static_assert(CLIP_BUTTON == 0x1F, "missaligned");
+    static_assert(COMPACT_PLAYER_BUTTON == 0x2B, "missaligned");
     static_assert(RESERVED_0X3F == 0x3F, "missaligned");
 
     // Basic functionality:

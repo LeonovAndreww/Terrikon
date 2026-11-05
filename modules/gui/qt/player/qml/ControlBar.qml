@@ -27,6 +27,7 @@ import VLC.Style
 import VLC.Widgets as Widgets
 import VLC.Player
 import VLC.Util
+import VLC.Terrikon
 
 T.Pane {
     id: root
@@ -255,6 +256,23 @@ T.Pane {
                 }
             }
         ]
+
+        ClipPanel {
+            id: clipPanel
+
+            Layout.fillWidth: true
+            Layout.leftMargin: VLCStyle.margin_normal
+            Layout.rightMargin: VLCStyle.margin_normal
+
+            // Exporting must not be hidden away by the auto-hide timer
+            property bool _holdsLock: false
+            onVisibleChanged: {
+                if (visible !== _holdsLock) {
+                    _holdsLock = visible
+                    root.requestLockUnlockAutoHide(visible)
+                }
+            }
+        }
 
         Item {
             // BUG: RowLayout can not be used here
