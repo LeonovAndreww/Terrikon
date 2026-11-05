@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
   <!-- colors values have a purpose, changing them may break the associated component -->
-  <g fill="none" stroke="#ff00ff" stroke-width="1.8" stroke-linecap="round">
-    <circle cx="6" cy="6" r="2.8"/>
-    <circle cx="6" cy="18" r="2.8"/>
-    <path d="M8.3 7.6 20 17.5"/>
-    <path d="M8.3 16.4 20 6.5"/>
+  <!-- Same weight as the icon font: 1 px stroke on the 24 grid -->
+  <g fill="none" stroke="#ff00ff" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="6.5" cy="6.5" r="2.5"/>
+    <circle cx="6.5" cy="17.5" r="2.5"/>
+    <path d="M8.6 7.9 19.5 16.5"/>
+    <path d="M8.6 16.1 19.5 7.5"/>
   </g>
 </svg>
