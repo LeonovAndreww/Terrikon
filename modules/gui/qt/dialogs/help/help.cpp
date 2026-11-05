@@ -91,12 +91,31 @@ AboutDialog::AboutDialog( qt_intf_t *_p_intf)
     setWindowRole( "vlc-about" );
     setWindowModality( Qt::WindowModal );
 
-    ui.version->setText(qfu( " " VERSION_MESSAGE ) );
-    ui.title->setText("<html><head/><body><p><span style=\" font-size:26pt; color:#353535;\"> " + qtr( "VLC media player" ) + " </span></p></body></html>");
+    /* Dark like the player: the native Windows style draws dialogs light
+     * whatever the palette says, a style sheet is respected */
+    setStyleSheet( QStringLiteral(
+        "QWidget { background-color: #1f1f1f; color: #eeeeee; }"
+        "QTextBrowser, QPlainTextEdit, QTextEdit { background-color: #171717; border: 1px solid #333333; }"
+        "QPushButton { background-color: #2c2c2c; border: 1px solid #3a3a3a; padding: 4px 14px; }"
+        "QPushButton:hover { background-color: #383838; }"
+        "QScrollBar { background: #1f1f1f; }" ) );
 
-    ui.MainBlabla->setText("<html><head/><body>" +
-    qtr( "<p>VLC media player is a free and open source media player, encoder, and streamer made by the volunteers of the <a href=\"https://www.videolan.org/\"><span style=\" text-decoration: underline; color:#0057ae;\">VideoLAN</span></a> community.</p><p>VLC uses its internal codecs, works on essentially every popular platform, and can read almost all files, CDs, DVDs, network streams, capture cards and other media formats!</p><p><a href=\"https://www.videolan.org/contribute/\"><span style=\" text-decoration: underline; color:#0057ae;\">Help and join us!</span></a>" ) +
-    "</p></body> </html>");
+    ui.version->setText(qtr( "Based on VLC %1" ).arg( qfu( VERSION_MESSAGE ) ) );
+    ui.title->setText("<html><head/><body><p><span style=\" font-size:26pt;\"> Terrikon </span></p></body></html>");
+
+    /* Links in a colour that reads on a light and a dark window alike */
+    const QString link = QStringLiteral("<a href=\"%1\"><span style=\" text-decoration: underline; color:#5b9bd5;\">%2</span></a>");
+    ui.MainBlabla->setText("<html><head/><body><p>"
+        + qtr( "Terrikon is a free player for game recordings and series. "
+               "It keeps every audio track of a recording at hand, makes clips "
+               "and plays in a small window over other apps." )
+        + "</p><p>"
+        + qtr( "It is built on VLC media player, made by the volunteers of the %1 community, "
+               "and plays everything VLC plays." )
+              .arg( link.arg( QStringLiteral("https://www.videolan.org/"), QStringLiteral("VideoLAN") ) )
+        + "</p><p>"
+        + link.arg( QStringLiteral("https://github.com/LeonovAndreww/Terrikon"), qtr( "Source code" ) )
+        + "</p></body></html>");
 
     const QDate today = QDate::currentDate();
     if( today.month() == 4 && today.day() == 1
@@ -114,13 +133,13 @@ AboutDialog::AboutDialog( qt_intf_t *_p_intf)
     /* People who wrote the software */
     ui.authorsPage->setText( qfu( psz_authors ) );
 
-    ui.licenseButton->setText( "<html><head/><body><p><span style=\" text-decoration: underline; color:#0057ae;\">"+qtr( "License" )+"</span></p></body></html>");
+    ui.licenseButton->setText( "<html><head/><body><p><span style=\" text-decoration: underline; color:#5b9bd5;\">"+qtr( "License" )+"</span></p></body></html>");
     ui.licenseButton->installEventFilter( this );
 
-    ui.authorsButton->setText( "<html><head/><body><p><span style=\" text-decoration: underline; color:#0057ae;\">"+qtr( "Authors" )+"</span></p></body></html>");
+    ui.authorsButton->setText( "<html><head/><body><p><span style=\" text-decoration: underline; color:#5b9bd5;\">"+qtr( "Authors" )+"</span></p></body></html>");
     ui.authorsButton->installEventFilter( this );
 
-    ui.creditsButton->setText( "<html><head/><body><p><span style=\" text-decoration: underline; color:#0057ae;\">"+qtr( "Credits" )+"</span></p></body></html>");
+    ui.creditsButton->setText( "<html><head/><body><p><span style=\" text-decoration: underline; color:#5b9bd5;\">"+qtr( "Credits" )+"</span></p></body></html>");
     ui.creditsButton->installEventFilter( this );
 
     ui.version->installEventFilter( this );
@@ -155,7 +174,7 @@ bool AboutDialog::eventFilter(QObject *obj, QEvent *event)
             }
             else
             {
-                ui.version->setText(qfu( " " VERSION_MESSAGE ) );
+                ui.version->setText(qtr( "Based on VLC %1" ).arg( qfu( VERSION_MESSAGE ) ) );
                 b_advanced = false;
             }
             return true;

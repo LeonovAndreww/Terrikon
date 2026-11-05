@@ -822,6 +822,8 @@ libqt_plugin_la_RES = \
 	pixmaps/icons/ic_album_cover.svg \
 	pixmaps/icons/ic_aspect_ratio.svg \
 	pixmaps/icons/atob.svg \
+	pixmaps/icons/autoplay_off.svg \
+	pixmaps/icons/autoplay_on.svg \
 	pixmaps/icons/clip.svg \
 	pixmaps/icons/compact_player.svg \
 	pixmaps/icons/compact_player_exit.svg \
@@ -1201,9 +1203,7 @@ libqml_module_player_a_QML = \
 	player/qml/AudioPopover.qml \
 	player/qml/ClipCropFrame.qml \
 	player/qml/ClipPanel.qml \
-	player/qml/ClipTimeline.qml \
 	player/qml/ClipRange.qml \
-	player/qml/OverdriveSlider.qml \
 	player/qml/PipOverlay.qml \
 	player/qml/SeekPreview.qml \
 	player/qml/SkipChapterButton.qml \
