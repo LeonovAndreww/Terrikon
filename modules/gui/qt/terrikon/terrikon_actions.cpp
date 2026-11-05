@@ -146,6 +146,9 @@ void TerrikonActions::report(int action)
     {
     case ACTIONID_JUMP_BACKWARD_EXTRASHORT: jump("extrashort-jump-size", -1); break;
     case ACTIONID_JUMP_FORWARD_EXTRASHORT:  jump("extrashort-jump-size", +1); break;
+    /* Arrows without a disc menu seek by the extra short step */
+    case ACTIONID_NAV_LEFT:                 jump("extrashort-jump-size", -1); break;
+    case ACTIONID_NAV_RIGHT:                jump("extrashort-jump-size", +1); break;
     case ACTIONID_JUMP_BACKWARD_SHORT:      jump("short-jump-size", -1); break;
     case ACTIONID_JUMP_FORWARD_SHORT:       jump("short-jump-size", +1); break;
     case ACTIONID_JUMP_BACKWARD_MEDIUM:     jump("medium-jump-size", -1); break;

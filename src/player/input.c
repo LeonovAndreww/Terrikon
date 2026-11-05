@@ -885,7 +885,7 @@ vlc_player_input_NavigationFallback(struct vlc_player_input *input, int nav_type
     {
         /* Seek or change volume if the input doesn't have navigation or viewpoint */
         vlc_tick_t it = vlc_tick_from_sec(seek_direction
-                      * var_InheritInteger(player, "short-jump-size"));
+                      * var_InheritInteger(player, "extrashort-jump-size"));
         vlc_player_input_SeekByTime(input, it, VLC_PLAYER_SEEK_PRECISE,
                                     VLC_PLAYER_WHENCE_RELATIVE);
     }

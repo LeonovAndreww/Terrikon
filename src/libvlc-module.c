@@ -2789,7 +2789,7 @@ vlc_module_begin ()
             SUBTEXT_SCALEDOWN_KEY_TEXT, SUBTEXT_SCALE_KEY_LONGTEXT)
 
     set_section ( N_("Jump sizes" ), NULL )
-    add_integer( "extrashort-jump-size", 3, JIEXTRASHORT_TEXT,
+    add_integer( "extrashort-jump-size", 5, JIEXTRASHORT_TEXT,
                                     JIEXTRASHORT_LONGTEXT )
     add_integer( "short-jump-size", 10, JISHORT_TEXT,
                                     JISHORT_LONGTEXT )
