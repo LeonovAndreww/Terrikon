@@ -109,11 +109,9 @@ decltype (ControlbarProfileModel::m_defaults)
                                     ControlListModel::NAVIGATION_BUTTONS
                                 },
                                 {
-                                    ControlListModel::SKIP_BACK_BUTTON,
                                     ControlListModel::PREVIOUS_BUTTON,
                                     ControlListModel::PLAY_BUTTON,
-                                    ControlListModel::NEXT_BUTTON,
-                                    ControlListModel::SKIP_FW_BUTTON
+                                    ControlListModel::NEXT_BUTTON
                                 },
                                 {
                                     ControlListModel::VOLUME,
