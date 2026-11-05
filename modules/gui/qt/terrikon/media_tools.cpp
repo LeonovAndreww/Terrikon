@@ -33,6 +33,7 @@
 #include <QDesktopServices>
 #include <QDir>
 #include <QFile>
+#include <QFileDialog>
 #include <QFileInfo>
 #include <QGuiApplication>
 #include <QMimeData>
@@ -44,6 +45,10 @@
 
 #include <algorithm>
 #include <cmath>
+
+#ifdef _WIN32
+# include <windows.h>
+#endif
 
 namespace terrikon {
 
@@ -175,13 +180,19 @@ ClipExporter::Plan ClipExporter::plan(const QVariantMap &params, const QString &
     if (output.isEmpty())
     {
         const QFileInfo source(input);
+        /* A clip made only to be pasted somewhere goes to a temporary
+         * folder, not next to the recording */
+        const QDir folder = params.value(QStringLiteral("temporary")).toBool()
+            ? QDir(QDir::temp().filePath(QStringLiteral("terrikon-clips")))
+            : source.dir();
+        QDir().mkpath(folder.absolutePath());
         const int s = int(start);
         const QString stamp = QStringLiteral("%1-%2-%3")
             .arg(s / 3600, 2, 10, QLatin1Char('0'))
             .arg(s / 60 % 60, 2, 10, QLatin1Char('0'))
             .arg(s % 60, 2, 10, QLatin1Char('0'));
-        const QString base = source.dir().filePath(source.completeBaseName()
-                                                   + QStringLiteral("_clip_") + stamp);
+        const QString base = folder.filePath(source.completeBaseName()
+                                             + QStringLiteral("_clip_") + stamp);
         output = base + QLatin1Char('.') + extension;
         for (int i = 2; QFileInfo::exists(output); ++i)
             output = base + QStringLiteral("_%1.").arg(i) + extension;
@@ -210,7 +221,14 @@ ClipExporter::Plan ClipExporter::plan(const QVariantMap &params, const QString &
     if (vertical)
     {
         const double cropX = std::clamp(params.value(QStringLiteral("cropX"), 0.5).toDouble(), 0., 1.);
-        videoFilters << QStringLiteral("crop=ih*9/16:ih:(iw-ih*9/16)*%1:0").arg(cropX, 0, 'f', 3)
+        const double cropY = std::clamp(params.value(QStringLiteral("cropY"), 0.5).toDouble(), 0., 1.);
+        const double zoom = std::clamp(params.value(QStringLiteral("cropZoom"), 1.).toDouble(), 1., 4.);
+        /* A 9:16 window, full height at zoom 1, smaller when zoomed in,
+         * placed by cropX/cropY within what is left around it */
+        const QString w = QStringLiteral("ih*9/16/%1").arg(zoom, 0, 'f', 3);
+        const QString h = QStringLiteral("ih/%1").arg(zoom, 0, 'f', 3);
+        videoFilters << QStringLiteral("crop=%1:%2:(iw-%1)*%3:(ih-%2)*%4")
+                            .arg(w, h).arg(cropX, 0, 'f', 3).arg(cropY, 0, 'f', 3)
                      << ((sizeLimited && videoKbps < 2500) ? QStringLiteral("scale=720:1280")
                                                           : QStringLiteral("scale=1080:1920"));
     }
@@ -344,6 +362,46 @@ bool ClipExporter::start(const QVariantMap &params)
     runPass();
     emit runningChanged();
     return true;
+}
+
+double ClipExporter::estimateBytes(const QVariantMap &params) const
+{
+    QString input = params.value(QStringLiteral("input")).toString();
+    if (const QUrl url(input); url.isLocalFile())
+        input = url.toLocalFile();
+    const double length = params.value(QStringLiteral("end")).toDouble()
+                        - params.value(QStringLiteral("start")).toDouble();
+    const double mediaLength = params.value(QStringLiteral("mediaLength")).toDouble();
+    const QFileInfo source(input);
+    if (length <= 0. || mediaLength <= 0. || !source.exists())
+        return 0.;
+
+    const QString preset = params.value(QStringLiteral("preset"), QStringLiteral("copy")).toString();
+    if (preset == QLatin1String("size"))
+        return params.value(QStringLiteral("targetBytes")).toDouble() * 0.95;
+
+    /* The source's average rate; copying keeps it */
+    const double sourceRate = double(source.size()) / mediaLength;
+    if (preset == QLatin1String("copy") && !params.value(QStringLiteral("vertical")).toBool())
+        return sourceRate * length;
+
+    /* Re-encoding at CRF 20 lands around 8 Mbit/s for busy 1080p game
+     * footage, never above what the source had */
+    return std::min(sourceRate, 8e6 / 8.) * length;
+}
+
+QString ClipExporter::defaultOutput(const QVariantMap &params) const
+{
+    return plan(params, QString()).output;
+}
+
+QString ClipExporter::askSavePath(const QString &suggested) const
+{
+    const QString extension = QFileInfo(suggested).suffix();
+    const QString filter = extension.isEmpty()
+        ? QString()
+        : QStringLiteral("%1 (*.%2)").arg(extension.toUpper(), extension);
+    return QFileDialog::getSaveFileName(nullptr, qtr("Save clip as"), suggested, filter);
 }
 
 void ClipExporter::reveal(const QString &path) const
@@ -676,12 +734,19 @@ void ThumbnailStrip::clear()
 {
     stop();
     m_times.clear();
+    m_path.clear();
     m_cacheDir.clear();
+    m_sheetDir.clear();
     if (m_ready)
     {
         m_ready = false;
         emit readyChanged();
     }
+}
+
+static QString denseDir(const QString &cacheDir)
+{
+    return QDir(cacheDir).filePath(QStringLiteral("dense"));
 }
 
 void ThumbnailStrip::load(const QString &path)
@@ -690,68 +755,73 @@ void ThumbnailStrip::load(const QString &path)
     if (path.isEmpty())
         return;
 
+    m_path = path;
     m_cacheDir = cacheDirFor(path, QStringLiteral("thumbnails"));
-    if (readIndex())
+    if (readIndex(denseDir(m_cacheDir)))
     {
         m_ready = true;
         emit readyChanged();
         return;
     }
+    if (readIndex(m_cacheDir))
+    {
+        m_ready = true;
+        emit readyChanged();
+        startPass(true);
+        return;
+    }
+    startPass(false);
+}
 
+void ThumbnailStrip::startPass(bool dense)
+{
     const QString ffmpeg = findTool(QStringLiteral("ffmpeg"));
     if (ffmpeg.isEmpty())
         return;
 
-    /* Key frames only (no full decoding), at most one every minSpacing
-     * seconds, letterboxed into equal cells; showinfo logs each kept frame's
-     * time in the same order as the cells */
+    const QString dir = dense ? denseDir(m_cacheDir) : m_cacheDir;
+    QDir().mkpath(dir);
+
+    /* At most one frame per spacing, letterboxed into equal cells; showinfo
+     * logs each kept frame's time in the same order as the cells */
     const QString filters = QStringLiteral(
         "select='isnan(prev_selected_t)+gte(t-prev_selected_t,%1)',"
         "scale=%2:%3:force_original_aspect_ratio=decrease,"
         "pad=%2:%3:(ow-iw)/2:(oh-ih)/2,showinfo,tile=%4x%5")
-        .arg(minSpacing).arg(cellWidth).arg(cellHeight).arg(columns).arg(rows);
+        .arg(dense ? denseSpacing : keySpacing)
+        .arg(cellWidth).arg(cellHeight).arg(columns).arg(rows);
 
+    QStringList args = { QStringLiteral("-hide_banner"), QStringLiteral("-nostdin"),
+                         QStringLiteral("-y"), QStringLiteral("-loglevel"), QStringLiteral("info") };
+    if (dense)
+        /* Every frame is decoded: let the GPU do it where it can */
+        args << QStringLiteral("-hwaccel") << QStringLiteral("auto");
+    else
+        /* Key frames only: no real decoding, ready in a moment */
+        args << QStringLiteral("-skip_frame") << QStringLiteral("nokey");
+    args << QStringLiteral("-i") << m_path << QStringLiteral("-an") << QStringLiteral("-sn")
+         << QStringLiteral("-vf") << filters
+         << QStringLiteral("-fps_mode") << QStringLiteral("vfr")
+         << QStringLiteral("-q:v") << QStringLiteral("5")
+         << QDir(dir).filePath(QStringLiteral("sheet-%03d.jpg"));
+
+    m_densePass = dense;
     m_process = new QProcess(this);
     m_process->setProgram(ffmpeg);
-    m_process->setArguments({ QStringLiteral("-hide_banner"), QStringLiteral("-nostdin"),
-                              QStringLiteral("-y"), QStringLiteral("-loglevel"), QStringLiteral("info"),
-                              QStringLiteral("-skip_frame"), QStringLiteral("nokey"),
-                              QStringLiteral("-i"), path, QStringLiteral("-an"), QStringLiteral("-sn"),
-                              QStringLiteral("-vf"), filters,
-                              QStringLiteral("-fps_mode"), QStringLiteral("vfr"),
-                              QStringLiteral("-q:v"), QStringLiteral("5"),
-                              QDir(m_cacheDir).filePath(QStringLiteral("sheet-%03d.jpg")) });
+    m_process->setArguments(args);
+#ifdef _WIN32
+    /* The preview should never slow playback down */
+    m_process->setCreateProcessArgumentsModifier([](QProcess::CreateProcessArguments *a) {
+        a->flags |= BELOW_NORMAL_PRIORITY_CLASS;
+    });
+#endif
     connect(m_process, &QProcess::finished, this, &ThumbnailStrip::onFinished);
     m_process->start();
 }
 
-void ThumbnailStrip::onFinished(int exitCode, QProcess::ExitStatus status)
+bool ThumbnailStrip::readIndex(const QString &dir)
 {
-    const QString log = QString::fromUtf8(m_process->readAllStandardError());
-    m_process->deleteLater();
-    m_process = nullptr;
-    if (status != QProcess::NormalExit || exitCode != 0)
-        return;
-
-    static const QRegularExpression ptsTime(QStringLiteral("Parsed_showinfo.*pts_time:\\s*([-\\d.]+)"));
-    QFile index(QDir(m_cacheDir).filePath(QStringLiteral("index.txt")));
-    if (!index.open(QIODevice::WriteOnly | QIODevice::Text))
-        return;
-    QTextStream out(&index);
-    for (auto it = ptsTime.globalMatch(log); it.hasNext(); )
-        out << it.next().captured(1) << '\n';
-    index.close();
-
-    if (readIndex())
-    {
-        m_ready = true;
-        emit readyChanged();
-    }
-}
-
-bool ThumbnailStrip::readIndex()
-{
-    QFile index(QDir(m_cacheDir).filePath(QStringLiteral("index.txt")));
+    QFile index(QDir(dir).filePath(QStringLiteral("index.txt")));
     if (!index.open(QIODevice::ReadOnly | QIODevice::Text))
         return false;
     QVector<double> times;
@@ -762,10 +832,41 @@ bool ThumbnailStrip::readIndex()
         if (ok)
             times.push_back(time);
     }
-    if (times.isEmpty() || !QFileInfo::exists(QDir(m_cacheDir).filePath(QStringLiteral("sheet-001.jpg"))))
+    if (times.isEmpty() || !QFileInfo::exists(QDir(dir).filePath(QStringLiteral("sheet-001.jpg"))))
         return false;
     m_times = times;
+    m_sheetDir = dir;
     return true;
+}
+
+void ThumbnailStrip::onFinished(int exitCode, QProcess::ExitStatus status)
+{
+    const QString log = QString::fromUtf8(m_process->readAllStandardError());
+    m_process->deleteLater();
+    m_process = nullptr;
+    if (status != QProcess::NormalExit || exitCode != 0)
+        return;
+
+    const bool dense = m_densePass;
+    const QString dir = dense ? denseDir(m_cacheDir) : m_cacheDir;
+    static const QRegularExpression ptsTime(QStringLiteral("Parsed_showinfo.*pts_time:\\s*([-\\d.]+)"));
+    QFile index(QDir(dir).filePath(QStringLiteral("index.txt")));
+    if (!index.open(QIODevice::WriteOnly | QIODevice::Text))
+        return;
+    QTextStream out(&index);
+    for (auto it = ptsTime.globalMatch(log); it.hasNext(); )
+        out << it.next().captured(1) << '\n';
+    index.close();
+
+    if (readIndex(dir))
+    {
+        /* Also sent when the dense set replaces the quick one, so frames
+         * asked for again come from it */
+        m_ready = true;
+        emit readyChanged();
+    }
+    if (!dense)
+        startPass(true);
 }
 
 QVariantMap ThumbnailStrip::frameAt(double seconds) const
@@ -779,7 +880,7 @@ QVariantMap ThumbnailStrip::frameAt(double seconds) const
 
     const int perSheet = columns * rows;
     const int cell = int(i % perSheet);
-    const QString sheet = QDir(m_cacheDir).filePath(
+    const QString sheet = QDir(m_sheetDir).filePath(
         QStringLiteral("sheet-%1.jpg").arg(int(i / perSheet) + 1, 3, 10, QLatin1Char('0')));
     return {
         { QStringLiteral("source"), QUrl::fromLocalFile(sheet).toString() },

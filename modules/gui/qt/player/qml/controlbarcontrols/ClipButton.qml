@@ -24,14 +24,19 @@ import VLC.Util
 import VLC.Terrikon
 
 // Opens or closes clip mode
-Widgets.IconToolButton {
+Widgets.ImageToolButton {
     id: clipBtn
+
+    sourceSize: Qt.size(VLCStyle.icon_toolbar, VLCStyle.icon_toolbar)
 
     enabled: Player.isStarted && Player.seekable
     checked: ClipSelection.active
-    // TODO: a scissors glyph; the A-B loop one is the closest in the icon font
-    text: VLCIcons.atob
-    description: qsTr("Clip") + " (" + TerrikonActions.keyFor("clip-toggle") + ")"
+
+    // Scissors, white; underlined like other active toggles when clip mode is on
+    imageSource: SVGColorImage.colorize("qrc:///icons/clip.svg")
+                     .color1(clipBtn.colorContext.fg.primary).uri()
+
+    description: qsTr("Clip") + TerrikonActions.hint("clip-toggle")
 
     onClicked: {
         if (ClipSelection.active) {
@@ -40,6 +45,16 @@ Widgets.IconToolButton {
             const length = Player.length.toSeconds()
             ClipSelection.begin(Player.position * length, length)
         }
+    }
+
+    Rectangle {
+        visible: clipBtn.checked
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+        width: parent.width * 0.6
+        height: VLCStyle.dp(2, VLCStyle.scale)
+        radius: height / 2
+        color: clipBtn.colorContext.fg.primary
     }
 
     AccessibleCompat.id: "clipButton"

@@ -17,6 +17,7 @@
  *****************************************************************************/
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Templates as T
 
 import VLC.Player
 import VLC.Style
@@ -24,8 +25,9 @@ import VLC.Util
 import VLC.Widgets as Widgets
 import VLC.Terrikon
 
-// Clip mode strip of the control bar: the chosen range, how to export it
-// and the export itself. The range is edited on the seek bar.
+// Clip mode card, above the seek bar on the left. The range is edited on
+// the seek bar and plays in a loop; this card sets what the clip contains
+// and saves or copies it.
 FocusScope {
     id: root
 
@@ -33,20 +35,24 @@ FocusScope {
     // lower so container overhead never tips it over
     readonly property real discordBytes: 9.5 * 1024 * 1024
 
-    readonly property bool _running: exporter.running
-    readonly property int _enabledTracks: {
-        // Re-read when tracks are switched or their volume changes
-        void Player.audioTracks.count
-        void _tracksRevision
-        return Player.audioTracks.trackStates().filter(t => t.enabled).length
-    }
-    property int _tracksRevision: 0
+    // 0: original quality, no re-encoding; 1: re-encoded; 2: fits Discord
+    property int format: 0
+    readonly property string _preset: ["copy", "quality", "size"][format]
 
-    // Last export result, cleared when the range changes
+    // The clip's audio: starts as the player plays it, then edited here
+    // without touching playback. [{ index, title, enabled, volume }]
+    property var tracks: []
+    property bool mix: true
+    readonly property int _includedTracks: tracks.filter(t => t.enabled).length
+
+    readonly property bool _running: exporter.running
     property string _resultPath: ""
+    property bool _resultCopied: false
     property string _error: ""
 
-    implicitHeight: groups.implicitHeight + 2 * VLCStyle.margin_xsmall
+    implicitWidth: Math.min(VLCStyle.dp(560, VLCStyle.scale), parent ? parent.width : 0)
+    implicitHeight: column.implicitHeight + 2 * VLCStyle.margin_normal
+
     visible: ClipSelection.active
 
     readonly property ColorContext colorContext: ColorContext {
@@ -58,196 +64,357 @@ FocusScope {
         return Player.position * ClipSelection.mediaLength
     }
 
-    function exportClip() {
-        _resultPath = ""
-        _error = ""
+    function _setTrack(i, key, value) {
+        const copy = tracks.slice()
+        copy[i] = Object.assign({}, copy[i])
+        copy[i][key] = value
+        tracks = copy
+    }
 
-        const preset = ["copy", "quality", "size"][presetBox.currentIndex]
-        const params = {
+    function _params(extra) {
+        const p = {
             input: Player.url.toString(),
             start: ClipSelection.start,
             end: ClipSelection.end,
-            tracks: Player.audioTracks.trackStates(),
-            merge: mergeBox.checked && root._enabledTracks > 1,
-            preset: preset,
-            vertical: verticalBox.checked,
-            cropX: 0.5,
-            copyToClipboard: clipboardBox.checked
+            mediaLength: ClipSelection.mediaLength,
+            tracks: tracks.map(t => ({ index: t.index, enabled: t.enabled, volume: t.volume })),
+            merge: mix && _includedTracks > 1,
+            preset: _preset,
+            vertical: ClipSelection.vertical,
+            cropX: ClipSelection.cropX,
+            cropY: ClipSelection.cropY,
+            cropZoom: ClipSelection.cropZoom
         }
-        if (preset === "size")
-            params.targetBytes = root.discordBytes
-
-        if (!exporter.start(params))
-            _error = qsTr("Could not start the export.")
+        if (_preset === "size")
+            p.targetBytes = discordBytes
+        for (const key in extra)
+            p[key] = extra[key]
+        return p
     }
 
-    Connections {
-        target: TerrikonActions
-        function onClipExportRequested() {
-            if (!root._running)
-                root.exportClip()
-        }
+    function _formatSize(bytes) {
+        if (bytes <= 0)
+            return ""
+        const mb = bytes / (1024 * 1024)
+        return mb < 10 ? qsTr("%1 MB").arg(mb.toFixed(1)) : qsTr("%1 MB").arg(Math.round(mb))
+    }
+
+    function _start(params) {
+        _resultPath = ""
+        _error = ""
+        _resultCopied = !!params.copyToClipboard && !!params.temporary
+        if (!exporter.start(params))
+            _error = qsTr("Could not start making the clip.")
+    }
+
+    function save() {
+        _start(_params({}))
+    }
+
+    function saveAs() {
+        const path = exporter.askSavePath(exporter.defaultOutput(_params({})))
+        if (path !== "")
+            _start(_params({ output: path }))
+    }
+
+    function copy() {
+        _start(_params({ temporary: true, copyToClipboard: true }))
     }
 
     ClipExporter {
         id: exporter
 
         onFinished: (ok, output, error) => {
-            if (ok) {
-                root._resultPath = output
-                root._error = ""
-            } else {
-                root._resultPath = ""
-                root._error = error
-            }
+            root._resultPath = ok ? output : ""
+            root._error = ok ? "" : error
         }
     }
 
     Connections {
         target: ClipSelection
+
+        function onActiveChanged() {
+            if (!ClipSelection.active)
+                return
+            root.tracks = Player.audioTracks.trackStates()
+            root._resultPath = ""
+            root._error = ""
+            // Show the range from its start; it then plays in a loop
+            if (ClipSelection.mediaLength > 0)
+                Player.position = ClipSelection.start / ClipSelection.mediaLength
+        }
+
         function onRangeChanged() {
             root._resultPath = ""
             root._error = ""
         }
     }
 
+    // Loop the range: past its end, back to its start. A seek far beyond the
+    // end (on purpose, on the seek bar) is left alone.
     Connections {
-        target: Player.audioTracks
-        function onDataChanged() { root._tracksRevision++ }
+        target: Player
+        enabled: ClipSelection.active && !root._running
+
+        function onPositionChanged() {
+            const now = root._currentSeconds()
+            if (now >= ClipSelection.end && now < ClipSelection.end + 1.5)
+                Player.position = ClipSelection.start / ClipSelection.mediaLength
+        }
     }
 
-    // The strip lies above the control bar background, over the video
+    Connections {
+        target: TerrikonActions
+        function onClipExportRequested() {
+            if (!root._running)
+                root.save()
+        }
+    }
+
+    // A thin underline marks the chosen one, as in the subtitle style page
+    component Choice: Widgets.TextToolButton {
+        id: choice
+
+        property bool current: false
+
+        font.bold: current
+
+        Rectangle {
+            visible: choice.current
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            anchors.leftMargin: choice.leftPadding
+            anchors.rightMargin: choice.rightPadding
+            height: VLCStyle.dp(2, VLCStyle.scale)
+            radius: height / 2
+            color: "white"
+        }
+    }
+
     Rectangle {
         anchors.fill: parent
-        radius: VLCStyle.dp(8, VLCStyle.scale)
+        radius: VLCStyle.dp(10, VLCStyle.scale)
         color: theme.bg.primary
-        opacity: 0.9
+        opacity: 0.94
     }
 
-    // The range and the export settings: side by side when the window is
-    // wide enough, the export settings on a second line otherwise
-    Flow {
-        id: groups
+    ColumnLayout {
+        id: column
 
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.verticalCenter: parent.verticalCenter
-        anchors.leftMargin: VLCStyle.margin_xsmall
-        anchors.rightMargin: VLCStyle.margin_xsmall
+        anchors.fill: parent
+        anchors.margins: VLCStyle.margin_normal
 
-        spacing: VLCStyle.margin_large
-
-    RowLayout {
         spacing: VLCStyle.margin_small
 
-        Widgets.IconToolButton {
-            text: VLCIcons.close
-            description: qsTr("Close clip mode")
-            enabled: !root._running
-            onClicked: ClipSelection.close()
-        }
+        // Title, range, close
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: VLCStyle.margin_small
 
-        Widgets.TextToolButton {
-            id: startButton
-            text: qsTr("Start here")
-            Widgets.ToolTipExt {
-                visible: startButton.hovered
-                text: TerrikonActions.keyFor("clip-start")
+            Text {
+                text: qsTr("Clip")
+                color: theme.fg.primary
+                font.pixelSize: VLCStyle.fontSize_large
+                font.weight: Font.DemiBold
             }
-            enabled: !root._running
-            onClicked: ClipSelection.start = root._currentSeconds()
-        }
 
-        Text {
-            text: qsTr("%1 – %2 (%3 s)")
-                    .arg(ClipSelection.formatTime(ClipSelection.start))
-                    .arg(ClipSelection.formatTime(ClipSelection.end))
-                    .arg(ClipSelection.duration.toFixed(1))
-            color: theme.fg.primary
-            font.pixelSize: VLCStyle.fontSize_normal
-        }
-
-        Widgets.TextToolButton {
-            id: endButton
-            text: qsTr("End here")
-            Widgets.ToolTipExt {
-                visible: endButton.hovered
-                text: TerrikonActions.keyFor("clip-end")
+            Text {
+                Layout.fillWidth: true
+                text: qsTr("%1 – %2 · %3 s")
+                        .arg(ClipSelection.formatTime(ClipSelection.start))
+                        .arg(ClipSelection.formatTime(ClipSelection.end))
+                        .arg(ClipSelection.duration.toFixed(1))
+                color: theme.fg.secondary
+                font.pixelSize: VLCStyle.fontSize_normal
             }
-            enabled: !root._running
-            onClicked: ClipSelection.end = root._currentSeconds()
+
+            Widgets.IconToolButton {
+                text: VLCIcons.close
+                description: qsTr("Close clip mode") + TerrikonActions.hint("clip-toggle")
+                enabled: !root._running
+                onClicked: ClipSelection.close()
+            }
         }
 
-    }
+        // Edges at the current moment
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: VLCStyle.margin_small
 
-    RowLayout {
-        spacing: VLCStyle.margin_small
+            Widgets.ButtonExt {
+                text: qsTr("Start here") + TerrikonActions.hint("clip-start")
+                enabled: !root._running
+                onClicked: ClipSelection.start = root._currentSeconds()
+            }
 
-        Widgets.CheckBoxExt {
-            id: mergeBox
-            text: qsTr("Mix tracks")
-            checked: true
-            visible: root._enabledTracks > 1
-            enabled: !root._running
+            Widgets.ButtonExt {
+                text: qsTr("End here") + TerrikonActions.hint("clip-end")
+                enabled: !root._running
+                onClicked: ClipSelection.end = root._currentSeconds()
+            }
+
+            Item { Layout.fillWidth: true }
         }
 
-        Widgets.CheckBoxExt {
-            id: verticalBox
-            text: qsTr("Vertical")
-            enabled: !root._running
-        }
-
-        Widgets.ComboBoxExt {
-            id: presetBox
-
-            Layout.preferredWidth: VLCStyle.dp(170, VLCStyle.scale)
-
-            model: [ qsTr("Original, fast"), qsTr("Re-encode"), qsTr("Discord (10 MB)") ]
-            enabled: !root._running
-        }
-
-        Widgets.CheckBoxExt {
-            id: clipboardBox
-            text: qsTr("Copy to clipboard")
-            checked: true
-            enabled: !root._running
-        }
-
-        Widgets.ProgressBarExt {
-            visible: root._running
-            Layout.preferredWidth: VLCStyle.dp(120, VLCStyle.scale)
-            from: 0
-            to: 1
-            value: exporter.progress
-        }
-
+        // Audio: which tracks go in, how loud, mixed or not
         Text {
+            visible: root.tracks.length > 0
+            text: qsTr("Audio")
+            color: theme.fg.secondary
+            font.pixelSize: VLCStyle.fontSize_small
+        }
+
+        Repeater {
+            model: root.tracks
+
+            RowLayout {
+                required property var modelData
+                required property int index
+
+                Layout.fillWidth: true
+                spacing: VLCStyle.margin_small
+
+                Widgets.CheckBoxExt {
+                    Layout.preferredWidth: VLCStyle.dp(170, VLCStyle.scale)
+                    text: modelData.title
+                    checked: modelData.enabled
+                    enabled: !root._running
+                    onClicked: root._setTrack(index, "enabled", checked)
+                }
+
+                Widgets.SliderExt {
+                    Layout.fillWidth: true
+                    from: 0
+                    to: 2
+                    stepSize: 0.05
+                    value: modelData.volume
+                    enabled: modelData.enabled && !root._running
+                    onMoved: root._setTrack(index, "volume", value)
+                }
+
+                Text {
+                    Layout.preferredWidth: VLCStyle.dp(44, VLCStyle.scale)
+                    horizontalAlignment: Text.AlignRight
+                    text: Math.round(modelData.volume * 100) + "%"
+                    color: theme.fg.secondary
+                    font.pixelSize: VLCStyle.fontSize_small
+                }
+            }
+        }
+
+        Widgets.CheckBoxExt {
+            visible: root._includedTracks > 1
+            text: qsTr("Mix into one track")
+            checked: root.mix
+            enabled: !root._running
+            onClicked: root.mix = checked
+        }
+
+        // Format and shape
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: VLCStyle.margin_xxsmall
+
+            Choice {
+                text: qsTr("Original")
+                current: root.format === 0
+                enabled: !root._running
+                onClicked: root.format = 0
+            }
+            Choice {
+                text: qsTr("Re-encode")
+                current: root.format === 1
+                enabled: !root._running
+                onClicked: root.format = 1
+            }
+            Choice {
+                text: qsTr("Discord (10 MB)")
+                current: root.format === 2
+                enabled: !root._running
+                onClicked: root.format = 2
+            }
+
+            Item { Layout.fillWidth: true }
+
+            Widgets.CheckBoxExt {
+                text: qsTr("Vertical 9:16")
+                checked: ClipSelection.vertical
+                enabled: !root._running
+                onClicked: ClipSelection.vertical = checked
+            }
+        }
+
+        // Size, then what to do with it
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: VLCStyle.margin_small
+
+            Text {
+                Layout.fillWidth: true
+                text: {
+                    const size = root._formatSize(exporter.estimateBytes(root._params({})))
+                    return size === "" ? "" : (root._preset === "size" ? qsTr("Up to %1") : qsTr("About %1")).arg(size)
+                }
+                color: theme.fg.secondary
+                font.pixelSize: VLCStyle.fontSize_normal
+            }
+
+            Widgets.ButtonExt {
+                visible: !root._running
+                text: qsTr("Copy")
+                onClicked: root.copy()
+            }
+            Widgets.ButtonExt {
+                visible: !root._running
+                text: qsTr("Save as…")
+                onClicked: root.saveAs()
+            }
+            Widgets.ActionButtonPrimary {
+                visible: !root._running
+                text: qsTr("Save") + TerrikonActions.hint("clip-export")
+                onClicked: root.save()
+            }
+
+            Widgets.ProgressBarExt {
+                visible: root._running
+                Layout.preferredWidth: VLCStyle.dp(160, VLCStyle.scale)
+                from: 0
+                to: 1
+                value: exporter.progress
+            }
+            Widgets.ButtonExt {
+                visible: root._running
+                text: qsTr("Cancel")
+                onClicked: exporter.cancel()
+            }
+        }
+
+        // What happened
+        RowLayout {
+            Layout.fillWidth: true
             visible: !root._running && (root._resultPath !== "" || root._error !== "")
-            Layout.maximumWidth: VLCStyle.dp(260, VLCStyle.scale)
-            elide: Text.ElideMiddle
+            spacing: VLCStyle.margin_small
 
-            text: root._error !== ""
-                  ? root._error
-                  : (clipboardBox.checked ? qsTr("Saved and copied") : qsTr("Saved"))
-            color: root._error !== "" ? theme.fg.negative : theme.fg.secondary
-            font.pixelSize: VLCStyle.fontSize_normal
-        }
+            Text {
+                Layout.fillWidth: true
+                elide: Text.ElideMiddle
+                text: {
+                    if (root._error !== "")
+                        return root._error
+                    if (root._resultCopied)
+                        return qsTr("Copied. Paste it into a chat or a folder.")
+                    return qsTr("Saved to %1").arg(root._resultPath)
+                }
+                color: root._error !== "" ? theme.fg.negative : theme.fg.primary
+                font.pixelSize: VLCStyle.fontSize_normal
+            }
 
-        Widgets.TextToolButton {
-            visible: !root._running && root._resultPath !== ""
-            text: qsTr("Show")
-            onClicked: exporter.reveal(root._resultPath)
-        }
-
-        Widgets.ButtonExt {
-            text: root._running ? qsTr("Cancel") : qsTr("Export")
-            onClicked: {
-                if (root._running)
-                    exporter.cancel()
-                else
-                    root.exportClip()
+            Widgets.TextToolButton {
+                visible: root._resultPath !== "" && !root._resultCopied
+                text: qsTr("Show in folder")
+                onClicked: exporter.reveal(root._resultPath)
             }
         }
-    }
     }
 }

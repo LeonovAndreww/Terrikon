@@ -95,7 +95,11 @@ Item {
                     ClipSelection.end = seconds
             }
             // Show the frame at the edge once it is let go
-            onReleased: Player.position = Helpers.clamp(time / root._length, 0, 1)
+            // the start from its frame, the end from a little before it
+            onReleased: {
+                const at = index === 0 ? time : Math.max(ClipSelection.start, time - 3)
+                Player.position = Helpers.clamp(at / root._length, 0, 1)
+            }
 
             Rectangle {
                 anchors.centerIn: parent

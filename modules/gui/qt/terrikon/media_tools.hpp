@@ -61,11 +61,20 @@ public:
      *   merge: mix the enabled tracks into one
      *   preset: "copy" (no video re-encoding), "quality" or "size"
      *   targetBytes: file size limit for "size"
-     *   vertical, cropX (0..1): 9:16 crop, cropX is the horizontal position
+     *   vertical, cropX, cropY (0..1), cropZoom (1..4): 9:16 crop; the
+     *           position of the crop window and how much it is zoomed in
      *   output: destination path, next to the input if empty
+     *   temporary: write to a temporary folder (for copying only)
      *   copyToClipboard: put the resulting file on the clipboard */
     Q_INVOKABLE bool start(const QVariantMap &params);
     Q_INVOKABLE void cancel();
+    /* Rough size of the clip "params" would give, in bytes; 0 if unknown.
+     * mediaLength (seconds) is the length of the whole input. */
+    Q_INVOKABLE double estimateBytes(const QVariantMap &params) const;
+    /* Where "params" would be saved by default */
+    Q_INVOKABLE QString defaultOutput(const QVariantMap &params) const;
+    /* Asks where to save, starting from "suggested"; empty if cancelled */
+    Q_INVOKABLE QString askSavePath(const QString &suggested) const;
     /* Shows a file in the system file manager, selected where possible */
     Q_INVOKABLE void reveal(const QString &path) const;
 
@@ -152,8 +161,10 @@ private:
     int m_samplesInPeak = 0;
 };
 
-/* Key frame thumbnails of a file, tiled into a few JPEG sheets, so the
- * seek bar preview can show a frame instantly while hovering. */
+/* Thumbnails of a file, tiled into JPEG sheets, so the seek bar preview
+ * can show a frame instantly while hovering. A quick pass over key frames
+ * comes first; a second one, decoding everything, then gives a frame
+ * every second and replaces it. Both are cached. */
 class ThumbnailStrip : public QObject
 {
     Q_OBJECT
@@ -165,8 +176,9 @@ public:
     static constexpr int cellHeight = 90;
     static constexpr int columns = 8;
     static constexpr int rows = 8;
-    /* At most one thumbnail every 2 seconds */
-    static constexpr double minSpacing = 2.;
+    /* Spacing of the quick key frame pass and of the dense pass */
+    static constexpr double keySpacing = 2.;
+    static constexpr double denseSpacing = 1.;
 
     explicit ThumbnailStrip(QObject *parent = nullptr);
     ~ThumbnailStrip() override;
@@ -186,11 +198,15 @@ signals:
     void readyChanged();
 
 private:
-    bool readIndex();
+    bool readIndex(const QString &dir);
+    void startPass(bool dense);
     void onFinished(int exitCode, QProcess::ExitStatus status);
     void stop();
 
+    QString m_path;
     QString m_cacheDir;
+    QString m_sheetDir; /* where the sheets in use are */
+    bool m_densePass = false;
     QVector<double> m_times;
     bool m_ready = false;
     QProcess *m_process = nullptr;

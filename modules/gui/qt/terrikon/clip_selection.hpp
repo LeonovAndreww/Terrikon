@@ -36,6 +36,12 @@ class ClipSelection : public QObject
     Q_PROPERTY(double start READ start WRITE setStart NOTIFY rangeChanged FINAL)
     Q_PROPERTY(double end READ end WRITE setEnd NOTIFY rangeChanged FINAL)
     Q_PROPERTY(double duration READ duration NOTIFY rangeChanged FINAL)
+    /* Vertical 9:16 clip: where the crop window is (0..1 of the room
+     * left around it) and how much it is zoomed in (1..4) */
+    Q_PROPERTY(bool vertical MEMBER m_vertical NOTIFY verticalChanged FINAL)
+    Q_PROPERTY(double cropX READ cropX WRITE setCropX NOTIFY cropChanged FINAL)
+    Q_PROPERTY(double cropY READ cropY WRITE setCropY NOTIFY cropChanged FINAL)
+    Q_PROPERTY(double cropZoom READ cropZoom WRITE setCropZoom NOTIFY cropChanged FINAL)
 
 public:
     static constexpr double minLength = 0.5;
@@ -51,6 +57,12 @@ public:
     double start() const { return m_start; }
     double end() const { return m_end; }
     double duration() const { return m_end - m_start; }
+    double cropX() const { return m_cropX; }
+    double cropY() const { return m_cropY; }
+    double cropZoom() const { return m_cropZoom; }
+    void setCropX(double x);
+    void setCropY(double y);
+    void setCropZoom(double zoom);
 
     void setActive(bool active);
     void setMediaLength(double length);
@@ -69,6 +81,8 @@ public:
 signals:
     void activeChanged();
     void rangeChanged();
+    void verticalChanged();
+    void cropChanged();
 
 private:
     double clampTime(double seconds) const;
@@ -77,6 +91,10 @@ private:
     double m_length = 0.;
     double m_start = 0.;
     double m_end = 0.;
+    bool m_vertical = false;
+    double m_cropX = .5;
+    double m_cropY = .5;
+    double m_cropZoom = 1.;
 };
 
 }

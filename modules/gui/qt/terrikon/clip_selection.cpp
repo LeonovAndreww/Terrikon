@@ -114,6 +114,33 @@ QString ClipSelection::formatTime(double seconds) const
                                        .arg(secondsText);
 }
 
+void ClipSelection::setCropX(double x)
+{
+    x = std::clamp(x, 0., 1.);
+    if (x == m_cropX)
+        return;
+    m_cropX = x;
+    emit cropChanged();
+}
+
+void ClipSelection::setCropY(double y)
+{
+    y = std::clamp(y, 0., 1.);
+    if (y == m_cropY)
+        return;
+    m_cropY = y;
+    emit cropChanged();
+}
+
+void ClipSelection::setCropZoom(double zoom)
+{
+    zoom = std::clamp(zoom, 1., 4.);
+    if (zoom == m_cropZoom)
+        return;
+    m_cropZoom = zoom;
+    emit cropChanged();
+}
+
 void ClipSelection::shift(double seconds)
 {
     const double length = duration();

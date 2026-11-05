@@ -140,6 +140,11 @@ T.Pane {
                 }
                 color: theme.fg.primary
                 font: timeTextMetrics.font
+
+                // Out of the way of the waveforms shown over the bar
+                opacity: (trackPositionSlider._pointerOver
+                          && textPosition === ControlBar.TimeTextPosition.AboveSlider) ? 0 : 1
+                Behavior on opacity { NumberAnimation { duration: VLCStyle.duration_short } }
                 horizontalAlignment: Text.AlignHCenter
 
                 // TODO: Do not use `Binding` when minimum Qt is 6.12:
@@ -166,6 +171,7 @@ T.Pane {
                       : Player.length.formatHMS()
                 color: mediaTime.color
                 font: timeTextMetrics.font
+                opacity: mediaTime.opacity
                 horizontalAlignment: Text.AlignHCenter
 
                 visible: root.showRemainingTime
@@ -260,7 +266,8 @@ T.Pane {
         ClipPanel {
             id: clipPanel
 
-            Layout.fillWidth: true
+            Layout.preferredWidth: implicitWidth
+            Layout.alignment: Qt.AlignLeft
             Layout.leftMargin: VLCStyle.margin_normal
             Layout.rightMargin: VLCStyle.margin_normal
 
