@@ -24,11 +24,15 @@ import VLC.Util
 import VLC.Terrikon
 
 // Picture in picture
-Widgets.IconToolButton {
+Widgets.ImageToolButton {
+    id: pipBtn
+
+    sourceSize: Qt.size(VLCStyle.icon_toolbar, VLCStyle.icon_toolbar)
+
     enabled: Player.hasVideoOutput
-    checked: CompactPlayer.active
-    text: VLCIcons.defullscreen
-    description: qsTr("Picture in picture") + " (" + TerrikonActions.keyFor("pip-toggle") + ")"
+    imageSource: SVGColorImage.colorize("qrc:///icons/compact_player.svg")
+                     .color1(pipBtn.colorContext.fg.primary).uri()
+    description: qsTr("Picture in picture") + TerrikonActions.hint("pip-toggle")
 
     onClicked: CompactPlayer.toggle()
 

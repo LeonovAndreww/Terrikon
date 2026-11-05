@@ -85,6 +85,8 @@ void CompactPlayer::enter()
 
     m_ctx->setMinimalView(true);
     m_ctx->setInterfaceAlwaysOnTop(true);
+    /* Keys (arrows, space, frame steps) must reach it right away */
+    window->requestActivate();
 
     m_active = true;
     emit activeChanged();

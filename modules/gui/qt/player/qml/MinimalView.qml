@@ -23,6 +23,7 @@ import VLC.Player
 import VLC.Style
 import VLC.Util
 import VLC.Menus
+import VLC.Terrikon
 
 FocusScope {
     id: root
@@ -134,7 +135,7 @@ FocusScope {
             id: tapNDrag
 
             anchors.fill: parent
-            active: root._showCSD
+            active: root._showCSD && !CompactPlayer.active
             source: "qrc:///qt/qml/VLC/Widgets/CSDTitlebarTapNDrapHandler.qml"
         }
 
@@ -148,9 +149,9 @@ FocusScope {
             }
 
             focus: false
-            active:  root._showCSD
-            enabled: root._showCSD
-            visible: root._showCSD
+            active:  root._showCSD && !CompactPlayer.active
+            enabled: root._showCSD && !CompactPlayer.active
+            visible: root._showCSD && !CompactPlayer.active
             source:  VLCStyle.palette.hasCSDImage
                      ? "qrc:///qt/qml/VLC/Widgets/CSDThemeButtonSet.qml"
                      : "qrc:///qt/qml/VLC/Widgets/CSDWindowButtonSet.qml"
@@ -164,6 +165,13 @@ FocusScope {
             right: parent.right
             margins: VLCStyle.margin_large
         }
+    }
+
+    // Picture in picture: browser-like controls over the video
+    PipOverlay {
+        anchors.fill: parent
+        visible: CompactPlayer.active
+        z: 10
     }
 
     Keys.onPressed: (event) => {
