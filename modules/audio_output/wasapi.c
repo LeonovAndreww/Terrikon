@@ -843,7 +843,10 @@ static HRESULT Start(aout_stream_t *s, audio_sample_format_t *restrict pfmt,
         else
         {
             vlc_ToWave(pwfe, &fmt);
-            buffer_duration = MSFTIME_FROM_VLC_TICK(AOUT_MAX_PREPARE_TIME);
+            /* Keep the device buffer short, as for Ambisonics: the software
+             * volume of each track is applied before this buffer, so a 2 s
+             * buffer made volume changes and newly enabled tracks lag. */
+            buffer_duration = MSFTIME_FROM_MS(200);
         }
 
         /* Cache the var in the parent object (audio_output_t). */
