@@ -18,6 +18,7 @@
 import QtQuick
 
 import VLC.Style
+import VLC.Widgets as Widgets
 import VLC.Terrikon
 
 // Frame under the pointer while hovering the seek bar, cut out of the
@@ -59,42 +60,25 @@ Item {
         NumberAnimation { duration: VLCStyle.duration_veryShort }
     }
 
-    Rectangle {
-        id: frameBox
-
+    // The cell of the sheet, cut out on the GPU, rounded and outlined in
+    // one pass so the picture follows the rounded edge
+    Widgets.EnhancedImageExt {
         anchors.fill: parent
 
+        source: root._hasFrame ? root._frame.source : ""
+        textureSubRect: root._hasFrame ? Qt.rect(root._frame.x, root._frame.y,
+                                                 root._frame.width, root._frame.height)
+                                       : undefined
+
         radius: VLCStyle.dp(6, VLCStyle.scale)
-        color: "black"
+        backgroundColor: "black"
         // Thin light edge so a dark frame still reads against dark video
-        border.color: Qt.rgba(1, 1, 1, 0.85)
-        border.width: VLCStyle.dp(2, VLCStyle.scale)
+        borderColor: Qt.rgba(1, 1, 1, 0.85)
+        borderWidth: VLCStyle.dp(2, VLCStyle.scale)
 
-        Item {
-            id: viewport
-
-            anchors.fill: parent
-            anchors.margins: frameBox.border.width
-
-            clip: true
-
-            readonly property real _scale: root._hasFrame ? width / root._frame.width : 1
-
-            // The whole sheet, shifted so the wanted cell fills the viewport
-            Image {
-                source: root._hasFrame ? root._frame.source : ""
-
-                x: root._hasFrame ? -root._frame.x * viewport._scale : 0
-                y: root._hasFrame ? -root._frame.y * viewport._scale : 0
-                width: implicitWidth * viewport._scale
-                height: implicitHeight * viewport._scale
-
-                // Sheets are small JPEGs reused for every hover position
-                asynchronous: false
-                cache: true
-                smooth: true
-                mipmap: false
-            }
-        }
+        // Sheets are small JPEGs reused for every hover position
+        asynchronous: false
+        cache: true
+        smooth: true
     }
 }

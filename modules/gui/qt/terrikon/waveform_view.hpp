@@ -28,10 +28,9 @@
 
 namespace terrikon {
 
-/* The waveform of each shown audio track of a WaveformLoader: a filled
- * envelope around a centre line, in the track's colour, translucent so
- * overlapping tracks stay readable. Painted with QPainter: the Qt build
- * of VLC has no QML Canvas. */
+/* The waveform of each shown audio track of a WaveformLoader, in one of
+ * a few looks (see Style). Painted with QPainter: the Qt build of VLC has
+ * no QML Canvas. */
 class WaveformView : public QQuickPaintedItem
 {
     Q_OBJECT
@@ -42,19 +41,34 @@ class WaveformView : public QQuickPaintedItem
     Q_PROPERTY(qreal barStep READ barStep WRITE setBarStep NOTIFY barStepChanged FINAL)
     /* Indexes of the tracks to draw; all of them when empty */
     Q_PROPERTY(QVariantList tracks READ tracks WRITE setTracks NOTIFY tracksChanged FINAL)
+    Q_PROPERTY(Style style READ style WRITE setStyle NOTIFY styleChanged FINAL)
 
 public:
+    enum Style
+    {
+        /* A smooth line rising from the bottom edge; the first track is
+         * filled, the others only drawn, so overlaps never add up */
+        Curve,
+        /* Thin rounded columns from the bottom edge, all tracks merged */
+        Bars,
+        /* A filled envelope mirrored around the middle, one per track */
+        Mirror,
+    };
+    Q_ENUM(Style)
+
     explicit WaveformView(QQuickItem *parent = nullptr);
 
     WaveformLoader *loader() const { return m_loader; }
     QVariantList colors() const { return m_colors; }
     qreal barStep() const { return m_barStep; }
     QVariantList tracks() const { return m_tracks; }
+    Style style() const { return m_style; }
 
     void setLoader(WaveformLoader *loader);
     void setColors(const QVariantList &colors);
     void setBarStep(qreal step);
     void setTracks(const QVariantList &tracks);
+    void setStyle(Style style);
 
     void paint(QPainter *painter) override;
 
@@ -63,12 +77,14 @@ signals:
     void colorsChanged();
     void barStepChanged();
     void tracksChanged();
+    void styleChanged();
 
 private:
     QPointer<WaveformLoader> m_loader;
     QVariantList m_colors;
     qreal m_barStep = 2.;
     QVariantList m_tracks;
+    Style m_style = Curve;
 };
 
 }

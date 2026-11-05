@@ -84,6 +84,15 @@ void WaveformView::setTracks(const QVariantList &tracks)
     update();
 }
 
+void WaveformView::setStyle(Style style)
+{
+    if (m_style == style)
+        return;
+    m_style = style;
+    emit styleChanged();
+    update();
+}
+
 void WaveformView::paint(QPainter *painter)
 {
     const qreal w = width();
@@ -99,50 +108,129 @@ void WaveformView::paint(QPainter *painter)
         for (const QVariant &track : m_tracks)
             shown << track.toInt();
 
-    const int count = std::max(2, int(w / m_barStep));
-    const qreal middle = h / 2.;
+    const qreal step = m_style == Bars ? std::max<qreal>(m_barStep, 4.) : m_barStep;
+    const int count = std::max(2, int(w / step));
     painter->setRenderHint(QPainter::Antialiasing, true);
-    painter->setPen(Qt::NoPen);
 
+    /* Peaks of each track, 0..1. Each track is scaled to its own loudest
+     * moment: a microphone is far quieter than the game and would
+     * otherwise be a flat line */
+    QList<QList<qreal>> levels;
+    QList<int> drawn;
     for (int t : shown)
     {
         if (t < 0 || t >= m_loader->trackCount() || !m_loader->isLoaded(t))
             continue;
-
         const QVariantList peaks = m_loader->peaks(t, count);
         if (peaks.size() < 2)
             continue;
-        /* Each track is scaled to its own loudest moment: a microphone is
-         * far quieter than the game and would otherwise be a flat line */
         double loudest = 0.;
         for (const QVariant &peak : peaks)
             loudest = std::max(loudest, peak.toDouble());
         const double gain = loudest > 0.001 ? 1. / loudest : 1.;
+        QList<qreal> level;
+        level.reserve(peaks.size());
+        for (const QVariant &peak : peaks)
+            level << std::clamp(peak.toDouble() * gain, 0., 1.);
+        levels << level;
+        drawn << t;
+    }
+    if (levels.isEmpty())
+        return;
 
-        /* Upper edge left to right, then the mirrored lower edge back */
-        QPainterPath envelope;
-        const qreal step = w / (peaks.size() - 1);
-        for (qsizetype i = 0; i < peaks.size(); ++i)
-        {
-            const qreal half = std::max<qreal>(.5, peaks.at(i).toDouble() * gain * middle);
-            const QPointF point(i * step, middle - half);
-            if (i == 0)
-                envelope.moveTo(point);
-            else
-                envelope.lineTo(point);
-        }
-        for (qsizetype i = peaks.size() - 1; i >= 0; --i)
-        {
-            const qreal half = std::max<qreal>(.5, peaks.at(i).toDouble() * gain * middle);
-            envelope.lineTo(i * step, middle + half);
-        }
-        envelope.closeSubpath();
+    auto colorOf = [this](int track) {
+        return m_colors.isEmpty() ? QColor(Qt::white)
+                                  : m_colors.at(track % m_colors.size()).value<QColor>();
+    };
 
-        QColor color = m_colors.isEmpty()
-                     ? QColor(Qt::white)
-                     : m_colors.at(t % m_colors.size()).value<QColor>();
-        color.setAlphaF(.7);
-        painter->fillPath(envelope, color);
+    switch (m_style)
+    {
+    case Bars:
+    {
+        /* One column per step, as loud as the loudest track there */
+        const qsizetype n = levels.first().size();
+        const qreal span = w / n;
+        const qreal barWidth = std::max<qreal>(1.5, span / 2.);
+        QColor color = colorOf(drawn.first());
+        color.setAlphaF(.85);
+        painter->setPen(Qt::NoPen);
+        painter->setBrush(color);
+        for (qsizetype i = 0; i < n; ++i)
+        {
+            qreal level = 0.;
+            for (const QList<qreal> &l : levels)
+                if (i < l.size())
+                    level = std::max(level, l.at(i));
+            const qreal barHeight = std::max<qreal>(barWidth, level * h);
+            painter->drawRoundedRect(QRectF(i * span + (span - barWidth) / 2., h - barHeight,
+                                            barWidth, barHeight),
+                                     barWidth / 2., barWidth / 2.);
+        }
+        break;
+    }
+    case Curve:
+    {
+        for (qsizetype k = levels.size() - 1; k >= 0; --k)
+        {
+            const QList<qreal> &level = levels.at(k);
+            const qreal x = w / (level.size() - 1);
+            auto point = [&](qsizetype i) {
+                return QPointF(i * x, h - std::max<qreal>(.5, level.at(i) * (h - 1.)));
+            };
+            /* Through the midpoints, with the peaks as control points:
+             * a smooth line that never overshoots */
+            QPainterPath line;
+            line.moveTo(point(0));
+            for (qsizetype i = 1; i < level.size() - 1; ++i)
+            {
+                const QPointF a = point(i), b = point(i + 1);
+                line.quadTo(a, (a + b) / 2.);
+            }
+            line.lineTo(point(level.size() - 1));
+
+            QColor color = colorOf(drawn.at(k));
+            if (k == 0)
+            {
+                QPainterPath area = line;
+                area.lineTo(w, h);
+                area.lineTo(0., h);
+                area.closeSubpath();
+                QColor fill = color;
+                fill.setAlphaF(.35);
+                painter->fillPath(area, fill);
+            }
+            color.setAlphaF(k == 0 ? .9 : .7);
+            painter->strokePath(line, QPen(color, 1.25));
+        }
+        break;
+    }
+    case Mirror:
+    {
+        const qreal middle = h / 2.;
+        painter->setPen(Qt::NoPen);
+        for (qsizetype k = 0; k < levels.size(); ++k)
+        {
+            const QList<qreal> &level = levels.at(k);
+            const qreal x = w / (level.size() - 1);
+            /* Upper edge left to right, then the mirrored lower edge back */
+            QPainterPath envelope;
+            for (qsizetype i = 0; i < level.size(); ++i)
+            {
+                const QPointF point(i * x, middle - std::max<qreal>(.5, level.at(i) * middle));
+                if (i == 0)
+                    envelope.moveTo(point);
+                else
+                    envelope.lineTo(point);
+            }
+            for (qsizetype i = level.size() - 1; i >= 0; --i)
+                envelope.lineTo(i * x, middle + std::max<qreal>(.5, level.at(i) * middle));
+            envelope.closeSubpath();
+            QColor color = colorOf(drawn.at(k));
+            color.setAlphaF(.7);
+            painter->fillPath(envelope, color);
+        }
+        break;
+    }
     }
 }
 

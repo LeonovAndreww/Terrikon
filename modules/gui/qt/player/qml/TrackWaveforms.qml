@@ -22,7 +22,7 @@ import VLC.Style
 import VLC.Terrikon
 
 // The waveform of each audio track that is playing, along the seek bar,
-// each in its own colour. The part already played is drawn bright, the
+// each in its own shade. The part already played is drawn bright, the
 // rest dimmed: the same picture twice, the bright one cut at the playback
 // position, so playing never repaints it.
 Item {
@@ -36,7 +36,10 @@ Item {
     property bool shown: false
 
     // Track colours by track index, repeated when there are more tracks
-    property var colors: [ "#4FC3F7", "#F48FB1", "#AED581", "#B39DDB" ]
+    property var colors: [ "#ffffff", "#d0d0d0" ]
+
+    // How the waves look, see WaveformView.Style
+    property int style: WaveformView.Curve
 
     // Indexes of the tracks being played, re-read when tracks are switched
     property int _tracksRevision: 0
@@ -64,6 +67,7 @@ Item {
         loader: root.loader
         colors: root.colors
         tracks: root._playing
+        style: root.style
     }
 
     Item {
@@ -80,6 +84,7 @@ Item {
             loader: root.loader
             colors: root.colors
             tracks: root._playing
+            style: root.style
         }
     }
 }
