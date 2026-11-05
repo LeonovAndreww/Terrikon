@@ -35,7 +35,8 @@ T.Popup {
     padding: VLCStyle.margin_normal
     margins: VLCStyle.margin_small
 
-    closePolicy: T.Popup.CloseOnEscape | T.Popup.CloseOnPressOutside
+    // Clicking the speaker itself (mute) keeps it open
+    closePolicy: T.Popup.CloseOnEscape | T.Popup.CloseOnPressOutsideParent
 
     implicitWidth: VLCStyle.dp(300, VLCStyle.scale)
     implicitHeight: implicitContentHeight + topPadding + bottomPadding
