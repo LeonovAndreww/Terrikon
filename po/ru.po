@@ -38049,3 +38049,9 @@ msgstr "Включить режим «картинка в картинке»"
 
 msgid "Accent color"
 msgstr "Цвет акцента"
+
+msgid "Best quality"
+msgstr "Лучшее качество"
+
+msgid "Fit in"
+msgstr "Вписать в"

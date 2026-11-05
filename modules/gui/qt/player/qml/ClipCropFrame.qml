@@ -80,19 +80,6 @@ Item {
         border.color: "white"
         border.width: VLCStyle.dp(2, VLCStyle.scale)
 
-        Text {
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.bottom: parent.bottom
-            anchors.bottomMargin: VLCStyle.margin_small
-            width: parent.width - 2 * VLCStyle.margin_xsmall
-            horizontalAlignment: Text.AlignHCenter
-            wrapMode: Text.WordWrap
-            text: qsTr("Drag to move · Scroll to zoom")
-            color: "white"
-            style: Text.Outline
-            styleColor: Qt.rgba(0, 0, 0, 0.7)
-            font.pixelSize: VLCStyle.fontSize_small
-        }
 
         MouseArea {
             anchors.fill: parent

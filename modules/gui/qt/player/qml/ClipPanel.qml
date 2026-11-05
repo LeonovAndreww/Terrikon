@@ -31,13 +31,13 @@ import VLC.Terrikon
 FocusScope {
     id: root
 
-    // Discord's upload limit for accounts without Nitro is 10 MB; aim a bit
-    // lower so container overhead never tips it over
-    readonly property real discordBytes: 9.5 * 1024 * 1024
-
-    // 0: original quality, no re-encoding; 1: re-encoded; 2: fits Discord
-    property int format: 0
-    readonly property string _preset: ["copy", "quality", "size"][format]
+    // Original: the video is copied as it is. Re-encoded: with a codec, at
+    // its best quality or to fit a file size.
+    property bool reencode: false
+    property string codec: "h264"
+    property bool fitSize: false
+    property int targetMB: 25
+    readonly property string _preset: !reencode ? "copy" : (fitSize ? "size" : "quality")
 
     // The clip's audio: starts as the player plays it, then edited here
     // without touching playback. [{ index, title, enabled, volume }]
@@ -80,13 +80,14 @@ FocusScope {
             tracks: tracks.map(t => ({ index: t.index, enabled: t.enabled, volume: t.volume })),
             merge: mix && _includedTracks > 1,
             preset: _preset,
+            codec: codec,
             vertical: ClipSelection.vertical,
             cropX: ClipSelection.cropX,
             cropY: ClipSelection.cropY,
             cropZoom: ClipSelection.cropZoom
         }
         if (_preset === "size")
-            p.targetBytes = discordBytes
+            p.targetBytes = targetMB * 1024 * 1024
         for (const key in extra)
             p[key] = extra[key]
         return p
@@ -237,26 +238,6 @@ FocusScope {
             }
         }
 
-        // Edges at the current moment
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: VLCStyle.margin_small
-
-            Widgets.ButtonExt {
-                text: qsTr("Start here") + TerrikonActions.hint("clip-start")
-                enabled: !root._running
-                onClicked: ClipSelection.start = root._currentSeconds()
-            }
-
-            Widgets.ButtonExt {
-                text: qsTr("End here") + TerrikonActions.hint("clip-end")
-                enabled: !root._running
-                onClicked: ClipSelection.end = root._currentSeconds()
-            }
-
-            Item { Layout.fillWidth: true }
-        }
-
         // Audio: which tracks go in, how loud, mixed or not
         Text {
             visible: root.tracks.length > 0
@@ -318,21 +299,15 @@ FocusScope {
 
             Choice {
                 text: qsTr("Original")
-                current: root.format === 0
+                current: !root.reencode
                 enabled: !root._running
-                onClicked: root.format = 0
+                onClicked: root.reencode = false
             }
             Choice {
                 text: qsTr("Re-encode")
-                current: root.format === 1
+                current: root.reencode
                 enabled: !root._running
-                onClicked: root.format = 1
-            }
-            Choice {
-                text: qsTr("Discord (10 MB)")
-                current: root.format === 2
-                enabled: !root._running
-                onClicked: root.format = 2
+                onClicked: root.reencode = true
             }
 
             Item { Layout.fillWidth: true }
@@ -345,20 +320,61 @@ FocusScope {
             }
         }
 
-        // Size, then what to do with it
+        // Re-encoding: codec, then quality or a file size to fit
+        RowLayout {
+            Layout.fillWidth: true
+            visible: root.reencode
+            spacing: VLCStyle.margin_xxsmall
+
+            Repeater {
+                model: [ { key: "h264", name: "H.264" }, { key: "hevc", name: "H.265" }, { key: "av1", name: "AV1" } ]
+
+                Choice {
+                    required property var modelData
+                    text: modelData.name
+                    current: root.codec === modelData.key
+                    enabled: !root._running
+                    onClicked: root.codec = modelData.key
+                }
+            }
+
+            Item { Layout.fillWidth: true }
+
+            Choice {
+                text: qsTr("Best quality")
+                current: !root.fitSize
+                enabled: !root._running
+                onClicked: root.fitSize = false
+            }
+            Choice {
+                text: qsTr("Fit in")
+                current: root.fitSize
+                enabled: !root._running
+                onClicked: root.fitSize = true
+            }
+            Widgets.SpinBoxExt {
+                visible: root.fitSize
+                from: 1
+                to: 4000
+                value: root.targetMB
+                editable: true
+                enabled: !root._running
+                onValueModified: root.targetMB = value
+            }
+            Text {
+                visible: root.fitSize
+                text: qsTr("MB")
+                color: theme.fg.secondary
+                font.pixelSize: VLCStyle.fontSize_normal
+            }
+        }
+
+        // What to do with it, then its size under the buttons
         RowLayout {
             Layout.fillWidth: true
             spacing: VLCStyle.margin_small
 
-            Text {
-                Layout.fillWidth: true
-                text: {
-                    const size = root._formatSize(exporter.estimateBytes(root._params({})))
-                    return size === "" ? "" : (root._preset === "size" ? qsTr("Up to %1") : qsTr("About %1")).arg(size)
-                }
-                color: theme.fg.secondary
-                font.pixelSize: VLCStyle.fontSize_normal
-            }
+            Item { Layout.fillWidth: true }
 
             Widgets.ButtonExt {
                 visible: !root._running
@@ -388,6 +404,18 @@ FocusScope {
                 text: qsTr("Cancel")
                 onClicked: exporter.cancel()
             }
+        }
+
+        // The same for all three: copy, save as, save
+        Text {
+            Layout.alignment: Qt.AlignRight
+            visible: !root._running && text !== ""
+            text: {
+                const size = root._formatSize(exporter.estimateBytes(root._params({})))
+                return size === "" ? "" : (root._preset === "size" ? "≤ " : "≈ ") + size
+            }
+            color: theme.fg.secondary
+            font.pixelSize: VLCStyle.fontSize_normal
         }
 
         // What happened

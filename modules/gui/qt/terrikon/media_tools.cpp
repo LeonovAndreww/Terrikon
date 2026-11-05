@@ -146,6 +146,10 @@ ClipExporter::Plan ClipExporter::plan(const QVariantMap &params, const QString &
     const bool vertical = params.value(QStringLiteral("vertical")).toBool();
     const bool merge = params.value(QStringLiteral("merge")).toBool();
     const bool copyVideo = preset == QLatin1String("copy") && !vertical;
+    /* "h264", "hevc" or "av1" when re-encoding */
+    const QString codec = params.value(QStringLiteral("codec"), QStringLiteral("h264")).toString();
+    const bool hevc = codec == QLatin1String("hevc");
+    const bool av1 = codec == QLatin1String("av1");
 
     struct Track { int index; double volume; };
     QVector<Track> tracks;
@@ -254,16 +258,32 @@ ClipExporter::Plan ClipExporter::plan(const QVariantMap &params, const QString &
     if (copyVideo)
         video << QStringLiteral("-c:v") << QStringLiteral("copy")
               << QStringLiteral("-avoid_negative_ts") << QStringLiteral("make_zero");
-    else if (sizeLimited)
-        video << QStringLiteral("-c:v") << QStringLiteral("libx264")
-              << QStringLiteral("-preset") << QStringLiteral("medium")
-              << QStringLiteral("-b:v") << QStringLiteral("%1k").arg(videoKbps)
-              << QStringLiteral("-pix_fmt") << QStringLiteral("yuv420p");
     else
-        video << QStringLiteral("-c:v") << QStringLiteral("libx264")
-              << QStringLiteral("-preset") << QStringLiteral("veryfast")
-              << QStringLiteral("-crf") << QStringLiteral("20")
-              << QStringLiteral("-pix_fmt") << QStringLiteral("yuv420p");
+    {
+        /* Similar visual quality at each codec's own scale */
+        if (av1)
+            video << QStringLiteral("-c:v") << QStringLiteral("libsvtav1")
+                  << QStringLiteral("-preset") << QStringLiteral("8");
+        else if (hevc)
+            video << QStringLiteral("-c:v") << QStringLiteral("libx265")
+                  << QStringLiteral("-preset") << (sizeLimited ? QStringLiteral("medium")
+                                                               : QStringLiteral("fast"))
+                  /* players on Apple systems want this tag in MP4 */
+                  << QStringLiteral("-tag:v") << QStringLiteral("hvc1");
+        else
+            video << QStringLiteral("-c:v") << QStringLiteral("libx264")
+                  << QStringLiteral("-preset") << (sizeLimited ? QStringLiteral("medium")
+                                                               : QStringLiteral("veryfast"));
+        if (sizeLimited)
+            video << QStringLiteral("-b:v") << QStringLiteral("%1k").arg(videoKbps)
+                  << QStringLiteral("-maxrate") << QStringLiteral("%1k").arg(videoKbps * 3 / 2)
+                  << QStringLiteral("-bufsize") << QStringLiteral("%1k").arg(videoKbps * 2);
+        else
+            video << QStringLiteral("-crf") << (av1 ? QStringLiteral("32")
+                                              : hevc ? QStringLiteral("24")
+                                                     : QStringLiteral("20"));
+        video << QStringLiteral("-pix_fmt") << QStringLiteral("yuv420p");
+    }
 
     QStringList audio;
     QStringList graph;
@@ -309,7 +329,9 @@ ClipExporter::Plan ClipExporter::plan(const QVariantMap &params, const QString &
     if (extension == QLatin1String("mp4"))
         tail << QStringLiteral("-movflags") << QStringLiteral("+faststart");
 
-    if (sizeLimited)
+    /* ffmpeg's -pass drives x264 only; the others get one pass at the
+     * target rate, kept in check by maxrate */
+    if (sizeLimited && !hevc && !av1)
     {
         /* Two passes: the first one only measures the video */
         QStringList first = head;
@@ -385,9 +407,13 @@ double ClipExporter::estimateBytes(const QVariantMap &params) const
     if (preset == QLatin1String("copy") && !params.value(QStringLiteral("vertical")).toBool())
         return sourceRate * length;
 
-    /* Re-encoding at CRF 20 lands around 8 Mbit/s for busy 1080p game
-     * footage, never above what the source had */
-    return std::min(sourceRate, 8e6 / 8.) * length;
+    /* Re-encoding at the quality setting lands around 8 Mbit/s for busy
+     * 1080p game footage with H.264, never above what the source had;
+     * H.265 and AV1 need about 60% and 50% of that */
+    const QString codec = params.value(QStringLiteral("codec"), QStringLiteral("h264")).toString();
+    const double codecFactor = codec == QLatin1String("av1") ? 0.5
+                             : codec == QLatin1String("hevc") ? 0.6 : 1.;
+    return std::min(sourceRate, 8e6 / 8. * codecFactor) * length;
 }
 
 QString ClipExporter::defaultOutput(const QVariantMap &params) const
