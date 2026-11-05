@@ -550,9 +550,9 @@ void MainCtx::onVOutChanged( bool video )
 #ifdef KeyPress
 #undef KeyPress
 #endif
-void MainCtx::sendHotkey(Qt::Key key , Qt::KeyboardModifiers modifiers)
+void MainCtx::sendHotkey(Qt::Key key , Qt::KeyboardModifiers modifiers, quint32 nativeScanCode)
 {
-    QKeyEvent event(QEvent::KeyPress, key, modifiers );
+    QKeyEvent event(QEvent::KeyPress, layoutIndependentKey(key, nativeScanCode), modifiers );
     int vlckey = qtEventToVLCKey(&event);
     var_SetInteger(vlc_object_instance(p_intf), "key-pressed", vlckey);
 }

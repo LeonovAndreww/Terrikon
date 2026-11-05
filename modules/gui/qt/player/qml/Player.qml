@@ -84,7 +84,7 @@ FocusScope {
 
         //unhandled keys are forwarded as hotkeys
         if (!event.accepted || controlBar.state !== "visible")
-            MainCtx.sendHotkey(event.key, event.modifiers);
+            MainCtx.sendHotkey(event.key, event.modifiers, event.nativeScanCode);
     }
 
     Keys.onReleased: (event) => {

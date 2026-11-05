@@ -169,6 +169,6 @@ FocusScope {
     Keys.onPressed: (event) => {
         if (event.accepted)
             return
-        MainCtx.sendHotkey(event.key, event.modifiers);
+        MainCtx.sendHotkey(event.key, event.modifiers, event.nativeScanCode);
     }
 }

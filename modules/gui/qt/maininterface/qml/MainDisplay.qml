@@ -101,7 +101,7 @@ FocusScope {
         }
         //unhandled keys are forwarded as hotkeys
         if (!event.accepted)
-            MainCtx.sendHotkey(event.key, event.modifiers);
+            MainCtx.sendHotkey(event.key, event.modifiers, event.nativeScanCode);
     }
 
     readonly property var pageModel: [

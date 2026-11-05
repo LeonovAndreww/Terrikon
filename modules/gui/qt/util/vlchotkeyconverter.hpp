@@ -16,6 +16,10 @@ class QInputEvent;
 
 int qtKeyModifiersToVLC( const QInputEvent& e );
 int qtEventToVLCKey( QKeyEvent *e );
+/* With a non-Latin layout (Russian...), letters arrive as their own
+ * characters and never match hotkeys written as Latin letters. Returns
+ * the key at the same place on a Latin layout, or "key" unchanged. */
+Qt::Key layoutIndependentKey( Qt::Key key, quint32 nativeScanCode );
 int qtWheelEventToVLCKey( const QWheelEvent& e );
 QString VLCKeyToString( unsigned val, bool );
 

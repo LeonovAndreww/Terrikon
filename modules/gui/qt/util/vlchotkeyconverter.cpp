@@ -11,6 +11,10 @@
 #include <QApplication>
 #include <vlc_actions.h>
 
+#ifdef _WIN32
+# include <windows.h>
+#endif
+
 /***************************************************************************
  * Hotkeys converters
  ***************************************************************************/
@@ -192,6 +196,45 @@ static int keycmp( const void *a, const void *b )
     const vlc_qt_key_t *m = (const vlc_qt_key_t *)b;
 
     return *q - m->qt;
+}
+
+Qt::Key layoutIndependentKey( Qt::Key key, quint32 nativeScanCode )
+{
+    /* Latin layouts, AZERTY included, keep their own letters; special
+     * keys (Escape, F1...) are above the Unicode range */
+    if( key < 0x80 || key >= Qt::Key_Escape )
+        return key;
+#ifdef _WIN32
+    /* Windows gives letter keys of Cyrillic and similar layouts the
+     * virtual key of the Latin letter at the same place. Ask the current
+     * layout which key types the character; the scan code is only a
+     * fallback, as synthetic presses may come without one. */
+    UINT vk = 0;
+    const SHORT typed = VkKeyScanExW( wchar_t( QChar( char16_t( key ) ).toLower().unicode() ),
+                                      GetKeyboardLayout( 0 ) );
+    if( typed != -1 )
+        vk = LOBYTE( typed );
+    else if( nativeScanCode != 0 )
+        vk = MapVirtualKeyW( nativeScanCode & 0xFF, MAPVK_VSC_TO_VK );
+    if( (vk >= 'A' && vk <= 'Z') || (vk >= '0' && vk <= '9') )
+        return Qt::Key( vk );
+    switch( vk )
+    {
+        case VK_OEM_4:      return Qt::Key_BracketLeft;
+        case VK_OEM_6:      return Qt::Key_BracketRight;
+        case VK_OEM_COMMA:  return Qt::Key_Comma;
+        case VK_OEM_PERIOD: return Qt::Key_Period;
+        case VK_OEM_1:      return Qt::Key_Semicolon;
+        case VK_OEM_7:      return Qt::Key_Apostrophe;
+        case VK_OEM_2:      return Qt::Key_Slash;
+        case VK_OEM_3:      return Qt::Key_QuoteLeft;
+        case VK_OEM_5:      return Qt::Key_Backslash;
+        default:            break;
+    }
+#else
+    Q_UNUSED( nativeScanCode );
+#endif
+    return key;
 }
 
 int qtEventToVLCKey( QKeyEvent *e )
