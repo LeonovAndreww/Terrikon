@@ -110,6 +110,7 @@ ClipExporter::ClipExporter(QObject *parent)
 
 ClipExporter::~ClipExporter()
 {
+    stopMeasuring();
     if (m_process)
     {
         m_process->disconnect(this);
@@ -414,6 +415,233 @@ double ClipExporter::estimateBytes(const QVariantMap &params) const
     const double codecFactor = codec == QLatin1String("av1") ? 0.5
                              : codec == QLatin1String("hevc") ? 0.6 : 1.;
     return std::min(sourceRate, 8e6 / 8. * codecFactor) * length;
+}
+
+void ClipExporter::stopMeasuring()
+{
+    if (!m_meter)
+        return;
+    m_meter->disconnect(this);
+    m_meter->kill();
+    m_meter->waitForFinished(1000);
+    m_meter->deleteLater();
+    m_meter = nullptr;
+}
+
+static void lowPriority(QProcess *process)
+{
+#ifdef _WIN32
+    /* Measuring should never slow playback down */
+    process->setCreateProcessArgumentsModifier([](QProcess::CreateProcessArguments *a) {
+        a->flags |= BELOW_NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW;
+    });
+#else
+    (void) process;
+#endif
+}
+
+void ClipExporter::measure(const QVariantMap &params)
+{
+    stopMeasuring();
+    m_measuredBytes = 0.;
+    m_measureParams = params;
+
+    QString input = params.value(QStringLiteral("input")).toString();
+    if (const QUrl url(input); url.isLocalFile())
+        input = url.toLocalFile();
+    const double start = params.value(QStringLiteral("start")).toDouble();
+    const double end = params.value(QStringLiteral("end")).toDouble();
+    const double length = end - start;
+    const QString preset = params.value(QStringLiteral("preset"), QStringLiteral("copy")).toString();
+    if (length <= 0. || !QFileInfo::exists(input))
+    {
+        emit measuredChanged();
+        return;
+    }
+
+    /* A size limit is met by the encoder: nothing to measure */
+    if (preset == QLatin1String("size"))
+    {
+        m_measuredBytes = estimateBytes(params);
+        emit measuredChanged();
+        return;
+    }
+
+    const bool vertical = params.value(QStringLiteral("vertical")).toBool();
+    if (preset == QLatin1String("copy") && !vertical)
+    {
+        /* Which audio tracks go in untouched, which get encoded */
+        m_copiedAudio.clear();
+        m_copiedAudioTracks = -1;
+        m_extraAudioBytes = 0.;
+        const QVariantList trackList = params.value(QStringLiteral("tracks")).toList();
+        if (!trackList.isEmpty())
+        {
+            bool changed = params.value(QStringLiteral("merge")).toBool();
+            QList<int> kept;
+            for (const QVariant &value : trackList)
+            {
+                const QVariantMap track = value.toMap();
+                if (!track.value(QStringLiteral("enabled"), true).toBool())
+                    continue;
+                if (std::abs(track.value(QStringLiteral("volume"), 1.).toDouble() - 1.) > 0.001)
+                    changed = true;
+                kept << track.value(QStringLiteral("index")).toInt();
+            }
+            if (changed)
+            {
+                /* Encoded at 160 kbit/s by start(), one track if merged */
+                const int outputs = params.value(QStringLiteral("merge")).toBool() && kept.size() > 1
+                                  ? 1 : kept.size();
+                m_extraAudioBytes = outputs * 160e3 / 8. * length;
+                m_copiedAudioTracks = 0;
+            }
+            else
+            {
+                m_copiedAudio = kept;
+                m_copiedAudioTracks = kept.size();
+            }
+        }
+
+        /* Reading from the keyframe before the start, as the copy does */
+        m_meter = new QProcess(this);
+        m_meter->setProgram(findTool(QStringLiteral("ffprobe")));
+        m_meter->setArguments({
+            QStringLiteral("-v"), QStringLiteral("error"),
+            QStringLiteral("-read_intervals"),
+            QStringLiteral("%1%%2").arg(seconds(start), seconds(end)),
+            QStringLiteral("-show_entries"), QStringLiteral("packet=codec_type,stream_index,pts_time,size"),
+            QStringLiteral("-of"), QStringLiteral("csv=p=0"),
+            input,
+        });
+        lowPriority(m_meter);
+        connect(m_meter, &QProcess::finished, this, &ClipExporter::onProbed);
+        m_meter->start();
+        emit measuredChanged();
+        return;
+    }
+
+    /* Re-encoding: the whole clip when short, else three pieces spread
+     * over it, so both calm and busy parts count */
+    m_samples.clear();
+    m_sampledSeconds = 0.;
+    m_sampledBytes = 0.;
+    if (length <= 8.)
+        m_samples << qMakePair(start, length);
+    else
+        for (double at : { 1. / 6., 3. / 6., 5. / 6. })
+            m_samples << qMakePair(start + length * at - 1., 2.);
+    m_meterTmp = std::make_unique<QTemporaryDir>();
+    measureNextSample();
+}
+
+void ClipExporter::measureNextSample()
+{
+    if (m_samples.isEmpty())
+    {
+        const double length = m_measureParams.value(QStringLiteral("end")).toDouble()
+                            - m_measureParams.value(QStringLiteral("start")).toDouble();
+        m_measuredBytes = m_sampledSeconds > 0. ? m_sampledBytes / m_sampledSeconds * length : 0.;
+        if (m_meter)
+            m_meter->deleteLater();
+        m_meter = nullptr;
+        emit measuredChanged();
+        return;
+    }
+
+    const auto [start, length] = m_samples.takeFirst();
+    QVariantMap params = m_measureParams;
+    params[QStringLiteral("start")] = start;
+    params[QStringLiteral("end")] = start + length;
+    params[QStringLiteral("output")] = QString();
+    params[QStringLiteral("temporary")] = false;
+    const Plan p = plan(params, QString());
+    if (!p.error.isEmpty() || p.passes.size() != 1 || !m_meterTmp || !m_meterTmp->isValid())
+    {
+        m_samples.clear();
+        m_sampledSeconds = 0.;
+        measureNextSample();
+        return;
+    }
+
+    /* Same arguments, written to a scratch file instead */
+    QStringList args = p.passes.first();
+    m_sampleOutput = m_meterTmp->filePath(QStringLiteral("sample.") + QFileInfo(p.output).suffix());
+    args.last() = m_sampleOutput;
+
+    if (m_meter)
+        m_meter->deleteLater();
+    m_meter = new QProcess(this);
+    m_meter->setProgram(findTool(QStringLiteral("ffmpeg")));
+    m_meter->setArguments(args);
+    lowPriority(m_meter);
+    connect(m_meter, &QProcess::finished, this, [this, length](int exitCode, QProcess::ExitStatus status) {
+        if (status == QProcess::NormalExit && exitCode == 0)
+        {
+            m_sampledBytes += QFileInfo(m_sampleOutput).size();
+            m_sampledSeconds += length;
+        }
+        QFile::remove(m_sampleOutput);
+        measureNextSample();
+    });
+    m_meter->start();
+    emit measuredChanged();
+}
+
+void ClipExporter::onProbed(int exitCode, QProcess::ExitStatus status)
+{
+    QProcess *probe = m_meter;
+    m_meter = nullptr;
+    probe->deleteLater();
+    if (status != QProcess::NormalExit || exitCode != 0)
+    {
+        m_measuredBytes = estimateBytes(m_measureParams);
+        emit measuredChanged();
+        return;
+    }
+
+    const double end = m_measureParams.value(QStringLiteral("end")).toDouble();
+    /* Audio streams by order of their index: track N is the Nth of them */
+    QList<int> audioStreams;
+    struct Packet { bool video; int stream; double pts; qint64 size; };
+    QList<Packet> packets;
+    const QList<QByteArray> lines = probe->readAllStandardOutput().split('\n');
+    for (const QByteArray &line : lines)
+    {
+        const QList<QByteArray> f = line.trimmed().split(',');
+        if (f.size() < 4)
+            continue;
+        const bool video = f[0] == "video";
+        if (!video && f[0] != "audio")
+            continue;
+        bool ok = false;
+        const double pts = f[2].toDouble(&ok);
+        if (!ok)
+            continue;
+        const int stream = f[1].toInt();
+        if (!video && !audioStreams.contains(stream))
+            audioStreams << stream;
+        packets.push_back({ video, stream, pts, f[3].toLongLong() });
+    }
+    std::sort(audioStreams.begin(), audioStreams.end());
+
+    double bytes = m_extraAudioBytes;
+    for (const Packet &packet : packets)
+    {
+        if (packet.pts > end)
+            continue;
+        if (!packet.video)
+        {
+            if (m_copiedAudioTracks == 0)
+                continue;
+            if (m_copiedAudioTracks > 0 && !m_copiedAudio.contains(audioStreams.indexOf(packet.stream)))
+                continue;
+        }
+        bytes += packet.size;
+    }
+    /* The container adds a little on top of the packets */
+    m_measuredBytes = bytes * 1.01;
+    emit measuredChanged();
 }
 
 QString ClipExporter::defaultOutput(const QVariantMap &params) const

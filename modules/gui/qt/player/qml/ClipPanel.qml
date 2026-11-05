@@ -122,6 +122,33 @@ FocusScope {
         _start(_params({ temporary: true, copyToClipboard: true }))
     }
 
+    // The size is measured again once the settings stop changing: the
+    // packets of the file are summed when copying, a few pieces are
+    // encoded when re-encoding
+    readonly property var _measureKey: JSON.stringify(_params({}))
+    on_MeasureKeyChanged: measureTimer.restart()
+    Component.onCompleted: measureTimer.restart()
+
+    Timer {
+        id: measureTimer
+        interval: 500
+        onTriggered: {
+            if (!root._running)
+                exporter.measure(root._params({}))
+        }
+    }
+
+    // Size of the clip copied as it is: fitting into more makes no sense,
+    // so the limit follows it down
+    readonly property int _originalMB: {
+        const bytes = exporter.estimateBytes(_params({ preset: "copy", vertical: false }))
+        return bytes > 0 ? Math.max(1, Math.ceil(bytes / (1024 * 1024))) : 4000
+    }
+    on_OriginalMBChanged: {
+        if (targetMB > _originalMB)
+            targetMB = _originalMB
+    }
+
     ClipExporter {
         id: exporter
 
@@ -238,14 +265,6 @@ FocusScope {
             }
         }
 
-        // Close-up of the range: edges are dragged here
-        ClipTimeline {
-            Layout.fillWidth: true
-            Layout.bottomMargin: VLCStyle.margin_xsmall
-            color: theme.fg.primary
-            secondaryColor: theme.fg.secondary
-        }
-
         // Audio: which tracks go in, how loud, mixed or not
         Text {
             visible: root.tracks.length > 0
@@ -360,17 +379,21 @@ FocusScope {
                 enabled: !root._running
                 onClicked: root.fitSize = true
             }
+            // Always shown, so "Fit in" reads as "fit in N MB"; changing
+            // the number picks this choice
             Widgets.SpinBoxExt {
-                visible: root.fitSize
                 from: 1
-                to: 4000
+                to: root._originalMB
                 value: root.targetMB
                 editable: true
                 enabled: !root._running
-                onValueModified: root.targetMB = value
+                opacity: root.fitSize ? 1 : 0.6
+                onValueModified: {
+                    root.targetMB = value
+                    root.fitSize = true
+                }
             }
             Text {
-                visible: root.fitSize
                 text: qsTr("MB")
                 color: theme.fg.secondary
                 font.pixelSize: VLCStyle.fontSize_normal
@@ -419,7 +442,10 @@ FocusScope {
             Layout.alignment: Qt.AlignRight
             visible: !root._running && text !== ""
             text: {
-                const size = root._formatSize(exporter.estimateBytes(root._params({})))
+                // The measured size once known, a quick guess meanwhile
+                const bytes = exporter.measuredBytes > 0 ? exporter.measuredBytes
+                                                         : exporter.estimateBytes(root._params({}))
+                const size = root._formatSize(bytes)
                 return size === "" ? "" : (root._preset === "size" ? "≤ " : "≈ ") + size
             }
             color: theme.fg.secondary

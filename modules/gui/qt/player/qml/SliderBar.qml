@@ -54,7 +54,9 @@ T.ProgressBar {
     // The waveforms sit right above the bar, the tool tip and the frame
     // preview above them
     readonly property real _overlayGap: VLCStyle.margin_xxsmall
-    readonly property real _tooltipLift: (trackWaveforms.shown && waveformLoader.trackCount > 0)
+    // Follows the waves while they fade out too, so the preview above
+    // does not drop when the pointer leaves
+    readonly property real _tooltipLift: (trackWaveforms.visible && waveformLoader.trackCount > 0)
                                          ? trackWaveforms.height + _overlayGap : 0
 
     Keys.onRightPressed: Player.jumpFwd()
@@ -144,7 +146,8 @@ T.ProgressBar {
 
         loader: waveformLoader
         position: control.visualPosition
-        shown: control._pointerOver
+        // Always there while making a clip: the sound helps to find the cut
+        shown: control._pointerOver || ClipSelection.active
 
         x: 0
         width: control.width

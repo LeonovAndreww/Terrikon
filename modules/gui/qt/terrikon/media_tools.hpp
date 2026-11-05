@@ -49,6 +49,10 @@ class ClipExporter : public QObject
     Q_OBJECT
     Q_PROPERTY(bool running READ running NOTIFY runningChanged FINAL)
     Q_PROPERTY(double progress READ progress NOTIFY progressChanged FINAL)
+    /* Size of the clip measure() was last asked about, in bytes; 0 while
+     * unknown */
+    Q_PROPERTY(double measuredBytes READ measuredBytes NOTIFY measuredChanged FINAL)
+    Q_PROPERTY(bool measuring READ measuring NOTIFY measuredChanged FINAL)
 
 public:
     explicit ClipExporter(QObject *parent = nullptr);
@@ -71,6 +75,12 @@ public:
     /* Rough size of the clip "params" would give, in bytes; 0 if unknown.
      * mediaLength (seconds) is the length of the whole input. */
     Q_INVOKABLE double estimateBytes(const QVariantMap &params) const;
+    /* Finds out the size of the clip "params" would give, in the
+     * background, into measuredBytes. Copying: the sizes of the packets
+     * that would be copied, read from the file. Re-encoding: a few short
+     * pieces of the clip are encoded with the same settings and the
+     * result is scaled to the whole length. */
+    Q_INVOKABLE void measure(const QVariantMap &params);
     /* Where "params" would be saved by default */
     Q_INVOKABLE QString defaultOutput(const QVariantMap &params) const;
     /* Asks where to save, starting from "suggested"; empty if cancelled */
@@ -80,6 +90,8 @@ public:
 
     bool running() const { return m_process != nullptr; }
     double progress() const { return m_progress; }
+    double measuredBytes() const { return m_measuredBytes; }
+    bool measuring() const { return m_meter != nullptr; }
 
     struct Plan
     {
@@ -92,6 +104,7 @@ public:
 signals:
     void runningChanged();
     void progressChanged();
+    void measuredChanged();
     void finished(bool ok, const QString &output, const QString &error);
 
 private:
@@ -100,6 +113,9 @@ private:
     void onFinished(int exitCode, QProcess::ExitStatus status);
     void finish(bool ok, const QString &error);
     void setProgress(double progress);
+    void stopMeasuring();
+    void measureNextSample();
+    void onProbed(int exitCode, QProcess::ExitStatus status);
 
     QProcess *m_process = nullptr;
     Plan m_plan;
@@ -109,6 +125,18 @@ private:
     bool m_copyToClipboard = false;
     QByteArray m_errors;
     std::unique_ptr<QTemporaryDir> m_tmp;
+
+    QProcess *m_meter = nullptr;
+    double m_measuredBytes = 0.;
+    QVariantMap m_measureParams;
+    QList<QPair<double, double>> m_samples; /* start, length still to encode */
+    double m_sampledSeconds = 0.;
+    double m_sampledBytes = 0.;
+    QString m_sampleOutput;
+    std::unique_ptr<QTemporaryDir> m_meterTmp;
+    int m_copiedAudioTracks = -1; /* -1: all, else how many are copied */
+    QList<int> m_copiedAudio;
+    double m_extraAudioBytes = 0.;
 };
 
 /* Peak levels of every audio track of a file, for drawing one waveform

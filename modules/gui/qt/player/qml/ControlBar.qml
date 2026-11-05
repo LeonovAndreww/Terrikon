@@ -270,6 +270,9 @@ T.Pane {
             Layout.alignment: Qt.AlignLeft
             Layout.leftMargin: VLCStyle.margin_normal
             Layout.rightMargin: VLCStyle.margin_normal
+            // Room for the sound waves above the seek bar, shown all the
+            // time while making a clip
+            Layout.bottomMargin: VLCStyle.dp(34, VLCStyle.scale)
 
             // Exporting must not be hidden away by the auto-hide timer
             property bool _holdsLock: false
