@@ -20,6 +20,9 @@
 #include "player/player_controller.hpp"
 
 #include <QRegularExpression>
+#include <QTimer>
+
+#include <algorithm>
 
 //***************************
 //  track list model
@@ -49,10 +52,34 @@ QVariant TrackListModel::data(const QModelIndex &index, int role) const
     if (role == Qt::DisplayRole)
         return m_data[row].m_title;
     else if (role == Qt::CheckStateRole)
-        return QVariant::fromValue<bool>(m_data[row].m_selected);
+        return QVariant::fromValue<bool>(m_data[row].m_selected && !m_data[row].m_muted);
     else if (role == VolumeRole)
         return QVariant::fromValue<float>(m_data[row].m_volume);
     return QVariant{};
+}
+
+void TrackListModel::addSilentTracks()
+{
+    if (!m_multiSelect)
+        return;
+    const bool playing = std::any_of(m_data.cbegin(), m_data.cend(), [](const Data &track) {
+        return track.m_selected && !track.m_muted;
+    });
+    if (!playing)
+        return;
+    vlc_player_locker lock{ m_player };
+    for (int i = 0; i < getCount(); i++)
+        selectMuted(i);
+}
+
+void TrackListModel::selectMuted(int row)
+{
+    Data &track = m_data[row];
+    if (track.m_selected || vlc_es_id_GetCat(track.m_id.get()) != AUDIO_ES)
+        return;
+    track.m_muted = true;
+    vlc_player_SetEsIdVolume(m_player, track.m_id.get(), 0.f);
+    vlc_player_SelectEsId(m_player, track.m_id.get(), VLC_PLAYER_SELECT_SIMULTANEOUS);
 }
 
 QVariantList TrackListModel::trackStates() const
@@ -64,7 +91,7 @@ QVariantList TrackListModel::trackStates() const
         states.append(QVariantMap{
             { QStringLiteral("index"), int(i) },
             { QStringLiteral("title"), m_data[i].m_title },
-            { QStringLiteral("enabled"), m_data[i].m_selected },
+            { QStringLiteral("enabled"), m_data[i].m_selected && !m_data[i].m_muted },
             { QStringLiteral("volume"), double(m_data[i].m_volume) },
         });
     }
@@ -81,6 +108,10 @@ bool TrackListModel::setData(const QModelIndex &index, const QVariant &value, in
         if (!value.canConvert<float>())
             return false;
         float volume = value.toFloat();
+        if (m_data[row].m_muted)
+            /* Kept for when the track is switched on again */
+            m_data[row].m_volume = std::clamp(volume, 0.f, 2.f);
+        else
         {
             vlc_player_locker lock{ m_player };
             if (vlc_player_SetEsIdVolume(m_player, m_data[row].m_id.get(), volume) != VLC_SUCCESS)
@@ -96,6 +127,20 @@ bool TrackListModel::setData(const QModelIndex &index, const QVariant &value, in
         return false;
     bool select = value.toBool();
     vlc_player_locker lock{ m_player };
+
+    Data &track = m_data[row];
+    const bool audio = vlc_es_id_GetCat(track.m_id.get()) == AUDIO_ES;
+    if (m_multiSelect && audio && track.m_selected)
+    {
+        /* Several at once: an audio track keeps playing, only its volume
+         * goes to zero and back */
+        if (track.m_muted == !select)
+            return true;
+        track.m_muted = !select;
+        vlc_player_SetEsIdVolume(m_player, track.m_id.get(), select ? track.m_volume : 0.f);
+        emit dataChanged(index, index, { Qt::CheckStateRole });
+        return true;
+    }
 
     if (select)
     {
@@ -120,6 +165,9 @@ void TrackListModel::updateTracks(vlc_player_list_action action, const vlc_playe
         m_data.append(Data{ track_info });
         endInsertRows();
         emit countChanged();
+        if (m_multiSelect)
+            /* Once the player has picked the track it plays */
+            QTimer::singleShot(500, this, &TrackListModel::addSilentTracks);
         break;
     }
     case VLC_PLAYER_LIST_REMOVED:
@@ -171,6 +219,13 @@ void TrackListModel::updateTrackSelection(vlc_es_id_t *trackid, bool selected)
         return;
     size_t pos = std::distance(m_data.begin(), it);
     it->m_selected = selected;
+    if (!selected && it->m_muted)
+    {
+        /* Dropped by the player: it starts at its own volume next time */
+        it->m_muted = false;
+        vlc_player_locker lock{ m_player };
+        vlc_player_SetEsIdVolume(m_player, trackid, it->m_volume);
+    }
     QModelIndex dataIndex = index(pos);
     emit dataChanged(dataIndex, dataIndex, {  Qt::CheckStateRole });
 }
@@ -197,8 +252,29 @@ void TrackListModel::setMultiSelect(bool multiSelect)
         return;
 
     m_multiSelect = multiSelect;
+    if ( m_multiSelect )
+    {
+        /* Every audio track plays from now on, the ones not wanted
+         * silent: switching them on is then instant */
+        vlc_player_locker lock{ m_player };
+        for ( int i = 0; i < getCount(); i++ )
+            selectMuted( i );
+    }
     if ( !m_multiSelect && getCount() > 1 )
     {
+        /* The silent ones go first, so that the one heard is kept */
+        {
+            vlc_player_locker lock{ m_player };
+            for ( Data &track : m_data )
+            {
+                if ( track.m_muted )
+                {
+                    track.m_muted = false;
+                    vlc_player_SetEsIdVolume( m_player, track.m_id.get(), track.m_volume );
+                    vlc_player_UnselectEsId( m_player, track.m_id.get() );
+                }
+            }
+        }
         int firstSelectedIndex = -1;
         for ( int i = 0; i < getCount(); i++ )
         {

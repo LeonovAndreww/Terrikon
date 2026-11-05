@@ -74,6 +74,11 @@ public:
     inline int getCount() const { return m_data.size(); }
 
     inline bool getMultiSelect() const { return m_multiSelect; }
+    /* Selects an audio track in the background, silent, so that it can be
+     * switched on instantly later. The player lock must be held. */
+    void selectMuted(int row);
+    /* The same for every audio track not playing, once one is */
+    void addSilentTracks();
 
     /* [{ index, title, enabled, volume }] of every track, in order */
     Q_INVOKABLE QVariantList trackStates() const;
@@ -100,6 +105,10 @@ private:
         //vlc_es_id_t *m_id = NULL;
         ::vlc::vlc_shared_data_ptr<vlc_es_id_t, &vlc_es_id_Hold, &vlc_es_id_Release> m_id;
         bool m_selected = false;
+        /* Several audio tracks at once: switched off by the user but still
+         * playing, silent. Switching it on again is then instant, instead
+         * of waiting for the track to be demuxed again. */
+        bool m_muted = false;
         float m_volume = 1.f;
     };
     QList<Data> m_data;
