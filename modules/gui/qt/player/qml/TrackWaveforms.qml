@@ -17,13 +17,14 @@
  *****************************************************************************/
 import QtQuick
 
+import VLC.Player
 import VLC.Style
 import VLC.Terrikon
 
-// One waveform per audio track along the seek bar, each in its own colour.
-// The part already played is drawn bright, the rest dimmed: the same
-// picture twice, the bright one cut at the playback position, so playing
-// never repaints it.
+// The waveform of each audio track that is playing, along the seek bar,
+// each in its own colour. The part already played is drawn bright, the
+// rest dimmed: the same picture twice, the bright one cut at the playback
+// position, so playing never repaints it.
 Item {
     id: root
 
@@ -34,29 +35,35 @@ Item {
 
     property bool shown: false
 
-    // Track colours, repeated when there are more tracks
+    // Track colours by track index, repeated when there are more tracks
     property var colors: [ "#4FC3F7", "#F48FB1", "#AED581", "#B39DDB" ]
 
+    // Indexes of the tracks being played, re-read when tracks are switched
+    property int _tracksRevision: 0
+    readonly property var _playing: {
+        void _tracksRevision
+        void Player.audioTracks.count
+        return Player.audioTracks.trackStates().filter(t => t.enabled).map(t => t.index)
+    }
+
+    Connections {
+        target: Player.audioTracks
+        function onDataChanged() { root._tracksRevision++ }
+    }
+
     visible: opacity > 0
-    opacity: (shown && loader && loader.trackCount > 0) ? 1 : 0
+    opacity: (shown && loader && loader.trackCount > 0 && _playing.length > 0) ? 1 : 0
 
     Behavior on opacity {
         NumberAnimation { duration: VLCStyle.duration_short }
     }
 
-    // Keeps the bars readable over bright video
-    Rectangle {
-        anchors.fill: parent
-        radius: VLCStyle.dp(4, VLCStyle.scale)
-        color: Qt.rgba(0, 0, 0, 0.35)
-    }
-
     WaveformView {
         anchors.fill: parent
-        opacity: 0.35
+        opacity: 0.4
         loader: root.loader
         colors: root.colors
-        barStep: VLCStyle.dp(3, VLCStyle.scale)
+        tracks: root._playing
     }
 
     Item {
@@ -72,7 +79,7 @@ Item {
             height: root.height
             loader: root.loader
             colors: root.colors
-            barStep: VLCStyle.dp(3, VLCStyle.scale)
+            tracks: root._playing
         }
     }
 }

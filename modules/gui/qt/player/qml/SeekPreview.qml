@@ -32,8 +32,22 @@ Item {
 
     property bool shown: false
 
-    readonly property var _frame: (strip && strip.ready && shown) ? strip.frameAt(seconds) : ({})
+    // The frame shown; kept while fading out, so no empty box flashes
+    property var _frame: ({})
     readonly property bool _hasFrame: _frame.source !== undefined
+    readonly property var _wanted: (strip && strip.ready && shown) ? strip.frameAt(seconds) : null
+    on_WantedChanged: {
+        if (_wanted && _wanted.source !== undefined)
+            _frame = _wanted
+    }
+
+    Connections {
+        target: root.strip
+        function onReadyChanged() {
+            if (!root.strip.ready)
+                root._frame = ({})
+        }
+    }
 
     implicitWidth: VLCStyle.dp(160, VLCStyle.scale)
     implicitHeight: VLCStyle.dp(90, VLCStyle.scale)

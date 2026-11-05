@@ -28,9 +28,9 @@
 
 namespace terrikon {
 
-/* One waveform per audio track of a WaveformLoader, each in its colour.
- * Two tracks (game and microphone) share a baseline, one above it and one
- * below; more tracks get a lane each. Painted with QPainter: the Qt build
+/* The waveform of each shown audio track of a WaveformLoader: a filled
+ * envelope around a centre line, in the track's colour, translucent so
+ * overlapping tracks stay readable. Painted with QPainter: the Qt build
  * of VLC has no QML Canvas. */
 class WaveformView : public QQuickPaintedItem
 {
@@ -38,8 +38,10 @@ class WaveformView : public QQuickPaintedItem
     Q_PROPERTY(terrikon::WaveformLoader *loader READ loader WRITE setLoader NOTIFY loaderChanged FINAL)
     /* Track colours, repeated when there are more tracks */
     Q_PROPERTY(QVariantList colors READ colors WRITE setColors NOTIFY colorsChanged FINAL)
-    /* Distance between bars, in pixels */
+    /* Horizontal resolution of the envelope, in pixels */
     Q_PROPERTY(qreal barStep READ barStep WRITE setBarStep NOTIFY barStepChanged FINAL)
+    /* Indexes of the tracks to draw; all of them when empty */
+    Q_PROPERTY(QVariantList tracks READ tracks WRITE setTracks NOTIFY tracksChanged FINAL)
 
 public:
     explicit WaveformView(QQuickItem *parent = nullptr);
@@ -47,10 +49,12 @@ public:
     WaveformLoader *loader() const { return m_loader; }
     QVariantList colors() const { return m_colors; }
     qreal barStep() const { return m_barStep; }
+    QVariantList tracks() const { return m_tracks; }
 
     void setLoader(WaveformLoader *loader);
     void setColors(const QVariantList &colors);
     void setBarStep(qreal step);
+    void setTracks(const QVariantList &tracks);
 
     void paint(QPainter *painter) override;
 
@@ -58,11 +62,13 @@ signals:
     void loaderChanged();
     void colorsChanged();
     void barStepChanged();
+    void tracksChanged();
 
 private:
     QPointer<WaveformLoader> m_loader;
     QVariantList m_colors;
-    qreal m_barStep = 3.;
+    qreal m_barStep = 2.;
+    QVariantList m_tracks;
 };
 
 }

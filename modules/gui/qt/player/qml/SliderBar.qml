@@ -84,7 +84,7 @@ T.ProgressBar {
         onTriggered: control._isSeekPointsShown = false
     }
 
-    Widgets.PointingToolTipAttached.visible: (hoverHandler.hovered || control.visualFocus || dragHandler.active)
+    Widgets.PointingToolTipAttached.visible: (hoverHandler.hovered || dragHandler.active)
 
     Widgets.PointingToolTipAttached.text: {
         if (!Widgets.PointingToolTipAttached.instance?.visible)
@@ -220,13 +220,30 @@ T.ProgressBar {
         seconds: control._hoverPosition * Player.length.toSeconds()
         shown: control._pointerOver && Player.hasVideoOutput
 
-        x: Helpers.clamp(control._hoverPosition * control.width - width / 2, 0, Math.max(0, control.width - width))
-        y: {
+        z: 1
+    }
+
+    // The preview follows the pointer while shown and stays put while it
+    // fades out, instead of dropping onto the time labels
+    Binding {
+        target: seekPreview
+        property: "x"
+        when: seekPreview.shown
+        restoreMode: Binding.RestoreNone
+        value: Helpers.clamp(control._hoverPosition * control.width - seekPreview.width / 2,
+                             0, Math.max(0, control.width - seekPreview.width))
+    }
+
+    Binding {
+        target: seekPreview
+        property: "y"
+        when: seekPreview.shown
+        restoreMode: Binding.RestoreNone
+        value: {
             const tip = Widgets.PointingToolTipAttached.instance
             const tipTop = (tip && tip.visible) ? tip.y : -control._tooltipLift
-            return tipTop - control._overlayGap - height
+            return tipTop - control._overlayGap - seekPreview.height
         }
-        z: 1
     }
 
     FSM {
@@ -343,25 +360,38 @@ T.ProgressBar {
     //we use our own HoverHandler
     hoverEnabled: false
 
-    HoverHandler {
-        id: hoverHandler
-
-        onHoveredChanged: () => {
-            if (hovered) {
-                if(Player.hasChapters)
-                    control._isSeekPointsShown = true
-            } else {
-                if(Player.hasChapters)
-                    seekpointTimer.restart()
-            }
-        }
-    }
-
     contentItem: Item {
         implicitHeight: control.implicitHeight
         implicitWidth: control.implicitWidth
+    }
 
-        //placing the TapHandler directly in the Control doesn't work with 6.2
+    // Where the pointer acts on the bar: much taller than the thin bar,
+    // mostly upwards since the buttons are right below it
+    Item {
+        id: hitArea
+
+        readonly property real above: VLCStyle.dp(12, VLCStyle.scale)
+        readonly property real below: VLCStyle.dp(4, VLCStyle.scale)
+
+        x: 0
+        y: -above
+        width: control.width
+        height: control.height + above + below
+
+        HoverHandler {
+            id: hoverHandler
+
+            onHoveredChanged: () => {
+                if (hovered) {
+                    if(Player.hasChapters)
+                        control._isSeekPointsShown = true
+                } else {
+                    if(Player.hasChapters)
+                        seekpointTimer.restart()
+                }
+            }
+        }
+
         TapHandler {
             acceptedButtons: Qt.LeftButton
 

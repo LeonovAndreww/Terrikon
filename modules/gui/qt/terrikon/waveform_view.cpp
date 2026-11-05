@@ -26,6 +26,7 @@
 
 #include <QColor>
 #include <QPainter>
+#include <QPainterPath>
 
 #include <algorithm>
 
@@ -74,6 +75,15 @@ void WaveformView::setBarStep(qreal step)
     update();
 }
 
+void WaveformView::setTracks(const QVariantList &tracks)
+{
+    if (m_tracks == tracks)
+        return;
+    m_tracks = tracks;
+    emit tracksChanged();
+    update();
+}
+
 void WaveformView::paint(QPainter *painter)
 {
     const qreal w = width();
@@ -81,39 +91,58 @@ void WaveformView::paint(QPainter *painter)
     if (!m_loader || w <= 0. || h <= 0.)
         return;
 
-    const int tracks = m_loader->trackCount();
-    const int count = std::max(1, int(w / m_barStep));
-    const qreal barWidth = std::max<qreal>(1., m_barStep * .6);
+    QList<int> shown;
+    if (m_tracks.isEmpty())
+        for (int t = 0; t < m_loader->trackCount(); ++t)
+            shown << t;
+    else
+        for (const QVariant &track : m_tracks)
+            shown << track.toInt();
 
-    for (int t = 0; t < tracks; ++t)
+    const int count = std::max(2, int(w / m_barStep));
+    const qreal middle = h / 2.;
+    painter->setRenderHint(QPainter::Antialiasing, true);
+    painter->setPen(Qt::NoPen);
+
+    for (int t : shown)
     {
-        if (!m_loader->isLoaded(t))
+        if (t < 0 || t >= m_loader->trackCount() || !m_loader->isLoaded(t))
             continue;
 
-        const QColor color = m_colors.isEmpty()
-                           ? QColor(Qt::white)
-                           : m_colors.at(t % m_colors.size()).value<QColor>();
         const QVariantList peaks = m_loader->peaks(t, count);
+        if (peaks.size() < 2)
+            continue;
         /* Each track is scaled to its own loudest moment: a microphone is
          * far quieter than the game and would otherwise be a flat line */
         double loudest = 0.;
         for (const QVariant &peak : peaks)
             loudest = std::max(loudest, peak.toDouble());
         const double gain = loudest > 0.001 ? 1. / loudest : 1.;
-        const qreal lane = tracks == 2 ? h / 2. : h / tracks;
 
+        /* Upper edge left to right, then the mirrored lower edge back */
+        QPainterPath envelope;
+        const qreal step = w / (peaks.size() - 1);
         for (qsizetype i = 0; i < peaks.size(); ++i)
         {
-            const qreal x = i * w / peaks.size();
-            const qreal barHeight = std::max<qreal>(1., peaks.at(i).toDouble() * gain * lane);
-            qreal top;
-            if (tracks == 2)
-                /* Track 0 grows up from the middle, track 1 down */
-                top = t == 0 ? h / 2. - barHeight : h / 2.;
+            const qreal half = std::max<qreal>(.5, peaks.at(i).toDouble() * gain * middle);
+            const QPointF point(i * step, middle - half);
+            if (i == 0)
+                envelope.moveTo(point);
             else
-                top = lane * (t + 1) - barHeight;
-            painter->fillRect(QRectF(x, top, barWidth, barHeight), color);
+                envelope.lineTo(point);
         }
+        for (qsizetype i = peaks.size() - 1; i >= 0; --i)
+        {
+            const qreal half = std::max<qreal>(.5, peaks.at(i).toDouble() * gain * middle);
+            envelope.lineTo(i * step, middle + half);
+        }
+        envelope.closeSubpath();
+
+        QColor color = m_colors.isEmpty()
+                     ? QColor(Qt::white)
+                     : m_colors.at(t % m_colors.size()).value<QColor>();
+        color.setAlphaF(.7);
+        painter->fillPath(envelope, color);
     }
 }
 
