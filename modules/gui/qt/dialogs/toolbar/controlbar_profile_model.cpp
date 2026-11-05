@@ -109,8 +109,8 @@ decltype (ControlbarProfileModel::m_defaults)
                                     ControlListModel::NAVIGATION_BUTTONS
                                 },
                                 {
-                                    ControlListModel::PREVIOUS_BUTTON,
                                     ControlListModel::PLAY_BUTTON,
+                                    ControlListModel::PREVIOUS_BUTTON,
                                     ControlListModel::NEXT_BUTTON
                                 },
                                 {

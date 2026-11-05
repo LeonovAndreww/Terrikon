@@ -123,11 +123,18 @@ FocusScope {
 
     // Private
 
-    function _onNavigationCancel() {
-        if (MainCtx.hasEmbededVideo && !MainCtx.canShowVideoPIP) {
+    // Leaving the player stops the video, unless it goes on in the small
+    // view: when asked for in the settings, or when it came from there
+    function _leavePlayer() {
+        const keepPlaying = MainCtx.canShowVideoPIP
+                            && (MainCtx.backToPip || MainCtx.playerFromPip)
+        MainCtx.playerFromPip = false
+        if (MainCtx.hasEmbededVideo && !keepPlaying)
             MainPlaylistController.stop()
-        }
+    }
 
+    function _onNavigationCancel() {
+        _leavePlayer()
         History.previous()
     }
 
@@ -292,6 +299,13 @@ FocusScope {
                             interactiveAutoHideTimer.restart()
                         else
                             playerToolbarVisibilityFSM.mouseMove();
+                    }
+
+                    // In device pixels of the surface
+                    onMouseMoved: (x, y) => {
+                        const dpr = MainCtx.effectiveDevicePixelRatio(Window.window)
+                        rootPlayer._pointer = videoSurface.mapToItem(null, x / dpr, y / dpr)
+                        pointerRestTimer.restart()
                     }
 
                     Component.onCompleted: {
@@ -1033,9 +1047,7 @@ FocusScope {
         }
 
         onBackRequested: {
-            if (MainCtx.hasEmbededVideo && !MainCtx.canShowVideoPIP) {
-               MainPlaylistController.stop()
-            }
+            rootPlayer._leavePlayer()
             MainCtx.playerView = false
         }
 
@@ -1427,7 +1439,7 @@ FocusScope {
 
         property bool forward: true
         property bool available: false
-        // Pointer in scene coordinates, from the video surface
+        // Pointer in scene coordinates, from the video surface (_pointer)
         property point pointer: Qt.point(-1, -1)
 
         readonly property bool _hot: {
@@ -1468,15 +1480,15 @@ FocusScope {
         }
     }
 
-    // Where the pointer is, for the edge zones. Items on top take the hover
-    // from them, but a handler on the root sees every move.
-    HoverHandler {
-        id: rootHover
-    }
+    // Where the pointer is over the video, in scene coordinates, for the
+    // edge zones; forgotten when it stops moving, as the controls are
+    property point _pointer: Qt.point(-1, -1)
 
-    readonly property point _pointer: rootHover.hovered
-                                      ? rootPlayer.mapToItem(null, rootHover.point.position)
-                                      : Qt.point(-1, -1)
+    Timer {
+        id: pointerRestTimer
+        interval: 2500
+        onTriggered: rootPlayer._pointer = Qt.point(-1, -1)
+    }
 
     EdgeZone {
         anchors.left: parent.left

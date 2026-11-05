@@ -97,8 +97,10 @@ T.Control {
 
             onDoubleTapped: (eventPoint, button) => {
                 // Docs are lying, there is no `deviceType`: QTBUG-135104
-                if (eventPoint.device.type !== PointerDevice.TouchScreen)
+                if (eventPoint.device.type !== PointerDevice.TouchScreen) {
+                    MainCtx.playerFromPip = true
                     MainCtx.playerView = true
+                }
             }
 
             onTapped: (eventPoint, button) => {
@@ -234,7 +236,10 @@ T.Control {
 
             textStyle: root.textStyle
 
-            onClicked: MainCtx.playerView = true
+            onClicked: {
+                MainCtx.playerFromPip = true
+                MainCtx.playerView = true
+            }
         }
     }
 }
