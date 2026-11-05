@@ -1201,6 +1201,7 @@ libqml_module_player_a_QML = \
 	player/qml/AudioPopover.qml \
 	player/qml/ClipCropFrame.qml \
 	player/qml/ClipPanel.qml \
+	player/qml/ClipTimeline.qml \
 	player/qml/ClipRange.qml \
 	player/qml/OverdriveSlider.qml \
 	player/qml/PipOverlay.qml \

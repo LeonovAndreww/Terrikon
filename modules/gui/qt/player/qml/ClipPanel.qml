@@ -238,6 +238,14 @@ FocusScope {
             }
         }
 
+        // Close-up of the range: edges are dragged here
+        ClipTimeline {
+            Layout.fillWidth: true
+            Layout.bottomMargin: VLCStyle.margin_xsmall
+            color: theme.fg.primary
+            secondaryColor: theme.fg.secondary
+        }
+
         // Audio: which tracks go in, how loud, mixed or not
         Text {
             visible: root.tracks.length > 0
