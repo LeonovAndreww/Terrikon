@@ -34,8 +34,11 @@
 #include <vlc_vout.h>
 #include <vlc_preparser.h>
 
+#include <QClipboard>
 #include <QFile>
 #include <QDir>
+#include <QGuiApplication>
+#include <QImage>
 #include <QSignalMapper>
 #include <QThreadPool>
 #ifndef QT_HAS_LIBATOMIC
@@ -57,9 +60,26 @@ using SharedTitleList = ::vlc::vlc_shared_data_ptr<vlc_player_title_list,
                                                    &vlc_player_title_list_Hold,
                                                    &vlc_player_title_list_Release>;
 
+/* Every saved snapshot (button, menu or hotkey) is also put on the
+ * clipboard. Called from the video output thread. */
+static int SnapshotSavedCallback(vlc_object_t *, const char *, vlc_value_t,
+                                 vlc_value_t newval, void *data)
+{
+    auto *that = static_cast<PlayerControllerPrivate *>(data);
+    const QString path = qfu(newval.psz_string);
+    QMetaObject::invokeMethod(that->q_ptr, [path] {
+        const QImage image(path);
+        if (!image.isNull())
+            QGuiApplication::clipboard()->setImage(image);
+    }, Qt::QueuedConnection);
+    return VLC_SUCCESS;
+}
+
 PlayerControllerPrivate::~PlayerControllerPrivate()
 {
     assert(m_smpteTimerRequestCount == 0);
+
+    var_DelCallback( vlc_object_instance(p_intf), "snapshot-file", SnapshotSavedCallback, this );
 
     vlc_player_locker locker{m_player}; //this also locks the player
     vlc_player_vout_RemoveListener( m_player, m_player_vout_listener );
@@ -1219,6 +1239,8 @@ PlayerControllerPrivate::PlayerControllerPrivate(PlayerController *playercontrol
         m_player_vout_listener = vlc_player_vout_AddListener( m_player, &player_vout_cbs, this );
         m_player_timer = vlc_player_AddTimer( m_player, VLC_TICK_FROM_MS(500), &player_timer_cbs, this );
     }
+
+    var_AddCallback( vlc_object_instance(p_intf), "snapshot-file", SnapshotSavedCallback, this );
 
     QObject::connect( &m_autoscale, &QVLCBool::valueChanged, q_ptr, &PlayerController::autoscaleChanged );
     QObject::connect( &m_audioVisualization, &VLCVarChoiceModel::hasCurrentChanged, q_ptr, &PlayerController::hasAudioVisualizationChanged );
