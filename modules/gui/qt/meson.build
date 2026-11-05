@@ -431,6 +431,8 @@ qt_plugin_sources = files(
     'terrikon/media_tools.cpp',
     'terrikon/media_tools.hpp',
     'terrikon/moment_marks.cpp',
+    'terrikon/window_theme.cpp',
+    'terrikon/window_theme.hpp',
     'terrikon/moment_marks.hpp',
     'terrikon/selftest.cpp',
     'terrikon/selftest.hpp',
@@ -804,6 +806,7 @@ qml_modules += {
    'outdir' : 'VLC/PlayerControls',
    'sources': files(
        'player/qml/controlbarcontrols/HighResolutionTimeWidget.qml',
+       'player/qml/controlbarcontrols/TimeWidget.qml',
        'player/qml/controlbarcontrols/ArtworkInfoWidget.qml',
        'player/qml/controlbarcontrols/AspectRatioWidget.qml',
        'player/qml/controlbarcontrols/AtoBButton.qml',

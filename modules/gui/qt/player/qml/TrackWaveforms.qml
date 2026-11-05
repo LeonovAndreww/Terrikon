@@ -41,6 +41,10 @@ Item {
     // How the waves look, see WaveformView.Style
     property int style: WaveformView.Curve
 
+    // Which of the playing tracks to draw: -1 for all of them, else the
+    // nth one only
+    property int pick: -1
+
     // Indexes of the tracks being played, re-read when tracks are switched
     property int _tracksRevision: 0
     readonly property var _playing: {
@@ -54,8 +58,11 @@ Item {
         function onDataChanged() { root._tracksRevision++ }
     }
 
+    readonly property var _shown: pick < 0 ? _playing
+                                           : (_playing.length > pick ? [_playing[pick]] : [])
+
     visible: opacity > 0
-    opacity: (shown && loader && loader.trackCount > 0 && _playing.length > 0) ? 1 : 0
+    opacity: (shown && loader && loader.trackCount > 0 && _shown.length > 0) ? 1 : 0
 
     Behavior on opacity {
         NumberAnimation { duration: VLCStyle.duration_short }
@@ -66,7 +73,7 @@ Item {
         opacity: 0.4
         loader: root.loader
         colors: root.colors
-        tracks: root._playing
+        tracks: root._shown
         style: root.style
     }
 
@@ -83,7 +90,7 @@ Item {
             height: root.height
             loader: root.loader
             colors: root.colors
-            tracks: root._playing
+            tracks: root._shown
             style: root.style
         }
     }

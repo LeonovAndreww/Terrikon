@@ -251,6 +251,14 @@ public:
     inline bool canShowVideoPIP() const { return m_canShowVideoPIP; }
     inline void setCanShowVideoPIP(bool canShowVideoPIP) { m_canShowVideoPIP = canShowVideoPIP; }
     inline bool backToPip() const { return var_InheritBool(p_intf, "qt-back-to-pip"); }
+    /* Value of a string option of the interface */
+    Q_INVOKABLE QString stringOption(const QString &name) const
+    {
+        char *value = var_InheritString(p_intf, qtu(name));
+        const QString result = qfu(value);
+        free(value);
+        return result;
+    }
 
     inline bool pinVideoControls() const { return m_pinVideoControls; }
     inline float pinOpacity() const { return m_pinOpacity; }

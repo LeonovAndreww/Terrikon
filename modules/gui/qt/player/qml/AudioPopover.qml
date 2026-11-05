@@ -50,19 +50,20 @@ T.Popup {
 
     readonly property ColorContext colorContext: theme
 
-    // A 0-200% slider with a mark at 100% that the value snaps to when
-    // it lands close by
+    // A 0-200% slider with a mark at 100% that the value snaps to from
+    // 96 to 107%: going past 100% by mistake is the likelier slip
     component MixSlider: Widgets.SliderExt {
         id: mix
 
-        readonly property real snap: 0.06
+        readonly property real snapBelow: 0.04
+        readonly property real snapAbove: 0.07
 
         from: 0
         to: 2
         stepSize: 0.01
 
         function snapped(v) {
-            return Math.abs(v - 1) < snap ? 1 : v
+            return (v > 1 - snapBelow && v < 1 + snapAbove) ? 1 : v
         }
 
         Rectangle {

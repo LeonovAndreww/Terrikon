@@ -91,15 +91,9 @@ AboutDialog::AboutDialog( qt_intf_t *_p_intf)
     setWindowRole( "vlc-about" );
     setWindowModality( Qt::WindowModal );
 
-    /* Dark like the player: the native Windows style draws dialogs light
-     * whatever the palette says, a style sheet is respected */
-    setStyleSheet( QStringLiteral(
-        "QWidget { background-color: #1f1f1f; color: #eeeeee; }"
-        "QTextBrowser, QPlainTextEdit, QTextEdit { background-color: #171717; border: 1px solid #333333; }"
-        "QPushButton { background-color: #2c2c2c; border: 1px solid #3a3a3a; padding: 4px 14px; }"
-        "QPushButton:hover { background-color: #383838; }"
-        "QScrollBar { background: #1f1f1f; }" ) );
-    /* Its own light background would win over the one above */
+    /* The .ui file paints parts of it light: follow the palette instead,
+     * which is dark with a dark player */
+    setStyleSheet( QString() );
     ui.horizontalFrame->setStyleSheet( QString() );
 
     ui.version->setText(qtr( "Based on VLC %1" ).arg( qfu( VERSION_MESSAGE ) ) );

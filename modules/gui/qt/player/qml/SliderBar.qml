@@ -141,6 +141,11 @@ T.ProgressBar {
         mediaToolsDelay.restart()
     }
 
+    // "curve", "bars", "mirror" or "split": the first playing track above
+    // the bar, the second below it, upside down
+    readonly property string _waveStyle: MainCtx.stringOption("qt-waveform-style")
+    readonly property bool _splitWaves: _waveStyle === "split"
+
     TrackWaveforms {
         id: trackWaveforms
 
@@ -148,12 +153,31 @@ T.ProgressBar {
         position: control.visualPosition
         // Always there while making a clip: the sound helps to find the cut
         shown: control._pointerOver || ClipSelection.active
+        style: control._waveStyle === "bars" ? WaveformView.Bars
+             : control._waveStyle === "mirror" ? WaveformView.Mirror
+                                                : WaveformView.Curve
+        pick: control._splitWaves ? 0 : -1
 
         x: 0
         width: control.width
         height: VLCStyle.dp(28, VLCStyle.scale)
         y: -height - control._overlayGap
         z: 1
+    }
+
+    TrackWaveforms {
+        loader: waveformLoader
+        position: control.visualPosition
+        shown: control._splitWaves && trackWaveforms.shown
+        pick: 1
+
+        x: 0
+        width: control.width
+        height: VLCStyle.dp(16, VLCStyle.scale)
+        y: control.height + control._overlayGap
+        z: 1
+
+        transform: Scale { origin.y: VLCStyle.dp(8, VLCStyle.scale); yScale: -1 }
     }
 
     // Marked moments: a tick above the bar each; click to go there,

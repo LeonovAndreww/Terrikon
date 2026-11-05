@@ -294,6 +294,7 @@ libqt_plugin_la_SOURCES = \
 	terrikon/moment_marks.cpp terrikon/moment_marks.hpp \
 	terrikon/selftest.cpp terrikon/selftest.hpp \
 	terrikon/subtitle_style.cpp terrikon/subtitle_style.hpp \
+	terrikon/window_theme.cpp terrikon/window_theme.hpp \
 	terrikon/terrikon_actions.cpp terrikon/terrikon_actions.hpp \
 	terrikon/waveform_view.cpp terrikon/waveform_view.hpp \
 	player/delay_estimator.cpp \
@@ -1235,6 +1236,7 @@ libqml_module_playercontrols_a_CXXFLAGS = $(libqt_plugin_la_CXXFLAGS)
 libqml_module_playercontrols_a_CPPFLAGS = $(libqt_plugin_la_CPPFLAGS)
 libqml_module_playercontrols_a_QML = \
 	player/qml/controlbarcontrols/HighResolutionTimeWidget.qml \
+	player/qml/controlbarcontrols/TimeWidget.qml \
 	player/qml/controlbarcontrols/ArtworkInfoWidget.qml \
 	player/qml/controlbarcontrols/AspectRatioWidget.qml \
 	player/qml/controlbarcontrols/AtoBButton.qml \

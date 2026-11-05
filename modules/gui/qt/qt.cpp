@@ -100,6 +100,7 @@ extern "C" char **environ;
 #include "style/defaultthemeproviders.hpp"
 #include "dialogs/extensions/extensions_manager.hpp" /* Extensions manager */
 #include "dialogs/help/help.hpp"     /* Launch Update */
+#include "terrikon/window_theme.hpp"
 #include "util/dismiss_popup_event_filter.hpp"
 #include "maininterface/compositor.hpp"
 #include "util/vlctick.hpp"
@@ -300,6 +301,13 @@ static void ShowDialog   ( intf_thread_t *, int, int, intf_dialog_args_t * );
 #define PIP_MODE_TEXT N_( "Enable picture-in-picture (PiP) mode" )
 #define PIP_MODE_LONGTEXT N_( "Picture-in-picture mode allows playing video contained in a smaller area so that the interface remains usable." )
 
+#define WAVEFORM_STYLE_TEXT N_( "Sound waves along the seek bar" )
+#define WAVEFORM_STYLE_LONGTEXT N_( "How the sound of the playing audio tracks is drawn along the seek bar." )
+static const char *const waveform_style_values[] = { "curve", "bars", "mirror", "split" };
+static const char *const waveform_style_texts[] = {
+    N_("Smooth line"), N_("Columns"), N_("Mirrored"),
+    N_("Above and below the bar (two tracks)") };
+
 #define ACCENT_COLOR_TEXT N_( "Accent color" )
 #define ACCENT_COLOR_LONGTEXT N_( "Adjusts the accent color, special values are 'mono' (black and white), 'default' (orange) and 'system' (requires Qt 6.6) ." )
 
@@ -488,6 +496,9 @@ vlc_module_begin ()
     add_float_with_range( "qt-safe-area", 0, 0, 100.0, SAFE_AREA_TEXT, SAFE_AREA_LONGTEXT )
 
     add_string( "qt-accent-color", "mono", ACCENT_COLOR_TEXT, ACCENT_COLOR_LONGTEXT )
+
+    add_string( "qt-waveform-style", "curve", WAVEFORM_STYLE_TEXT, WAVEFORM_STYLE_LONGTEXT )
+        change_string_list( waveform_style_values, waveform_style_texts )
 
     cannot_unload_broken_library()
 
@@ -1457,6 +1468,9 @@ static void *Thread( void *obj )
         }
     }
 #undef QTSTYLE_KEY
+
+    /* Terrikon: dialogs dark or light like the player */
+    terrikon::WindowTheme::install( p_intf, app, s_style.isEmpty() );
 
     /* Terrikon: the native menus (right click, the "more" button) look
      * like the rest of the player, dark and roomy, rather than like the
