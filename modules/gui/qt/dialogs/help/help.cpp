@@ -95,6 +95,10 @@ AboutDialog::AboutDialog( qt_intf_t *_p_intf)
      * which is dark with a dark player */
     setStyleSheet( QString() );
     ui.horizontalFrame->setStyleSheet( QString() );
+    /* The footer stays a shade apart, in the palette's own shade */
+    ui.footer->setStyleSheet( QString() );
+    ui.footer->setAutoFillBackground( true );
+    ui.footer->setBackgroundRole( QPalette::AlternateBase );
 
     ui.version->setText(qtr( "Based on VLC %1" ).arg( qfu( VERSION_MESSAGE ) ) );
     ui.title->setText("<html><head/><body><p><span style=\" font-size:26pt;\"> Terrikon </span></p></body></html>");
