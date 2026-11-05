@@ -68,9 +68,8 @@ T.Popup {
 
     background: Rectangle {
         radius: VLCStyle.dp(10, VLCStyle.scale)
-        color: theme.bg.primary
-        opacity: 0.96
-        border.color: Qt.rgba(1, 1, 1, 0.08)
+        color: Qt.rgba(0.09, 0.09, 0.09, 0.82)
+        border.color: Qt.rgba(1, 1, 1, 0.1)
     }
 
     // One row of a list: a check (or nothing), the label, the value, and

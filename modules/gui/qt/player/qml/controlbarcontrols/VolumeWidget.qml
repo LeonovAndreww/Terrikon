@@ -133,11 +133,11 @@ T.Pane {
             Navigation.rightItem: volControl
         }
 
-        // Stops at 100%; pulling on past the end unlocks up to 200%
-        OverdriveSlider {
+        Widgets.SliderExt {
             id: volControl
 
-            baseWidth: VLCStyle.dp(100, VLCStyle.scale)
+            // FIXME: use VLCStyle
+            implicitWidth: VLCStyle.dp(100, VLCStyle.scale)
 
             // WARNING: Directly setting the insets break handle and background positioning.
             Binding on topInset {
@@ -166,6 +166,8 @@ T.Pane {
 
             color: root.sliderColor
 
+            from: 0
+            to: root._maxvolpos
             opacity: _player.muted ? 0.5 : 1
 
             enabled: !root.paintOnly // disables event handling depending on this
@@ -175,7 +177,7 @@ T.Pane {
                 // from bounds of this widget and we want to show the current
                 // volume here, so directly use Player.volume instead of "value"
 
-                return Math.round(Player.volume * 100) + "%"
+                return Math.round((volControl.pressed ? value : Player.volume) * 100) + "%"
             }
 
             Accessible.name: qsTr("Volume")
@@ -203,8 +205,11 @@ T.Pane {
             }
 
             function _syncVolumeWithPlayer() {
-                if (_player.volume > 1)
-                    volControl.extended = true
+                // The player reports back a little later and rounded:
+                // while dragging, those late values would pull the
+                // handle back
+                if (volControl.pressed)
+                    return
                 volControl._inhibitPlayerVolumeUpdate = true
                 volControl.value = _player.volume
                 volControl._inhibitPlayerVolumeUpdate = false
@@ -260,10 +265,9 @@ T.Pane {
 
             Keys.priority: Keys.BeforeItem
 
-            // The range grows or folds back: show the player volume again
-            onToChanged: {
+            onPressedChanged: {
                 if (!pressed)
-                    _syncVolumeWithPlayer()
+                    Qt.callLater(_syncVolumeWithPlayer)
             }
 
             onValueChanged: {
@@ -276,6 +280,41 @@ T.Pane {
                     } else {
                         volControl._adjustPlayerVolume()
                         filterEvents = true
+                    }
+                }
+            }
+
+            Rectangle{
+                id: tickmark
+
+                parent: volControl.background
+
+                x : parent.width * root._fullvolpos
+                width: VLCStyle.dp(1, VLCStyle.scale)
+                height: parent.height
+                radius: VLCStyle.dp(2, VLCStyle.scale)
+
+                // NOTE: This shouldn't be visible when the volume stops before a 100.
+                visible: (root._maxvol > 100)
+
+                // FIXME: tick mark is not visible when it's over slider
+                color: root.sliderColor
+
+                // NOTE: This is a helper to select the default volume when clicking on the
+                //       tickmark. We apply a higher clamp value to achieve that behavior on
+                //       the Slider.
+                MouseArea {
+                    anchors.fill: parent
+
+                    anchors.margins: -(VLCStyle.dp(4, VLCStyle.scale))
+
+                    onPressed: (mouse) => {
+                        mouse.accepted = false
+
+                        if (mouse.modifiers === Qt.ShiftModifier)
+                            return
+
+                        volControl._clamp = 0.1
                     }
                 }
             }

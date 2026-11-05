@@ -24,7 +24,7 @@ import VLC.Style
 import VLC.Widgets as Widgets
 
 // Audio popover of the volume button: which track plays, or several at
-// once, each with its own volume.
+// once, each with its own volume, and the boost past 100%.
 T.Popup {
     id: root
 
@@ -38,10 +38,42 @@ T.Popup {
     // Clicking the speaker itself (mute) keeps it open
     closePolicy: T.Popup.CloseOnEscape | T.Popup.CloseOnPressOutsideParent
 
-    implicitWidth: VLCStyle.dp(300, VLCStyle.scale)
+    implicitWidth: VLCStyle.dp(280, VLCStyle.scale)
     implicitHeight: implicitContentHeight + topPadding + bottomPadding
 
+    // Grows and shrinks smoothly when a track row shows up or goes
+    height: implicitHeight
+    Behavior on height {
+        enabled: root.opened
+        NumberAnimation { duration: VLCStyle.duration_short; easing.type: Easing.OutCubic }
+    }
+
     readonly property ColorContext colorContext: theme
+
+    // A 0-200% slider with a mark at 100% that the value snaps to when
+    // it lands close by
+    component MixSlider: Widgets.SliderExt {
+        id: mix
+
+        readonly property real snap: 0.06
+
+        from: 0
+        to: 2
+        stepSize: 0.01
+
+        function snapped(v) {
+            return Math.abs(v - 1) < snap ? 1 : v
+        }
+
+        Rectangle {
+            x: mix.leftPadding + mix.availableWidth / 2 - width / 2
+            y: mix.topPadding + (mix.availableHeight - height) / 2
+            width: VLCStyle.dp(2, VLCStyle.scale)
+            height: VLCStyle.dp(10, VLCStyle.scale)
+            radius: width / 2
+            color: Qt.rgba(1, 1, 1, 0.45)
+        }
+    }
 
     Timer {
         id: closeTimer
@@ -58,16 +90,15 @@ T.Popup {
 
     background: Rectangle {
         radius: VLCStyle.dp(10, VLCStyle.scale)
-        color: theme.bg.primary
-        opacity: 0.96
-        border.color: Qt.rgba(1, 1, 1, 0.08)
+        color: Qt.rgba(0.09, 0.09, 0.09, 0.82)
+        border.color: Qt.rgba(1, 1, 1, 0.1)
 
         HoverHandler {
             id: popoverHover
         }
     }
 
-    contentItem: ColumnLayout {
+    contentItem: Item {
         // A popup is not an Item, so the palette is found from here down
         readonly property ColorContext colorContext: ColorContext {
             id: theme
@@ -75,87 +106,126 @@ T.Popup {
             palette: VLCStyle.palette
         }
 
+        implicitWidth: column.implicitWidth
+        implicitHeight: column.implicitHeight
+        clip: true
+
         // Rows take the hover themselves, so watch it from their parent
         HoverHandler {
             id: contentHover
         }
 
-        spacing: VLCStyle.margin_xsmall
+        ColumnLayout {
+            id: column
 
-        Text {
-            text: qsTr("Audio tracks")
-            color: theme.fg.secondary
-            font.pixelSize: VLCStyle.fontSize_small
-            visible: Player.audioTracks.count > 0
-        }
+            width: parent.width
+            spacing: VLCStyle.margin_xsmall
 
-        Repeater {
-            model: Player.audioTracks
+            Text {
+                text: qsTr("Audio tracks")
+                color: theme.fg.secondary
+                font.pixelSize: VLCStyle.fontSize_small
+                visible: Player.audioTracks.count > 0
+            }
 
-            ColumnLayout {
-                required property var model
-                required property int index
+            Repeater {
+                model: Player.audioTracks
 
-                Layout.fillWidth: true
-                spacing: 0
+                ColumnLayout {
+                    required property var model
+                    required property int index
 
-                // One track at a time: picking one switches to it.
-                // Several at once: each can be switched on and off.
-                Widgets.RadioButtonExt {
-                    visible: !Player.audioTracks.multiSelect
                     Layout.fillWidth: true
-                    text: model.display
-                    checked: model.checked
-                    onClicked: model.checked = true
-                }
+                    spacing: 0
 
-                Widgets.CheckBoxExt {
-                    visible: Player.audioTracks.multiSelect
-                    Layout.fillWidth: true
-                    text: model.display
-                    checked: model.checked
-                    onClicked: model.checked = checked
-                }
-
-                // Volume of this track in the mix
-                RowLayout {
-                    visible: Player.audioTracks.multiSelect && model.checked
-                    Layout.fillWidth: true
-                    Layout.leftMargin: VLCStyle.margin_large
-                    spacing: VLCStyle.margin_small
-
-                    OverdriveSlider {
-                        baseWidth: VLCStyle.dp(90, VLCStyle.scale)
-                        Layout.preferredWidth: implicitWidth
-                        stepSize: 0.05
-                        extended: model.volume > 1
-                        value: model.volume
-                        onMoved: model.volume = value
-                        onToChanged: {
-                            if (!pressed)
-                                value = model.volume
-                        }
+                    // One track at a time: picking one switches to it.
+                    // Several at once: each can be switched on and off.
+                    Widgets.RadioButtonExt {
+                        visible: !Player.audioTracks.multiSelect
+                        Layout.fillWidth: true
+                        text: model.display
+                        checked: model.checked
+                        onClicked: model.checked = true
                     }
 
-                    Item { Layout.fillWidth: true }
+                    Widgets.CheckBoxExt {
+                        visible: Player.audioTracks.multiSelect
+                        Layout.fillWidth: true
+                        text: model.display
+                        checked: model.checked
+                        onClicked: model.checked = checked
+                    }
 
-                    Text {
-                        Layout.preferredWidth: VLCStyle.dp(40, VLCStyle.scale)
-                        horizontalAlignment: Text.AlignRight
-                        text: Math.round(model.volume * 100) + "%"
-                        color: theme.fg.secondary
-                        font.pixelSize: VLCStyle.fontSize_small
+                    // Volume of this track in the mix
+                    RowLayout {
+                        visible: Player.audioTracks.multiSelect && model.checked
+                        Layout.fillWidth: true
+                        Layout.leftMargin: VLCStyle.margin_large
+                        spacing: VLCStyle.margin_small
+
+                        MixSlider {
+                            Layout.fillWidth: true
+                            value: model.volume
+                            onMoved: model.volume = snapped(value)
+                        }
+
+                        Text {
+                            Layout.preferredWidth: VLCStyle.dp(34, VLCStyle.scale)
+                            horizontalAlignment: Text.AlignRight
+                            text: Math.round(model.volume * 100) + "%"
+                            color: theme.fg.secondary
+                            font.pixelSize: VLCStyle.fontSize_small
+                        }
                     }
                 }
             }
-        }
 
-        Widgets.CheckBoxExt {
-            visible: Player.audioTracks.count > 1
-            text: qsTr("Play several at once")
-            checked: Player.audioTracks.multiSelect
-            onClicked: Player.audioTracks.multiSelect = checked
-        }
+            Widgets.CheckBoxExt {
+                visible: Player.audioTracks.count > 1
+                text: qsTr("Several tracks")
+                checked: Player.audioTracks.multiSelect
+                onClicked: Player.audioTracks.multiSelect = checked
+            }
 
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.topMargin: VLCStyle.margin_xxsmall
+                Layout.bottomMargin: VLCStyle.margin_xxsmall
+                implicitHeight: 1
+                color: Qt.rgba(1, 1, 1, 0.1)
+                visible: Player.audioTracks.count > 0
+            }
+
+            // Past 100% only here, on purpose: the bar's slider and the
+            // wheel stop at 100%
+            Text {
+                text: qsTr("Boost")
+                color: theme.fg.secondary
+                font.pixelSize: VLCStyle.fontSize_small
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: VLCStyle.margin_small
+
+                MixSlider {
+                    Layout.fillWidth: true
+                    value: Player.volume
+                    color: Player.volume > 1 ? theme.fg.negative : theme.fg.primary
+                    onMoved: {
+                        Player.muted = false
+                        Player.volume = snapped(value)
+                    }
+                }
+
+                Text {
+                    Layout.preferredWidth: VLCStyle.dp(34, VLCStyle.scale)
+                    horizontalAlignment: Text.AlignRight
+                    text: Math.round(Player.volume * 100) + "%"
+                    color: Player.volume > 1 ? theme.fg.negative : theme.fg.secondary
+                    font.pixelSize: VLCStyle.fontSize_small
+                }
+            }
+        }
     }
 }
