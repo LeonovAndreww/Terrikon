@@ -27,6 +27,10 @@
 
 #include <QCoreApplication>
 #include <QScreen>
+#ifdef _WIN32
+# include <QLibrary>
+# include <windows.h>
+#endif
 
 #include <algorithm>
 
@@ -48,6 +52,27 @@ void CompactPlayer::toggle()
     else
         enter();
 }
+
+/* Rounded or square corners for the small window. Only Windows 11 rounds
+ * window corners; earlier versions ignore the request and stay square. */
+static void setWindowCorners(QWindow *window, int preference)
+{
+#ifdef _WIN32
+    using SetAttribute = HRESULT (WINAPI *)(HWND, DWORD, LPCVOID, DWORD);
+    static const auto setAttribute = reinterpret_cast<SetAttribute>(
+        QLibrary::resolve(QStringLiteral("dwmapi"), "DwmSetWindowAttribute"));
+    if (!setAttribute || !window)
+        return;
+    const DWORD cornerPreference = 33; /* DWMWA_WINDOW_CORNER_PREFERENCE */
+    setAttribute(reinterpret_cast<HWND>(window->winId()), cornerPreference,
+                 &preference, sizeof(preference));
+#else
+    Q_UNUSED(window);
+    Q_UNUSED(preference);
+#endif
+}
+
+enum { CORNERS_DEFAULT = 0, CORNERS_SQUARE = 1, CORNERS_ROUND = 2 };
 
 void CompactPlayer::enter()
 {
@@ -85,6 +110,8 @@ void CompactPlayer::enter()
 
     m_ctx->setMinimalView(true);
     m_ctx->setInterfaceAlwaysOnTop(true);
+    setWindowCorners(window, var_InheritBool(m_ctx->getIntf(), "qt-pip-rounded")
+                             ? CORNERS_ROUND : CORNERS_SQUARE);
     /* Keys (arrows, space, frame steps) must reach it right away */
     window->requestActivate();
 
@@ -100,6 +127,7 @@ void CompactPlayer::leave()
 
     m_ctx->setInterfaceAlwaysOnTop(m_onTop);
     m_ctx->setMinimalView(m_minimalView);
+    setWindowCorners(window, CORNERS_DEFAULT);
 
     window->setMinimumSize(m_minimumSize);
     window->setGeometry(m_geometry);

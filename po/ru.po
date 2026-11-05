@@ -38055,3 +38055,6 @@ msgstr "Лучшее качество"
 
 msgid "Fit in"
 msgstr "Вписать в"
+
+msgid "Rounded corners for picture in picture"
+msgstr "Скруглённые углы у «картинки в картинке»"

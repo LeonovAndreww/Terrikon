@@ -292,6 +292,9 @@ static void ShowDialog   ( intf_thread_t *, int, int, intf_dialog_args_t * );
 #define BACKDROP_BLUR_FILTER_LONGTEXT N_( "If backdrop blur filter is available, use translucency in the backgrounds of certain parts of the user interface " \
     "instead of a solid color. This setting impairs readibility of text." )
 
+#define PIP_ROUNDED_TEXT N_( "Rounded corners for picture in picture" )
+#define PIP_ROUNDED_LONGTEXT N_( "Round the corners of the small always-on-top " \
+                                 "window. Windows 10 always draws square corners." )
 #define PIP_MODE_TEXT N_( "Enable picture-in-picture (PiP) mode" )
 #define PIP_MODE_LONGTEXT N_( "Picture-in-picture mode allows playing video contained in a smaller area so that the interface remains usable." )
 
@@ -475,6 +478,8 @@ vlc_module_begin ()
     add_bool( "qt-backdrop-blur", true, BACKDROP_BLUR_FILTER_TEXT, BACKDROP_BLUR_FILTER_LONGTEXT )
 
     add_bool( "qt-pip-mode", true, PIP_MODE_TEXT, PIP_MODE_LONGTEXT )
+
+    add_bool( "qt-pip-rounded", true, PIP_ROUNDED_TEXT, PIP_ROUNDED_LONGTEXT )
 
     add_float_with_range( "qt-safe-area", 0, 0, 100.0, SAFE_AREA_TEXT, SAFE_AREA_LONGTEXT )
 
