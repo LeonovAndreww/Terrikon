@@ -3,8 +3,8 @@ headless Edge) and a multi-size .ico with PNG entries.
 
 Usage: python make_icons.py [output folder]
 Then copy terrikon-{16,32,48,128,256}.png to share/icons/<size>x<size>/vlc.png,
-terrikon-512.png to share/vlc512x512.png, terrikon.ico to share/icons/vlc.ico
-and terrikon-large.svg to share/icons/terrikon.svg and
+terrikon-512.png to share/vlc512x512.png, terrikon.ico to share/icons/vlc.ico,
+terrikon-large.svg to share/icons/terrikon.svg and terrikon-cone.svg to
 modules/gui/qt/pixmaps/misc/cone.svg. The build does not track these images:
 delete the generated Qt assets and bin/vlc_win32_rc.o before rebuilding."""
 import os
@@ -71,6 +71,15 @@ def svg(tier):
             f'<g transform="translate(0 -12)">{shape}</g></svg>')
 
 
+def cone_svg():
+    """The bare silhouette for use inside the interface, in a square view box.
+    #FF8800 is the colour the Qt interface replaces with a theme colour."""
+    return ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="18 16 220 220">'
+            '<g transform="translate(0 -12)">'
+            f'<path d="{silhouette(True)}" fill="#FF8800" fill-rule="evenodd"/>'
+            '</g></svg>')
+
+
 def tier_for(size):
     return "large" if size >= 48 else "medium" if size >= 32 else "small"
 
@@ -111,6 +120,8 @@ def main():
     for tier in ("large", "medium", "small"):
         with open(os.path.join(OUT, f"terrikon-{tier}.svg"), "w", encoding="utf-8") as f:
             f.write(svg(tier))
+    with open(os.path.join(OUT, "terrikon-cone.svg"), "w", encoding="utf-8") as f:
+        f.write(cone_svg())
 
     sizes = [16, 24, 32, 48, 64, 128, 256, 512]
     entries = []
