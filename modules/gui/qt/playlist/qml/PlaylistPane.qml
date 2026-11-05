@@ -66,9 +66,19 @@ T.Pane {
     Accessible.name: qsTr("Play queue")
 
     // Clicking a column header sorts by it; again reverses the order
+    // Order of the queue before it was first sorted, by media url, so
+    // the sort can be undone
+    property var _unsortedOrder: []
+
     function _sortBy(key) {
         if (MainPlaylistController.count < 2)
             return
+        if (MainPlaylistController.sortKey === PlaylistController.SORT_KEY_NONE) {
+            const order = []
+            for (let i = 0; i < root.model.count; ++i)
+                order.push(root.model.data(root.model.index(i, 0), PlaylistListModel.UrlRole))
+            _unsortedOrder = order
+        }
         if (MainPlaylistController.sortKey === key)
             MainPlaylistController.sortOrder =
                 (MainPlaylistController.sortOrder === PlaylistController.SORT_ORDER_ASC)
@@ -78,6 +88,27 @@ T.Pane {
             MainPlaylistController.sortOrder = PlaylistController.SORT_ORDER_ASC
         }
         MainPlaylistController.sort()
+    }
+
+    // Back to the order the queue had before sorting; items added since
+    // stay at the end
+    function _unsort() {
+        if (MainPlaylistController.sortKey === PlaylistController.SORT_KEY_NONE)
+            return
+        const order = _unsortedOrder
+        let target = 0
+        for (let k = 0; k < order.length; ++k) {
+            for (let i = target; i < root.model.count; ++i) {
+                if (root.model.data(root.model.index(i, 0), PlaylistListModel.UrlRole) === order[k]) {
+                    if (i !== target)
+                        root.model.moveItemsPre([i], target)
+                    ++target
+                    break
+                }
+            }
+        }
+        MainPlaylistController.sortKey = PlaylistController.SORT_KEY_NONE
+        _unsortedOrder = []
     }
 
     function _sortArrow(key) {
@@ -173,10 +204,16 @@ T.Pane {
                     font.pixelSize: VLCStyle.dp(24, VLCStyle.scale)
                 }
 
-                Widgets.CheckBoxExt {
-                    text: qsTr("Autoplay")
-                    checked: Autoplay.enabled
-                    onClicked: Autoplay.enabled = checked
+                // Play the next video when one ends
+                Widgets.ImageToolButton {
+                    id: autoplayButton
+
+                    sourceSize: Qt.size(VLCStyle.icon_banner, VLCStyle.icon_banner)
+                    imageSource: SVGColorImage.colorize(Autoplay.enabled ? "qrc:///icons/autoplay_on.svg"
+                                                                         : "qrc:///icons/autoplay_off.svg")
+                                     .color1(Autoplay.enabled ? theme.fg.primary : theme.fg.secondary).uri()
+                    description: Autoplay.enabled ? qsTr("Autoplay is on") : qsTr("Autoplay is off")
+                    onClicked: Autoplay.enabled = !Autoplay.enabled
                 }
 
                 Widgets.SortControl {
@@ -277,7 +314,7 @@ T.Pane {
                         duration = duration[0].sum(duration)
                     }
 
-                    return qsTr("%1 elements, %2").arg(listView.count).arg(duration.formatLong())
+                    return qsTr("Items: %1, %2").arg(listView.count).arg(duration.formatLong())
                 }
             }
         }
@@ -306,7 +343,17 @@ T.Pane {
                 text: VLCIcons.album_cover
                 font.pixelSize: VLCStyle.icon_playlistHeader
 
-                color: theme.fg.secondary
+                color: (coverHeaderHover.hovered
+                        && MainPlaylistController.sortKey !== PlaylistController.SORT_KEY_NONE)
+                       ? theme.fg.primary : theme.fg.secondary
+
+                // Undoes the sort
+                HoverHandler {
+                    id: coverHeaderHover
+                    cursorShape: MainPlaylistController.sortKey !== PlaylistController.SORT_KEY_NONE
+                                 ? Qt.PointingHandCursor : Qt.ArrowCursor
+                }
+                TapHandler { onTapped: root._unsort() }
 
                 Accessible.role: Accessible.ColumnHeader
                 Accessible.name: qsTr("Cover")
@@ -342,6 +389,15 @@ T.Pane {
 
                 HoverHandler { id: durationHeaderHover; cursorShape: Qt.PointingHandCursor }
                 TapHandler { onTapped: root._sortBy(PlaylistController.SORT_KEY_DURATION) }
+
+                // The order arrow sits left of the clock, outside the column
+                Text {
+                    anchors.right: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: root._sortArrow(PlaylistController.SORT_KEY_DURATION).trim()
+                    color: theme.fg.primary
+                    font.pixelSize: VLCStyle.fontSize_normal
+                }
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
                 font.pixelSize: VLCStyle.icon_playlistHeader

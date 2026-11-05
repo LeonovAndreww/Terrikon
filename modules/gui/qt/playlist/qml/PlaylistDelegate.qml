@@ -273,7 +273,7 @@ T.Control {
             id: textInfoColumn
 
             Layout.fillWidth: true
-            Layout.fillHeight: true
+            Layout.alignment: Qt.AlignVCenter
             Layout.leftMargin: VLCStyle.margin_large
             spacing: VLCStyle.margin_xxxsmall
 
@@ -294,6 +294,10 @@ T.Control {
 
                 text: delegate.artist || (delegate.title.length === 0 ? delegate.url : "")
                 color: theme.fg.primary
+
+                // A video has no artist: an empty line would push the title
+                // up, out of line with the duration
+                visible: text.length > 0
             }
         }
 

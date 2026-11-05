@@ -12,6 +12,8 @@
     </qresource>
     <qresource prefix="/icons">
         <file alias="atob.svg">pixmaps/icons/atob.svg</file>
+        <file alias="autoplay_off.svg">pixmaps/icons/autoplay_off.svg</file>
+        <file alias="autoplay_on.svg">pixmaps/icons/autoplay_on.svg</file>
         <file alias="clip.svg">pixmaps/icons/clip.svg</file>
         <file alias="compact_player.svg">pixmaps/icons/compact_player.svg</file>
         <file alias="compact_player_exit.svg">pixmaps/icons/compact_player_exit.svg</file>
