@@ -99,6 +99,8 @@ AboutDialog::AboutDialog( qt_intf_t *_p_intf)
         "QPushButton { background-color: #2c2c2c; border: 1px solid #3a3a3a; padding: 4px 14px; }"
         "QPushButton:hover { background-color: #383838; }"
         "QScrollBar { background: #1f1f1f; }" ) );
+    /* Its own light background would win over the one above */
+    ui.horizontalFrame->setStyleSheet( QString() );
 
     ui.version->setText(qtr( "Based on VLC %1" ).arg( qfu( VERSION_MESSAGE ) ) );
     ui.title->setText("<html><head/><body><p><span style=\" font-size:26pt;\"> Terrikon </span></p></body></html>");
