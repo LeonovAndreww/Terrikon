@@ -301,20 +301,76 @@ Widgets.PageExt {
                 }
             }
 
-            // Folders there already: how many, and a way to add one more
-            Row {
+            // Folders there already: each one, removable, and one more
+            Flow {
                 id: addLine
 
                 visible: !card.visible && flickable._hasMedias
-                spacing: VLCStyle.margin_small
+                width: parent.width
+                spacing: VLCStyle.margin_xsmall
 
-                Widgets.CaptionLabel {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: qsTr("Media library folders: %1").arg(foldersCard.folderCount)
-                    color: cardTheme.fg.secondary
+                Repeater {
+                    model: mlFolders
+
+                    // A folder: its name, the whole path on hover; the cross
+                    // takes it out of the media library (the files stay)
+                    Rectangle {
+                        id: chip
+
+                        required property int index
+                        required property var display_url
+
+                        readonly property string _path: decodeURIComponent(String(display_url)).replace(/^file:\/\/\/?/, "")
+                        readonly property string _name: _path.replace(/[\\\/]+$/, "").split(/[\\\/]/).pop()
+
+                        height: VLCStyle.dp(30, VLCStyle.scale)
+                        width: chipRow.implicitWidth + 2 * VLCStyle.margin_small
+                        radius: height / 2
+                        color: chipHover.hovered ? Qt.rgba(1, 1, 1, 0.1) : Qt.rgba(1, 1, 1, 0.05)
+                        border.color: Qt.rgba(1, 1, 1, 0.1)
+
+                        HoverHandler { id: chipHover }
+
+                        Widgets.ToolTipExt {
+                            visible: chipHover.hovered
+                            text: chip._path
+                        }
+
+                        Row {
+                            id: chipRow
+
+                            anchors.centerIn: parent
+                            spacing: VLCStyle.margin_xsmall
+
+                            Widgets.IconLabel {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: VLCIcons.folder
+                                color: cardTheme.fg.secondary
+                                font.pixelSize: VLCStyle.icon_small
+                            }
+
+                            Widgets.CaptionLabel {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: chip._name
+                                color: cardTheme.fg.primary
+                            }
+
+                            Widgets.IconToolButton {
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: VLCStyle.dp(22, VLCStyle.scale)
+                                height: width
+                                font.pixelSize: VLCStyle.icon_xsmall
+                                text: VLCIcons.close
+                                description: qsTr("Remove from the media library (the files stay)")
+                                onClicked: mlFolders.removeAt(chip.index)
+                            }
+                        }
+                    }
                 }
 
                 Widgets.ButtonExt {
+                    height: VLCStyle.dp(30, VLCStyle.scale)
+                    iconTxt: VLCIcons.add
                     text: qsTr("Add folder")
                     onClicked: foldersCard.addFolder(MediaFolders.pickFolder())
                 }

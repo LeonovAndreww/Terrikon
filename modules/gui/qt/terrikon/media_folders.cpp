@@ -23,7 +23,9 @@
 
 #include "qt.hpp"
 
+#include <QCursor>
 #include <QDir>
+#include <QMenu>
 #include <QDirIterator>
 #include <QFileDialog>
 #include <QFileInfo>
@@ -118,6 +120,20 @@ QVariantList MediaFolders::suggestions() const
         };
     }
     return out;
+}
+
+bool MediaFolders::isFolder(const QUrl &url) const
+{
+    return url.isLocalFile() && QFileInfo(url.toLocalFile()).isDir();
+}
+
+int MediaFolders::askDropAction() const
+{
+    QMenu menu;
+    QAction *play = menu.addAction(qtr("Play"));
+    QAction *add = menu.addAction(qtr("Add to the media library"));
+    QAction *picked = menu.exec(QCursor::pos());
+    return picked == play ? 0 : picked == add ? 1 : -1;
 }
 
 QUrl MediaFolders::pickFolder() const

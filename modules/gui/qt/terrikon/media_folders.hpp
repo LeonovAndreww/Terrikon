@@ -43,6 +43,13 @@ public:
 
     /* How many videos a folder holds, two levels deep, at most 999 */
     Q_INVOKABLE int countVideos(const QUrl &folder) const;
+
+    /* Whether a dropped url is a folder on this computer */
+    Q_INVOKABLE bool isFolder(const QUrl &url) const;
+
+    /* A menu at the pointer for folders dropped on the window: 0 to play
+     * them, 1 to add them to the media library, -1 if dismissed */
+    Q_INVOKABLE int askDropAction() const;
 };
 
 }

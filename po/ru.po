@@ -44074,3 +44074,11 @@ msgstr "Записи OBS"
 #: terrikon
 msgid "Choose a folder with videos"
 msgstr "Выберите папку с видео"
+
+#: terrikon
+msgid "Remove from the media library (the files stay)"
+msgstr "Убрать из медиатеки (файлы останутся)"
+
+#: terrikon
+msgid "Add to the media library"
+msgstr "Добавить в медиатеку"

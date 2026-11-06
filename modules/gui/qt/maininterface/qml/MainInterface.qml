@@ -38,6 +38,7 @@ import VLC.Dialogs
 import VLC.Menus
 import VLC.Network
 import VLC.PlayerControls
+import VLC.Terrikon
 
 Item {
     id: root
@@ -298,9 +299,32 @@ Item {
                         }
                     }
 
+                    // Terrikon: folders can go to the media library instead
+                    const folders = urls.filter(u => MediaFolders.isFolder(u))
+                    if (folders.length > 0 && dropFolders.item) {
+                        drop.accept()
+                        // The menu runs its own loop: not inside the drop
+                        Qt.callLater(() => {
+                            const action = MediaFolders.askDropAction()
+                            if (action === 1)
+                                folders.forEach(u => dropFolders.item.add(u))
+                            if (action === 0 || (action === 1 && folders.length < urls.length))
+                                MainPlaylistController.append(action === 0 ? urls
+                                    : urls.filter(u => !MediaFolders.isFolder(u)), true)
+                        })
+                        return
+                    }
+
                     MainPlaylistController.append(urls, true)
                     drop.accept()
                 }
+            }
+
+            // Where dropped folders are added, when there is a media library
+            Loader {
+                id: dropFolders
+                active: MainCtx.mediaLibraryAvailable
+                sourceComponent: MLFolderModel { ctx: MainCtx }
             }
         }
 
