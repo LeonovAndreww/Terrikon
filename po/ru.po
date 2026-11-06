@@ -44254,3 +44254,13 @@ msgstr "Только визуализация"
 #: terrikon
 msgid "Shape: %1"
 msgstr "Форма: %1"
+
+#: src/misc/actions.c
+msgctxt "key"
+msgid "Home"
+msgstr "Home"
+
+#: src/misc/actions.c
+msgctxt "key"
+msgid "Delete"
+msgstr "Delete"

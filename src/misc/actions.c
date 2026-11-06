@@ -235,6 +235,17 @@ static const char *nooptext (const char *txt)
     return txt;
 }
 
+/* Key names that are also words of the interface ("Home" the page, "Delete"
+ * the action) are translated in a context of their own */
+static const char *keytext (const char *txt)
+{
+    if (!strcmp (txt, "Home"))
+        return vlc_pgettext ("key", "Home");
+    if (!strcmp (txt, "Delete"))
+        return vlc_pgettext ("key", "Delete");
+    return vlc_gettext (txt);
+}
+
 /**
  * Format a human-readable and unique representation of a VLC key code
  * (including modifiers).
@@ -245,7 +256,7 @@ static const char *nooptext (const char *txt)
  */
 char *vlc_keycode2str (uint_fast32_t code, bool locale)
 {
-    const char *(*tr)(const char *) = locale ? vlc_gettext : nooptext;
+    const char *(*tr)(const char *) = locale ? keytext : nooptext;
     const char *name;
     char *str, buf[5];
     uintptr_t key = code & ~KEY_MODIFIER;
