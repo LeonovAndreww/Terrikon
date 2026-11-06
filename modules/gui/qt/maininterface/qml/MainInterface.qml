@@ -360,6 +360,12 @@ Item {
             source: "qrc:///qt/qml/VLC/Menus/GlobalShortcuts.qml"
         }
 
+        // Terrikon: the mini window of the visualizer, over all the others
+        Loader {
+            active: Visualizer.miniWindow
+            source: "qrc:///qt/qml/VLC/Player/MiniVisualizer.qml"
+        }
+
         Loader {
             active: {
                 const windowVisibility = MainCtx.intfMainWindow.visibility

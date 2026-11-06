@@ -25,6 +25,7 @@
 #include <QColor>
 #include <QElapsedTimer>
 #include <QObject>
+#include <QPoint>
 #include <QQuickItem>
 #include <QRectF>
 #include <QStringList>
@@ -43,6 +44,9 @@ class Visualizer : public QObject
     Q_PROPERTY(int background READ background WRITE setBackground NOTIFY backgroundChanged FINAL)
     Q_PROPERTY(QStringList styleNames READ styleNames CONSTANT FINAL)
     Q_PROPERTY(QStringList backgroundNames READ backgroundNames CONSTANT FINAL)
+    // A small window over all the others, with the cover and a ring
+    Q_PROPERTY(bool miniWindow READ miniWindow WRITE setMiniWindow NOTIFY miniWindowChanged FINAL)
+    Q_PROPERTY(QPoint miniPosition READ miniPosition WRITE setMiniPosition NOTIFY miniPositionChanged FINAL)
 
 public:
     enum Style { Off = 0, Ring, Bars, Wave, Hills, StyleCount };
@@ -59,6 +63,11 @@ public:
     int background() const { return m_background; }
     void setBackground(int background);
 
+    bool miniWindow() const { return m_miniWindow; }
+    void setMiniWindow(bool on);
+    QPoint miniPosition() const { return m_miniPosition; }
+    void setMiniPosition(const QPoint &position);
+
     QStringList styleNames() const;
     QStringList backgroundNames() const;
 
@@ -68,6 +77,8 @@ public:
 signals:
     void styleChanged();
     void backgroundChanged();
+    void miniWindowChanged();
+    void miniPositionChanged();
 
 private:
     void listen();
@@ -78,6 +89,8 @@ private:
     int m_style = Off;
     int m_background = BlurredCover;
     bool m_listening = false;
+    bool m_miniWindow = false;
+    QPoint m_miniPosition;
 };
 
 /* Draws what the tap heard, in step with the playing time */

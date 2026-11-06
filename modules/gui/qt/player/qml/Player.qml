@@ -172,8 +172,10 @@ FocusScope {
                 }
             } else if (index < own + backgrounds) {
                 Visualizer.background = index - own
+            } else if (index === own + backgrounds) {
+                Visualizer.miniWindow = !Visualizer.miniWindow
             } else {
-                const vlcIndex = index - own - backgrounds
+                const vlcIndex = index - own - backgrounds - 1
                 if (Visualizer.style !== 0 && vlcIndex > 0) {
                     visualizationSwitch.schedule(() => { Player.audioVisualization.toggleIndex(vlcIndex) })
                     Visualizer.style = 0
@@ -234,6 +236,7 @@ FocusScope {
         const backgrounds = Visualizer.backgroundNames
         for (let b = 0; b < backgrounds.length; ++b)
             names.push(mark(Visualizer.background === b) + backgrounds[b])
+        names.push(mark(Visualizer.miniWindow) + qsTr("Mini window over all the others"))
         const vlcOn = Visualizer.style === 0
         const current = _vlcVisualizationIndex()
         for (let i = 0; i < visualizations.count; ++i) {

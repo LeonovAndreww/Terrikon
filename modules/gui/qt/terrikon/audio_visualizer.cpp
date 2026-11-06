@@ -39,6 +39,8 @@ namespace terrikon {
 
 static const char styleKey[] = "Terrikon/visualizer-style";
 static const char backgroundKey[] = "Terrikon/visualizer-background";
+static const char miniKey[] = "Terrikon/visualizer-mini";
+static const char miniPositionKey[] = "Terrikon/visualizer-mini-position";
 static const char tapFilter[] = "terrikon_tap";
 
 Visualizer *Visualizer::s_instance = nullptr;
@@ -63,9 +65,12 @@ Visualizer::Visualizer(qt_intf_t *intf, QObject *parent)
     m_background = qBound(0, m_intf->mainSettings->value(QString::fromLatin1(backgroundKey), 0).toInt(),
                           BackgroundCount - 1);
 
+    m_miniWindow = m_intf->mainSettings->value(QString::fromLatin1(miniKey), false).toBool();
+    m_miniPosition = m_intf->mainSettings->value(QString::fromLatin1(miniPositionKey), QPoint(-1, -1)).toPoint();
+
     /* The audio output may only come with the first playback */
     connect(m_intf->p_mainPlayerController, &PlayerController::playingStateChanged,
-            this, [this]() { if (m_listening != (m_style != Off)) listen(); });
+            this, [this]() { if (m_listening != (m_style != Off || m_miniWindow)) listen(); });
     listen();
 }
 
@@ -78,6 +83,25 @@ void Visualizer::setStyle(int style)
     m_intf->mainSettings->setValue(QString::fromLatin1(styleKey), style);
     listen();
     emit styleChanged();
+}
+
+void Visualizer::setMiniWindow(bool on)
+{
+    if (on == m_miniWindow)
+        return;
+    m_miniWindow = on;
+    m_intf->mainSettings->setValue(QString::fromLatin1(miniKey), on);
+    listen();
+    emit miniWindowChanged();
+}
+
+void Visualizer::setMiniPosition(const QPoint &position)
+{
+    if (position == m_miniPosition)
+        return;
+    m_miniPosition = position;
+    m_intf->mainSettings->setValue(QString::fromLatin1(miniPositionKey), position);
+    emit miniPositionChanged();
 }
 
 void Visualizer::setBackground(int background)
@@ -102,7 +126,7 @@ QStringList Visualizer::backgroundNames() const
 
 void Visualizer::listen()
 {
-    const bool want = m_style != Off;
+    const bool want = m_style != Off || m_miniWindow;
     vlc_player_t *player = m_intf->p_mainPlayerController->getPlayer();
     if (vlc_player_aout_EnableFilter(player, tapFilter, want) == 0)
         m_listening = want;

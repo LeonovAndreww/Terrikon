@@ -44218,3 +44218,15 @@ msgstr "Загрузки"
 #: terrikon
 msgid "Local disk"
 msgstr "Локальный диск"
+
+#: terrikon
+msgid "Mini window over all the others"
+msgstr "Мини-окно поверх всех окон"
+
+#: terrikon
+msgid "Open the player"
+msgstr "Открыть плеер"
+
+#: terrikon
+msgid "Close the mini window"
+msgstr "Закрыть мини-окно"

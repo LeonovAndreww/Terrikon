@@ -1219,6 +1219,7 @@ libqml_module_player_a_QML = \
 	player/qml/SubtitleStyleSection.qml \
 	player/qml/TrackWaveforms.qml \
 	player/qml/TopBar.qml \
+	player/qml/MiniVisualizer.qml \
 	player/qml/TracksMenu.qml \
 	player/qml/TracksPage.qml \
 	player/qml/TracksPageAudio.qml \
