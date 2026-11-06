@@ -44,7 +44,7 @@ struct SourceItem
     explicit SourceItem(const vlc_media_source_meta* meta)
         : isDummy(false)
         , name(qfu(meta->name))
-        , longName(qfu(meta->longname))
+        , longName(qtr(meta->longname))
     {
         if ( name.startsWith( "podcast" ) )
         {

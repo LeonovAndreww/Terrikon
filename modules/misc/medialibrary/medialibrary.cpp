@@ -1773,6 +1773,12 @@ medialibrary::SortingCriteria MediaLibrary::sortingCriteria(int sort)
             return medialibrary::SortingCriteria::Rating;
         case VLC_ML_SORTING_TRACKNUMBER_ALBUM_RELEASE_YEAR:
             return medialibrary::SortingCriteria::TrackNumberAlbumReleaseYear;
+        case VLC_ML_SORTING_NB_VIDEO:
+            return medialibrary::SortingCriteria::NbVideo;
+        case VLC_ML_SORTING_NB_MEDIA:
+            return medialibrary::SortingCriteria::NbMedia;
+        case VLC_ML_SORTING_LASTPLAYBACKDATE:
+            return medialibrary::SortingCriteria::LastPlaybackDate;
         default:
             vlc_assert_unreachable();
     }

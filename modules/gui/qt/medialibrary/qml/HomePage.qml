@@ -198,8 +198,10 @@ Widgets.PageExt {
 
             function refresh() {
                 folderCount = mlFolders.rowCount()
-                if (folderCount === 0)
-                    suggestions = MediaFolders.suggestions()
+                const have = []
+                for (let i = 0; i < folderCount; ++i)
+                    have.push(String(mlFolders.data(mlFolders.index(i, 0), 259 /* MRL */)))
+                suggestions = MediaFolders.suggestions(have)
             }
 
             function addFolder(url) {
@@ -332,7 +334,7 @@ Widgets.PageExt {
                         HoverHandler { id: chipHover }
 
                         Widgets.ToolTipExt {
-                            visible: chipHover.hovered
+                            visible: chipHover.hovered && !removeButton.hovered
                             text: chip._path
                         }
 
@@ -344,7 +346,7 @@ Widgets.PageExt {
 
                             Widgets.IconLabel {
                                 anchors.verticalCenter: parent.verticalCenter
-                                text: VLCIcons.folder
+                                text: VLCIcons.ic_fluent_folder_open_24_regular
                                 color: cardTheme.fg.secondary
                                 font.pixelSize: VLCStyle.icon_small
                             }
@@ -356,6 +358,7 @@ Widgets.PageExt {
                             }
 
                             Widgets.IconToolButton {
+                                id: removeButton
                                 anchors.verticalCenter: parent.verticalCenter
                                 width: VLCStyle.dp(22, VLCStyle.scale)
                                 height: width
@@ -363,6 +366,51 @@ Widgets.PageExt {
                                 text: VLCIcons.close
                                 description: qsTr("Remove from the media library (the files stay)")
                                 onClicked: mlFolders.removeAt(chip.index)
+                            }
+                        }
+                    }
+                }
+
+                // Offered and not there: a dashed chip, added on click
+                Repeater {
+                    model: foldersCard.suggestions
+
+                    Rectangle {
+                        id: offer
+
+                        required property var modelData
+
+                        height: VLCStyle.dp(30, VLCStyle.scale)
+                        width: offerRow.implicitWidth + 2 * VLCStyle.margin_small
+                        radius: height / 2
+                        color: offerHover.hovered ? Qt.rgba(1, 1, 1, 0.08) : "transparent"
+                        border.color: Qt.rgba(1, 1, 1, 0.18)
+
+                        HoverHandler { id: offerHover; cursorShape: Qt.PointingHandCursor }
+                        TapHandler { onTapped: foldersCard.addFolder(offer.modelData.url) }
+
+                        Widgets.ToolTipExt {
+                            visible: offerHover.hovered
+                            text: qsTr("Add %1 to the media library").arg(offer.modelData.path)
+                        }
+
+                        Row {
+                            id: offerRow
+
+                            anchors.centerIn: parent
+                            spacing: VLCStyle.margin_xsmall
+
+                            Widgets.IconLabel {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: VLCIcons.add
+                                color: cardTheme.fg.secondary
+                                font.pixelSize: VLCStyle.icon_xsmall
+                            }
+
+                            Widgets.CaptionLabel {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: offer.modelData.title
+                                color: cardTheme.fg.secondary
                             }
                         }
                     }

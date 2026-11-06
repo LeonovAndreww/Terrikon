@@ -36,7 +36,11 @@ ListViewExt {
     property var sortModel: []
 
     property Component tableHeaderDelegate:  TableHeaderDelegate {
+        id: defaultHeader
+        textEnd: colModel.hCenterText ? (width + defaultHeaderLabel.implicitWidth) / 2
+                                      : defaultHeaderLabel.implicitWidth
         Widgets.CaptionLabel {
+            id: defaultHeaderLabel
             horizontalAlignment: colModel.hCenterText ? Text.AlignHCenter : Text.AlignLeft
             verticalAlignment: Text.AlignVCenter
 
@@ -314,18 +318,19 @@ ListViewExt {
                             })
                         }
 
+                        // Right after the text of the header
                         Text {
+                            id: sortArrow
                             text: (root.model.sortOrder === Qt.AscendingOrder) ? "▼" : "▲"
                             visible: root.model.sortCriteria === modelData.model.criteria
-                            font.pixelSize: VLCStyle.fontSize_normal
+                            font.pixelSize: VLCStyle.fontSize_small
                             color: root.colorContext.accent
-
-                            anchors {
-                                top: parent.top
-                                bottom: parent.bottom
-                                right: parent.right
-                                leftMargin: VLCStyle.margin_xsmall
-                                rightMargin: VLCStyle.margin_xsmall
+                            verticalAlignment: Text.AlignVCenter
+                            height: parent.height
+                            x: {
+                                const end = headerCell._item ? headerCell._item.textEnd : -1
+                                const last = parent.width - width - VLCStyle.margin_xsmall
+                                return end >= 0 ? Math.min(end + VLCStyle.margin_xsmall, last) : last
                             }
                         }
 
@@ -333,6 +338,12 @@ ListViewExt {
                             onTapped: (eventPoint, button) => {
                                 if (!root.sortingFromHeader)
                                     return
+                                // Terrikon: the cover column undoes the sorting
+                                if (headerCell._item && eventPoint.position.x < headerCell._item.coverWidth) {
+                                    root.model.sortCriteria = ""
+                                    root.model.sortOrder = Qt.AscendingOrder
+                                    return
+                                }
                                 if (!(modelData.model.isSortable ?? true))
                                     return
                                 else if (root.model.sortCriteria !== modelData.model.criteria)

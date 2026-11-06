@@ -267,7 +267,7 @@ void DeviceSourceProvider::init()
                 //ensure this QObject don't live in the worker thread
                 mediaSource->moveToThread(thread);
 
-                ctx.name += ctx.name.isEmpty() ? qfu( meta->longname ) : ", " + qfu( meta->longname );
+                ctx.name += ctx.name.isEmpty() ? qtr( meta->longname ) : ", " + qtr( meta->longname );
                 ctx.sources.push_back(mediaSource);
             }
         },

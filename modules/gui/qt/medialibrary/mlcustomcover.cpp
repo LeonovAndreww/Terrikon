@@ -25,6 +25,7 @@
 #include "medialibrary/thumbnailcollector.hpp"
 #include "util/asynctask.hpp"
 #include "util/covergenerator.hpp"
+#include "terrikon/folder_tree.hpp"
 
 #include <qhashfunctions.h>
 
@@ -148,10 +149,7 @@ ThumbnailList extractChildMediaThumbnailsOrIDs(vlc_medialibrary_t *p_ml, const i
     // NOTE: We retrieve twice the count to maximize our chances to get a valid thumbnail.
     params.i_nbResults = count * 2;
 
-    ml_unique_ptr<vlc_ml_media_list_t> list(vlc_ml_list_media_of(p_ml, &params, itemID.type, itemID.id));
-
-    for (const auto &media : ml_range_iterate<vlc_ml_media_t>(list))
-    {
+    const auto take = [&result](const vlc_ml_media_t &media) {
         const bool isThumbnailAvailable = (media.thumbnails[VLC_ML_THUMBNAIL_SMALL].i_status == VLC_ML_THUMBNAIL_STATUS_AVAILABLE);
         if (isThumbnailAvailable)
         {
@@ -160,6 +158,39 @@ ThumbnailList extractChildMediaThumbnailsOrIDs(vlc_medialibrary_t *p_ml, const i
         {
             result.toGenerate.insert(media.i_id);
         }
+    };
+
+    if (itemID.type == VLC_ML_PARENT_FOLDER)
+    {
+        // Terrikon: its own videos, then one from each subfolder (from
+        // deeper down if need be), so that a folder of folders shows several
+        const auto enough = [&] { return result.existing.size() + result.toGenerate.size() >= size_t(count * 2); };
+        ml_unique_ptr<vlc_ml_media_list_t> own(vlc_ml_list_media_of(p_ml, &params, itemID.type, itemID.id));
+        for (const auto &media : ml_range_iterate<vlc_ml_media_t>(own))
+            take(media);
+        vlc_ml_folder_list_t *subfolders = nullptr;
+        vlc_ml_query_params_t subParams = vlc_ml_query_params_create();
+        subParams.i_sort = VLC_ML_SORTING_ALPHA;
+        if (!enough() && vlc_ml_list(p_ml, VLC_ML_LIST_SUBFOLDERS, &subParams, itemID.id, &subfolders) == VLC_SUCCESS && subfolders)
+        {
+            ml_unique_ptr<vlc_ml_folder_list_t> owner(subfolders);
+            for (const vlc_ml_folder_t &sub : ml_range_iterate<vlc_ml_folder_t>(owner))
+            {
+                if (enough())
+                    break;
+                terrikon::forEachFolderMedia(p_ml, sub.i_id, [&](const vlc_ml_media_t &media) {
+                    take(media);
+                    return false;
+                });
+            }
+        }
+    }
+    else
+    {
+        ml_unique_ptr<vlc_ml_media_list_t> list(vlc_ml_list_media_of(p_ml, &params, itemID.type, itemID.id));
+
+        for (const auto &media : ml_range_iterate<vlc_ml_media_t>(list))
+            take(media);
     }
 
     if (result.existing.size() > count)

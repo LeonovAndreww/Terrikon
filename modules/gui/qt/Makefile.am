@@ -291,6 +291,7 @@ libqt_plugin_la_SOURCES = \
 	terrikon/clip_selection.cpp terrikon/clip_selection.hpp \
 	terrikon/compact_player.cpp terrikon/compact_player.hpp \
 	terrikon/media_folders.cpp terrikon/media_folders.hpp \
+	terrikon/folder_tree.cpp terrikon/folder_tree.hpp \
 	terrikon/media_tools.cpp terrikon/media_tools.hpp \
 	terrikon/moment_marks.cpp terrikon/moment_marks.hpp \
 	terrikon/selftest.cpp terrikon/selftest.hpp \
@@ -506,6 +507,7 @@ nodist_libqt_plugin_la_SOURCES = \
 	terrikon/clip_selection.moc.cpp \
 	terrikon/compact_player.moc.cpp \
 	terrikon/media_folders.moc.cpp \
+	terrikon/folder_tree.moc.cpp \
 	terrikon/media_tools.moc.cpp \
 	terrikon/moment_marks.moc.cpp \
 	terrikon/subtitle_style.moc.cpp \
@@ -1111,6 +1113,7 @@ libqml_module_medialibrary_a_QML = \
 	medialibrary/qml/HomePage.qml \
 	medialibrary/qml/MediaView.qml \
 	medialibrary/qml/VideoGroupDisplay.qml \
+	medialibrary/qml/VideoFolderDisplay.qml \
 	medialibrary/qml/MusicAlbums.qml \
 	medialibrary/qml/MusicAlbumsDisplay.qml \
 	medialibrary/qml/MusicAlbumsGridExpandDelegate.qml \

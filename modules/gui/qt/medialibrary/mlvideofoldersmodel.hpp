@@ -1,7 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2021 VLC authors and VideoLAN
- *
- * Authors: Benjamin Arnaud <bunjee@omega.gg>
+ * Copyright (C) 2022 VLC authors and VideoLAN
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,27 +22,43 @@
 // MediaLibrary includes
 #include "mlvideomodel.hpp"
 
-// Forward declarations
-class MLFolder;
-
-class MLVideoFoldersModel : public MLBaseModel
+/* Terrikon: the videos of the media library by folder, as the folders are
+ * on the disk. A folder added to the media library shows as one folder,
+ * subfolders and all; expanded, it is replaced by what it holds (its
+ * subfolders and its own videos), one level, as often as wanted; collapsed
+ * back the same way (see terrikon::FolderExpansion). With a parent folder,
+ * what that folder holds is listed. */
+class MLVideoFoldersModel : public MLVideoModel
 {
     Q_OBJECT
 
 public:
     enum Roles
     {
-        FOLDER_ID = Qt::UserRole + 1,
-        FOLDER_TITLE,
-        FOLDER_TITLE_FIRST_SYMBOL,
-        FOLDER_THUMBNAIL,
-        FOLDER_DURATION,
-        FOLDER_COUNT,
-        FOLDER_NB_VIDEOS
+        FOLDER_COUNT = MLVideoModel::VIDEO_ROLES_COUNT,
+        FOLDER_NB_VIDEOS,
+        FOLDER_SIZE,
+        FOLDER_SIZE_TEXT,
+        FOLDER_MTIME_TEXT,
+        FOLDER_LAST_PLAYED_TEXT,
+        FOLDER_PATH,
+        FOLDER_CAN_EXPAND,
+        FOLDER_CAN_COLLAPSE,
+        FOLDER_CAN_COLLAPSE_ALL,
     };
 
 public:
     explicit MLVideoFoldersModel(QObject * parent = nullptr);
+
+    /* What an item becomes, for the tooltips of the buttons: the names of
+     * what expanding shows, the folder collapsing goes back to */
+    Q_INVOKABLE QString expandPreview(const QModelIndex &index) const;
+    Q_INVOKABLE QString collapseTarget(const QModelIndex &index) const;
+    Q_INVOKABLE QString collapseAllTarget(const QModelIndex &index) const;
+
+    Q_INVOKABLE void expandItem(const QModelIndex &index);
+    Q_INVOKABLE void collapseItem(const QModelIndex &index);
+    Q_INVOKABLE void collapseAllItem(const QModelIndex &index);
 
 public: // MLBaseModel reimplementation
     QHash<int, QByteArray> roleNames() const override;
@@ -62,13 +76,16 @@ protected: // MLBaseModel reimplementation
 private:
     struct Loader : public MLListCacheLoader::MLOp
     {
-        using MLListCacheLoader::MLOp::MLOp;
+        Loader(const MLVideoFoldersModel &model);
+
         size_t count(vlc_medialibrary_t * ml, const vlc_ml_query_params_t* queryParams) const override;
 
         std::vector<std::unique_ptr<MLItem>> load(vlc_medialibrary_t * ml,
                                                   const vlc_ml_query_params_t* queryParams) const override;
 
         std::unique_ptr<MLItem> loadItemById(vlc_medialibrary_t* ml, MLItemId itemId) const override;
+
+        QSet<QString> m_expanded;
     };
 };
 

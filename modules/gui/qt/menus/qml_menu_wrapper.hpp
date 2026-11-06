@@ -491,6 +491,7 @@ class NavigationBarContextMenu : public BasicMenuContainer
     Q_OBJECT
 
     SIMPLE_MENU_PROPERTY(QAbstractItemModel*, model, nullptr)
+    SIMPLE_MENU_PROPERTY(QStringList, currentPath, {})
 
     QML_ELEMENT
 

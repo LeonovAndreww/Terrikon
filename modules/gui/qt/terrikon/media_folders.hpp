@@ -31,12 +31,24 @@ class MediaFolders : public QObject
 {
     Q_OBJECT
 
+    /* What is written under the covers of Videos (see VideoFields) */
+    Q_PROPERTY(QStringList videoFields READ videoFields NOTIFY videoFieldsChanged FINAL)
+
 public:
     explicit MediaFolders(QObject *parent = nullptr);
 
+    QStringList videoFields() const;
+
+signals:
+    void videoFieldsChanged();
+
+public:
+
     /* [{ title, url, path, videos }], only folders that exist and hold
-     * videos; videos is how many (counted two levels deep, at most 999) */
-    Q_INVOKABLE QVariantList suggestions() const;
+     * videos (music for the Music folder), and are not in have (urls of
+     * the folders in the media library); videos is how many, counted two
+     * levels deep, at most 999 */
+    Q_INVOKABLE QVariantList suggestions(const QStringList &have = {}) const;
 
     /* Asks for a folder; empty if cancelled */
     Q_INVOKABLE QUrl pickFolder() const;

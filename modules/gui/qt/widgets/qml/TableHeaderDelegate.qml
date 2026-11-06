@@ -31,6 +31,11 @@ Item {
     readonly property var colModel: cellModel.colModel
     readonly property ColorContext colorContext: cellModel.colorContext
 
+    // Terrikon: where the text of the header ends, -1 if not known
+    property real textEnd: -1
+    // Terrikon: the width of a cover column the cell starts with
+    property real coverWidth: 0
+
     component CellModel: QtObject {
         required property var colModel
         required property ColorContext colorContext

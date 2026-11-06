@@ -145,6 +145,8 @@ Item {
 
     property Component titleHeaderDelegate: TableHeaderDelegate {
         id: titleHeadDel
+        coverWidth: root.titleCover_width
+        textEnd: titleHeadText.x + titleHeadText.implicitWidth
         Row {
             anchors.fill: parent
 
@@ -162,6 +164,7 @@ Item {
             }
 
             TitleHeaderText {
+                id: titleHeadText
                 height: parent.height
 
                 color: titleHeadDel.colorContext.fg.secondary
@@ -172,6 +175,7 @@ Item {
     }
 
     property Component timeHeaderDelegate: TableHeaderDelegate {
+        textEnd: (width + timeTextMetric.width) / 2
         Widgets.IconLabel {
             width: timeTextMetric.width
             height: parent.height
@@ -199,8 +203,10 @@ Item {
 
     property Component titleTextHeaderDelegate: TableHeaderDelegate {
         id: titleHeaderTextDel
+        textEnd: titleHeaderTextLabel.implicitWidth
 
         TitleHeaderText {
+            id: titleHeaderTextLabel
             height: parent.height
 
             color: titleHeaderTextDel.colorContext.fg.secondary

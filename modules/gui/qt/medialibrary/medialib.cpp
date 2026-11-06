@@ -20,6 +20,7 @@
 #include "mlhelper.hpp"
 #include "playlist/playlist_controller.hpp"
 #include "util/shared_input_item.hpp"
+#include "terrikon/folder_tree.hpp"
 
 #include <utility>
 
@@ -55,6 +56,16 @@ static void convertMLItemToPlaylistMedias(vlc_medialibrary_t* ml, const MLItemId
         SharedInputItem item( vlc_ml_get_input_item( ml, itemId.id ), false );
         if (item)
             medias.push_back(vlc::playlist::Media(item.get(), options));
+    }
+    else if (itemId.type == VLC_ML_PARENT_FOLDER)
+    {
+        // Terrikon: a folder plays with its subfolders
+        terrikon::forEachFolderMedia(ml, itemId.id, [&](const vlc_ml_media_t &m) {
+            SharedInputItem item(vlc_ml_get_input_item( ml, m.i_id ), false);
+            if (item)
+                medias.push_back(vlc::playlist::Media(item.get(), options));
+            return true;
+        });
     }
     else
     {
@@ -299,6 +310,13 @@ void MediaLib::mlInputItem(const QVector<MLItemId>& itemIdVector, QJSValue callb
             if (mlId.type == VLC_ML_PARENT_UNKNOWN)
             {
                 ctx.items.emplace_back(vlc_ml_get_input_item(ml, mlId.id), false);
+            }
+            else if (mlId.type == VLC_ML_PARENT_FOLDER)
+            {
+                terrikon::forEachFolderMedia(ml, mlId.id, [&](const vlc_ml_media_t &media) {
+                    ctx.items.emplace_back(vlc_ml_get_input_item(ml, media.i_id), false);
+                    return true;
+                });
             }
             else
             {

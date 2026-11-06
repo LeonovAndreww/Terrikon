@@ -57,6 +57,18 @@ NativeMenu {
             "text": qsTr("Play"),
             "action": addAndPlay
         }, {
+            "text": qsTr("Expand"),
+            "action": (dataList, options, indexes) => model.expandItem(indexes[0]),
+            "visible": (dataList, options, indexes) => _checkRole(dataList, "canExpand", true)
+        }, {
+            "text": qsTr("Collapse"),
+            "action": (dataList, options, indexes) => model.collapseItem(indexes[0]),
+            "visible": (dataList, options, indexes) => _checkRole(dataList, "canCollapse", true)
+        }, {
+            "text": qsTr("Collapse all"),
+            "action": (dataList, options, indexes) => model.collapseAllItem(indexes[0]),
+            "visible": (dataList, options, indexes) => _checkRole(dataList, "canCollapseAll", true)
+        }, {
             "text": qsTr("Play as audio"),
             "action": playAsAudio,
             "visible": root.showPlayAsAudioAction

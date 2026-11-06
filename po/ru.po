@@ -10815,7 +10815,7 @@ msgstr ""
 #: modules/gui/qt/medialibrary/qml/VideoDisplay.qml:49
 #: modules/gui/qt/maininterface/navigationmodel.cpp:273
 msgid "All"
-msgstr "все"
+msgstr "Все"
 
 #: modules/access/v4l2/v4l2.c:246
 msgid "Multichannel television sound (MTS)"
@@ -23113,7 +23113,7 @@ msgstr "Видео нет\nДобавьте источники"
 #: modules/gui/qt/medialibrary/qml/VideoAllSubDisplay.qml:185
 #: modules/gui/qt/medialibrary/qml/VideoAllSubDisplay.qml:244
 msgid "%1 Videos"
-msgstr "Видео: %1"
+msgstr "%1 видео"
 
 #: modules/gui/qt/medialibrary/qml/VideoDisplay.qml:59
 msgid "Video view"
@@ -44045,7 +44045,7 @@ msgstr "Их видео появятся здесь и в разделе «Ви�
 
 #: terrikon
 msgid "%1 videos"
-msgstr "видео: %1"
+msgstr "%1 видео"
 
 #: terrikon
 msgid "Choose another folder…"
@@ -44082,3 +44082,91 @@ msgstr "Убрать из медиатеки (файлы останутся)"
 #: terrikon
 msgid "Add to the media library"
 msgstr "Добавить в медиатеку"
+
+#: terrikon
+msgid "Free Music Charts"
+msgstr "Чарты свободной музыки"
+
+#: terrikon
+msgid "Jamendo Selections"
+msgstr "Подборки Jamendo"
+
+#: terrikon
+msgid "Radio Browser"
+msgstr "Радиостанции"
+
+#: terrikon
+msgid "Add %1 to the media library"
+msgstr "Добавить %1 в медиатеку"
+
+#: terrikon
+msgid "and %1 more"
+msgstr "и ещё %1"
+
+#: terrikon
+msgid "Expand: %1"
+msgstr "Развернуть: %1"
+
+#: terrikon
+msgid "Collapse into %1"
+msgstr "Свернуть в «%1»"
+
+#: terrikon
+msgid "Collapse all into %1, as when added"
+msgstr "Свернуть всё в «%1», как при добавлении"
+
+#: terrikon
+msgid "Collapse all"
+msgstr "Свернуть всё"
+
+#: terrikon
+msgid "Captions"
+msgstr "Подписи"
+
+#: terrikon
+msgid "Length"
+msgstr "Длительность"
+
+#: terrikon
+msgid "Number of videos"
+msgstr "Количество видео"
+
+#: terrikon
+msgid "Date modified"
+msgstr "Дата изменения"
+
+#: terrikon
+msgid "Last watched"
+msgstr "Последний просмотр"
+
+#: terrikon
+msgid "changed %1"
+msgstr "изменено %1"
+
+#: terrikon
+msgid "watched %1"
+msgstr "просмотрено %1"
+
+#: terrikon
+msgid "See-through parts: these menus, messages over the video"
+msgstr "Полупрозрачное: эти меню, сообщения поверх видео"
+
+#: terrikon
+msgid "Solid parts: the queue, the clip panel"
+msgstr "Сплошное: очередь, панель клипа"
+
+#: terrikon
+msgid "Opacity of the see-through parts of the player"
+msgstr "Непрозрачность полупрозрачных частей плеера"
+
+#: terrikon
+msgid "How opaque the menus over the video and the messages on it are."
+msgstr "Насколько непрозрачны меню поверх видео и сообщения на нём."
+
+#: terrikon
+msgid "Opacity of the solid parts of the player"
+msgstr "Непрозрачность сплошных частей плеера"
+
+#: terrikon
+msgid "How opaque the queue and the clip panel over the video are."
+msgstr "Насколько непрозрачны очередь и панель клипа поверх видео."

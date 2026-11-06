@@ -148,6 +148,7 @@ vlc_ml_sorting_criteria_t MLVideoGroupsModel::nameToCriteria(QByteArray name) co
         { QByteArrayLiteral("title"),    VLC_ML_SORTING_ALPHA         },
         { QByteArrayLiteral("duration"), VLC_ML_SORTING_DURATION      },
         { QByteArrayLiteral("date"),     VLC_ML_SORTING_INSERTIONDATE },
+        { QByteArrayLiteral("nb_videos"), VLC_ML_SORTING_NB_VIDEO },
     }.value(name, VLC_ML_SORTING_DEFAULT);
 }
 

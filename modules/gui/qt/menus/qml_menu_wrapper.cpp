@@ -29,6 +29,7 @@
 #include "dialogs/dialogs_provider.hpp"
 #include "util/colorizedsvgicon.hpp"
 #include "maininterface/navigationmodel.hpp"
+#include "terrikon/folder_tree.hpp"
 
 // Qt includes
 #include <QPainter>
@@ -236,6 +237,26 @@ void SortMenuVideo::onPopup(QMenu * menu) /* override */
 
         if (index == grouping)
             action->setChecked(true);
+    }
+
+    // Terrikon: what is written under the covers
+    QMenu *fields = menu->addMenu(qtr("Captions"));
+    const struct { const char *title; const char *field; } shown[] = {
+        { N_("Length"), "duration" },
+        { N_("Number of videos"), "count" },
+        { N_("Size"), "size" },
+        { N_("Date modified"), "mtime" },
+        { N_("Last watched"), "last_played" },
+    };
+    for (const auto &entry : shown)
+    {
+        QAction *action = fields->addAction(qtr(entry.title));
+        action->setCheckable(true);
+        const QString field = QString::fromLatin1(entry.field);
+        action->setChecked(terrikon::VideoFields::instance()->fields().contains(field));
+        connect(action, &QAction::toggled, this, [field](bool on) {
+            terrikon::VideoFields::instance()->setShown(field, on);
+        });
     }
 }
 
@@ -1394,6 +1415,11 @@ void NavigationBarContextMenu::populateMenuForChildren(QMenu *menu, const QList<
         const auto action = menu->addAction(childTitle, [this, uri = childUri]() {
             emit pageRequested(uri);
         });
+
+        // The page shown is marked
+        action->setCheckable(true);
+        action->setChecked(m_currentPath.size() >= childUri.size()
+                           && m_currentPath.mid(0, childUri.size()) == childUri);
 
         if (childIcon.length() > 0)
             action->setIcon(ColorizedSvgIcon::colorizedIconForWidget(childIcon, qobject_cast<QWidget*>(menu)));

@@ -69,7 +69,15 @@ T.Pane {
         target: History
 
         // NOTE: handles cases where the path changes not by clicking in the sidebar
-        function onViewPathChanged(viewPath) {
+        function onViewPathChanged(viewPath) { root._followPath(viewPath) }
+    }
+
+    // Terrikon: the section shown is open, with its pages under it, from the
+    // start too and not only once clicked
+    Component.onCompleted: Qt.callLater(() => _followPath(History.viewPath))
+
+    function _followPath(viewPath) {
+        {
             for (let i = 0; i < listView.count; ++i) {
                 const rowIndex = navigationModel.index(i, 0)
                 const uri = navigationModel.data(rowIndex, NavigationModel.URI)

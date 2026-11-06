@@ -589,6 +589,8 @@ FocusScope {
 
                 model: sidebar.model
 
+                currentPath: History.viewPath
+
                 onPageRequested: (uri) => {
                     if (stackView.isDefaulLoadedForPath([...uri]) ||
                         History.exactMatch(History.viewPath, uri)) {
@@ -605,10 +607,12 @@ FocusScope {
 
                 console.assert(item)
                 if ((sidebar.state !== 'expanded') && item.expandable) {
-                    // TODO: Investigate opening the menu on hover, if
-                    //       we switch to `Popup.Item` type of menus.
+                    // Terrikon: the section opens at once (on its first
+                    // page), the menu offers its other pages
+                    if (!History.match(History.viewPath, modelUri))
+                        History.push(modelUri)
                     const mappedPos = item.mapToGlobal(item.width, 0)
-                    navigationBarContextMenu.popup(item.index, mappedPos, !item.hovered)
+                    Qt.callLater(() => navigationBarContextMenu.popup(item.index, mappedPos, false))
 
                     return
                 }

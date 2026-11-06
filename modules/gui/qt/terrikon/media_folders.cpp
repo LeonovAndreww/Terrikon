@@ -22,6 +22,7 @@
 #include "media_folders.hpp"
 
 #include "qt.hpp"
+#include "folder_tree.hpp"
 
 #include <QCursor>
 #include <QDir>
@@ -37,6 +38,12 @@ namespace terrikon {
 MediaFolders::MediaFolders(QObject *parent)
     : QObject(parent)
 {
+    connect(VideoFields::instance(), &VideoFields::changed, this, &MediaFolders::videoFieldsChanged);
+}
+
+QStringList MediaFolders::videoFields() const
+{
+    return VideoFields::instance()->fields();
 }
 
 static const QStringList &videoPatterns()
@@ -49,14 +56,24 @@ static const QStringList &videoPatterns()
     return patterns;
 }
 
-static int countIn(const QString &path, int depth)
+static const QStringList &audioPatterns()
+{
+    static const QStringList patterns = {
+        QStringLiteral("*.mp3"), QStringLiteral("*.flac"), QStringLiteral("*.ogg"),
+        QStringLiteral("*.opus"), QStringLiteral("*.m4a"), QStringLiteral("*.wav"),
+        QStringLiteral("*.aac"), QStringLiteral("*.wma"),
+    };
+    return patterns;
+}
+
+static int countIn(const QString &path, int depth, const QStringList &patterns = videoPatterns())
 {
     QDir dir(path);
-    int count = dir.entryList(videoPatterns(), QDir::Files).size();
+    int count = dir.entryList(patterns, QDir::Files).size();
     if (depth > 0)
         for (const QString &sub : dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot))
         {
-            count += countIn(dir.filePath(sub), depth - 1);
+            count += countIn(dir.filePath(sub), depth - 1, patterns);
             if (count >= 999)
                 break;
         }
@@ -87,9 +104,10 @@ static QStringList obsFolders()
     return out;
 }
 
-QVariantList MediaFolders::suggestions() const
+QVariantList MediaFolders::suggestions(const QStringList &have) const
 {
     const QString videos = QStandardPaths::writableLocation(QStandardPaths::MoviesLocation);
+    const QString music = QStandardPaths::writableLocation(QStandardPaths::MusicLocation);
     QList<QPair<QString, QString>> candidates = {
         { qtr("NVIDIA recordings"), QDir(videos).filePath(QStringLiteral("NVIDIA")) },
         { qtr("Xbox Game Bar recordings"), QDir(videos).filePath(QStringLiteral("Captures")) },
@@ -97,9 +115,16 @@ QVariantList MediaFolders::suggestions() const
     for (const QString &obs : obsFolders())
         candidates.append({ qtr("OBS recordings"), obs });
     candidates.append({ qtr("Videos"), videos });
+    candidates.append({ qtr("Music"), music });
 
     QVariantList out;
     QStringList seen;
+    for (const QString &url : have)
+    {
+        const QString canonical = QFileInfo(QUrl(url).toLocalFile()).canonicalFilePath();
+        if (!canonical.isEmpty())
+            seen << canonical;
+    }
     for (const auto &[title, path] : candidates)
     {
         const QFileInfo info(path);
@@ -109,7 +134,7 @@ QVariantList MediaFolders::suggestions() const
         if (seen.contains(canonical, Qt::CaseInsensitive))
             continue;
         seen << canonical;
-        const int count = countIn(canonical, 2);
+        const int count = countIn(canonical, 2, path == music ? audioPatterns() : videoPatterns());
         if (count == 0)
             continue;
         out << QVariantMap{

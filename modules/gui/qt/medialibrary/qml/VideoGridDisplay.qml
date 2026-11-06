@@ -108,6 +108,9 @@ Widgets.ExpandGridItemView {
 
         labels: gridView.labels(model)
 
+        treeModel: (gridView.model instanceof MLVideoFoldersModel) ? gridView.model : null
+        treeRow: index
+
         // Events
 
         onItemClicked: (modifier, select) => { gridView.leftClickOnItem(modifier, index, select) }

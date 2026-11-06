@@ -54,12 +54,12 @@ Row {
 
             horizontalAlignment: Text.AlignRight
 
-            color: theme.fg.primary
+            color: "white"
 
             background: Rectangle {
                 anchors.fill: label
-                color: theme.bg.primary
-                opacity: 0.5
+                color: "black"
+                opacity: 0.7
                 radius: VLCStyle.dp(3, VLCStyle.scale)
             }
 

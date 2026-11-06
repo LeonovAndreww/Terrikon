@@ -87,8 +87,7 @@ Widgets.TableViewExt {
                 size: 0.5,
                 model: ({
                     criteria: "nb_videos",
-                    text: qsTr("Videos"),
-                    isSortable: false
+                    text: qsTr("Videos")
                 })
             })
         }

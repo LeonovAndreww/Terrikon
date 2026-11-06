@@ -85,6 +85,11 @@ Widgets.PageExt {
 
         showGroupCountColumn: _meta?.showGroupCountColumn ?? false
 
+        sortModel: _meta?.sortModel ?? [
+            { text: qsTr("Alphabetic"), criteria: "title"    },
+            { text: qsTr("Duration"),   criteria: "duration" }
+        ]
+
         sectionProperty: _meta?.sectionProperty ?? ""
 
         displayMarginBeginning: root.displayMarginBeginning
@@ -98,16 +103,9 @@ Widgets.PageExt {
         function getLabelGroup(model, string) {
             if (!model) return ""
 
-            const count = model.count
-
-            if (count === 1) {
+            if (model.isVideo)
                 return getLabel(model)
-            } else {
-                if (count < 100)
-                    return [ string.arg(count) ]
-                else
-                    return [ string.arg("99+") ]
-            }
+            return [ string.arg(model.count) ]
         }
 
 
@@ -246,18 +244,41 @@ Widgets.PageExt {
 
                 property bool showGroupCountColumn: true
 
+                // Terrikon: folders and videos, as on the disk
+                property var sortModel: [
+                    { text: qsTr("Alphabetic"), criteria: "title" },
+                    { text: qsTr("Number of videos"), criteria: "nb_videos" },
+                    { text: qsTr("Length"), criteria: "duration" },
+                    { text: qsTr("Size"), criteria: "size_text" },
+                    { text: qsTr("Date modified"), criteria: "mtime_text" },
+                    { text: qsTr("Last watched"), criteria: "last_played_text" }
+                ]
+
                 function onAction(indexes) {
                     const index = indexes[0]
+                    const object = model.getDataAt(index)
 
-                    root.showList(model.getDataAt(index), Qt.TabFocusReason)
+                    if (object.isVideo) {
+                        model.addAndPlay(indexes)
+                        MainCtx.playerView = true
+                        return
+                    }
+
+                    root.showList(object, Qt.TabFocusReason)
                 }
 
                 function onDoubleClick(object) {
+                    if (object.isVideo) {
+                        MediaLib.addAndPlay(object.id)
+                        MainCtx.playerView = true
+                        return
+                    }
+
                     root.showList(object, Qt.MouseFocusReason)
                 }
 
                 function isInfoExpandPanelAvailable(modelIndexData) {
-                    return false
+                    return !!modelIndexData.isVideo
                 }
             }
         }

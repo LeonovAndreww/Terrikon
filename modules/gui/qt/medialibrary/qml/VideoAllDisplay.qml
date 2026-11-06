@@ -46,6 +46,9 @@ Widgets.PageLoader {
     }, {
         name: "group",
         component: componentGroup
+    }, {
+        name: "folder",
+        component: componentFolder
     }]
 
 
@@ -58,10 +61,30 @@ Widgets.PageLoader {
             // Events
 
             onShowList: (model, reason) => {
-                History.push([...root.pagePrefix, "group"], { parentId: model.id, title: model.title }, reason)
+                History.push([...root.pagePrefix, MainCtx.grouping === MainCtx.GROUPING_FOLDER ? "folder" : "group"],
+                             { parentId: model.id, title: model.title }, reason)
             }
 
             onCurrentIndexChanged: History.viewProp.initialIndex = currentIndex
+
+            displayMarginBeginning: root.displayMarginBeginning
+            displayMarginEnd: root.displayMarginEnd
+
+            enableBeginningFade: root.enableBeginningFade
+            enableEndFade: root.enableEndFade
+        }
+    }
+
+    // Terrikon: a folder, with its subfolders
+    Component {
+        id: componentFolder
+
+        VideoFolderDisplay {
+            onCurrentIndexChanged: History.viewProp.initialIndex = currentIndex
+
+            onShowList: (model, reason) => {
+                History.push([...root.pagePrefix, "folder"], { parentId: model.id, title: model.title }, reason)
+            }
 
             displayMarginBeginning: root.displayMarginBeginning
             displayMarginEnd: root.displayMarginEnd
