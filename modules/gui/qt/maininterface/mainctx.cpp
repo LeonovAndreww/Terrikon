@@ -353,7 +353,9 @@ MainCtx::~MainCtx()
         settings->setValue( "artist-albums-width", QString::number( m_artistAlbumsWidth ) );
 
         settings->setValue( "grid-view", m_gridView );
-        settings->setValue( "grouping", m_grouping );
+        /* Terrikon: its own key, so that videos are grouped by folder by
+         * default even where VLC saved "no grouping" */
+        settings->setValue( "video-grouping", m_grouping );
 
         settings->setValue( "color-scheme-index", m_colorScheme->currentIndex() );
 
@@ -508,7 +510,7 @@ void MainCtx::loadFromSettingsImpl(const bool callSignals)
 
     loadFromSettings(m_gridView, "MainWindow/grid-view", true, this, &MainCtx::gridViewChanged);
 
-    loadFromSettings(m_grouping, "MainWindow/grouping", GROUPING_NONE, this, &MainCtx::groupingChanged);
+    loadFromSettings(m_grouping, "MainWindow/video-grouping", GROUPING_FOLDER, this, &MainCtx::groupingChanged);
 
     loadFromSettings(m_showRemainingTime, "MainWindow/ShowRemainingTime", false, this, &MainCtx::showRemainingTimeChanged);
 

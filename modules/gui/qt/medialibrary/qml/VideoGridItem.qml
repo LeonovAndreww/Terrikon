@@ -43,8 +43,12 @@ Widgets.GridItem {
     fillMode: Image.Stretch
 
     title: model.title || qsTr("Unknown title")
-    // An unknown length (not parsed yet) comes as a negative duration
+    // An unknown length (not parsed yet) comes as a negative duration; a
+    // group (a folder) has no length summed up yet, so it tells how many
+    // videos it holds instead
     subtitle: {
+        if (model?.count !== undefined && model.count > 0)
+            return qsTr("%1 videos").arg(model.count)
         const text = model?.duration?.formatHMS() ?? ""
         return text.startsWith("-") ? "" : text
     }
