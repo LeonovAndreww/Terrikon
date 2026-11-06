@@ -59,6 +59,7 @@
 #include <QWidget>
 #include <QHBoxLayout>
 #include <QDialog>
+#include <QIcon>
 #include <QFileDialog>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
@@ -236,9 +237,9 @@ SPrefsCatList::SPrefsCatList( qt_intf_t *_p_intf, QWidget *_parent ) :
         QToolButton * button = new QToolButton( this );
         /* Scale icon to non native size outside of toolbutton to avoid widget size */
         /* computation using native size */
-        QPixmap scaled = QPixmap( icon )
-              .scaledToHeight( ICON_HEIGHT * dpr, Qt::SmoothTransformation );
-        scaled.setDevicePixelRatio( dpr );
+        /* Terrikon: the svg drawn at the size shown, not drawn small and
+         * blown up (which blurred it) */
+        QPixmap scaled = QIcon( icon ).pixmap( QSize( ICON_WIDTH, ICON_HEIGHT ), dpr );
         button->setIcon( scaled );
         button->setText( label );
         button->setToolTip( ltooltip );
