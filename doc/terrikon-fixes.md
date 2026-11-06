@@ -21,6 +21,9 @@ bug is upstream's; when unsure, the original build is run.
 | Interface | About 1450 strings missing from the Russian translation | translated |
 | Core | `spawn.c` lost the child's error output | kept |
 | Core | Signals emitted while a lock is held | emitted after unlocking |
+| Browse | A drive without a label (usually C:) has no name; labels in other languages come out garbled (ANSI call) | "Label (E:)", "Local disk (C:)", read with the wide call |
+| Browse | On Windows the Documents folder is shown as "Home"; Desktop and Downloads share their translations with unrelated strings ("Screen", the verb "Download") | each folder keeps its own name |
+| Tables | The sort arrow points up for Z to A, unlike the file explorer | up is A to Z; a new column starts from A to Z |
 
 ## Our own bugs (introduced by Terrikon, fixed)
 
@@ -34,4 +37,5 @@ bug is upstream's; when unsure, the original build is run.
 ## Known upstream issues, not fixed yet
 
 - `ListViewExt.qml`: the footer's height depends on its own position ("Binding loop detected for property implicitHeight"). Harmless.
+- `BrowseDeviceView.qml`: "Unable to assign [undefined] to QQmlComponent*" for sections without a header. Harmless.
 - Changing the audio filters and the VLC visualization at the same moment can stall the audio output (playing, but the time stands still). Terrikon switches them one after the other.
