@@ -23527,7 +23527,7 @@ msgstr "&Воспроизведение"
 #: modules/gui/qt/menus/menus.cpp:790
 #: modules/gui/skins2/src/theme_repository.cpp:115
 msgid "Open skin..."
-msgstr "Открыть обложку..."
+msgstr "Открыть оболочку..."
 
 #: modules/gui/qt/menus/menus.cpp:811
 #: modules/gui/qt/menus/qml_menu_wrapper.cpp:305
@@ -43505,11 +43505,11 @@ msgstr "Внешний вид"
 
 #. Qt .ui file string, kept out of vlc.pot by VLC
 msgid "VLC will use custom skin."
-msgstr "Будет использоваться своя обложка."
+msgstr "Будет использоваться своя оболочка."
 
 #. Qt .ui file string, kept out of vlc.pot by VLC
 msgid "Use custom skin"
-msgstr "Своя обложка"
+msgstr "Своя оболочка"
 
 #. Qt .ui file string, kept out of vlc.pot by VLC
 msgid "VLC will use a modern layout with\nno menubar or pinned controls but\nwith client-side decoration."
@@ -43581,7 +43581,7 @@ msgstr "Не скрывать элементы управления во вре�
 
 #. Qt .ui file string, kept out of vlc.pot by VLC
 msgid "Skin resource file:"
-msgstr "Файл обложки:"
+msgstr "Файл оболочки:"
 
 #. Qt .ui file string, kept out of vlc.pot by VLC
 msgid "Play Queue and Instances"

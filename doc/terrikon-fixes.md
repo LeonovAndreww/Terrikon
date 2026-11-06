@@ -32,6 +32,7 @@ bug is upstream's; when unsure, the original build is run.
 | Videos and the player failed to load (b89e9d3) | missing QML imports, a grouped property set on an instance |
 | Blurry simple preferences icons | our SVG icons were scaled with VLC's pixmap code meant for its PNGs |
 | Folder names "Скачать" (the verb) and "Главная" (the home page) in Browse | our out-of-context translations of "Download" and "Home" |
+| "Skin" translated as "обложка" (cover) in the preferences and the menu | our translation; back to "оболочка" |
 | Pink (magenta) tool tips over the folder chips on Home and the folder buttons on covers | tool tips placed directly without the palette VLC's own ones carry |
 | Leaving the player while a visualization played stopped the music; once a grey view was left behind (not seen again since) | our leaving code stopped playback; now music goes on |
 
