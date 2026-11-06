@@ -18,6 +18,7 @@
 #ifndef TERRIKON_FOLDER_TREE_HPP
 #define TERRIKON_FOLDER_TREE_HPP
 
+#include <QMutex>
 #include <QObject>
 #include <QSet>
 #include <QString>
@@ -39,7 +40,8 @@ class FolderExpansion : public QObject
 public:
     static FolderExpansion *instance();
 
-    QSet<QString> expanded() const { return m_expanded; }
+    /* Safe from any thread: the media library thread reads it */
+    QSet<QString> expanded() const;
 
     void expand(const QString &mrl);
     /* Collapses the folder and every folder under it */
@@ -52,6 +54,7 @@ private:
     FolderExpansion();
     void save() const;
 
+    mutable QMutex m_lock;
     QSet<QString> m_expanded;
 };
 

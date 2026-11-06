@@ -19,6 +19,7 @@ import QtQuick
 
 import VLC.MainInterface
 import VLC.MediaLibrary
+import VLC.Menus
 
 import VLC.Widgets as Widgets
 import VLC.Style

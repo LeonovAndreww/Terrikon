@@ -19,6 +19,7 @@ import QtQuick
 
 import VLC.MainInterface
 import VLC.MediaLibrary
+import VLC.Terrikon
 
 import VLC.Widgets as Widgets
 import VLC.Util
@@ -154,20 +155,51 @@ Widgets.GridItem {
             readonly property bool _active: !!root.treeModel && root.treeRow >= 0
             visible: _active && (root.hovered || root.highlighted)
 
-            component TreeButton: Widgets.IconToolButton {
-                width: VLCStyle.dp(26, VLCStyle.scale)
-                height: width
-                font.pixelSize: VLCStyle.icon_small
-                color: "white"
-                backgroundColor: hovered ? Qt.rgba(0, 0, 0, 0.85) : Qt.rgba(0, 0, 0, 0.6)
+            // A dark chip with a white chevron (or two), clear on any cover
+            component TreeButton: Rectangle {
+                id: treeButton
+
+                property string description
+                property bool twoChevrons: false
+                property bool up: false
+                signal clicked()
+
+                width: VLCStyle.dp(30, VLCStyle.scale)
+                height: VLCStyle.dp(24, VLCStyle.scale)
+                radius: VLCStyle.dp(6, VLCStyle.scale)
+                color: buttonHover.hovered ? Qt.rgba(0, 0, 0, 0.9) : Qt.rgba(0, 0, 0, 0.7)
+                border.color: Qt.rgba(1, 1, 1, buttonHover.hovered ? 0.5 : 0.2)
+
+                Widgets.IconLabel {
+                    anchors.centerIn: parent
+                    anchors.verticalCenterOffset: treeButton.twoChevrons ? VLCStyle.dp(3, VLCStyle.scale) : 0
+                    text: treeButton.up ? VLCIcons.expand_inverted : VLCIcons.expand
+                    font.pixelSize: VLCStyle.dp(26, VLCStyle.scale)
+                    color: "white"
+                }
+
+                Widgets.IconLabel {
+                    visible: treeButton.twoChevrons
+                    anchors.centerIn: parent
+                    anchors.verticalCenterOffset: -VLCStyle.dp(3, VLCStyle.scale)
+                    text: VLCIcons.expand_inverted
+                    font.pixelSize: VLCStyle.dp(26, VLCStyle.scale)
+                    color: "white"
+                }
+
+                HoverHandler { id: buttonHover; cursorShape: Qt.PointingHandCursor }
+                TapHandler { onTapped: treeButton.clicked() }
+
+                Widgets.ToolTipExt {
+                    visible: buttonHover.hovered && treeButton.description !== ""
+                    text: treeButton.description
+                }
             }
 
             function _index() { return root.treeModel.index(root.treeRow, 0) }
 
             TreeButton {
                 visible: model?.canExpand === true
-                text: VLCIcons.expand
-                font.pixelSize: VLCStyle.icon_normal
                 description: treeButtons._active && visible
                              ? qsTr("Expand: %1").arg(root.treeModel.expandPreview(treeButtons._index())) : ""
                 onClicked: root.treeModel.expandItem(treeButtons._index())
@@ -175,8 +207,7 @@ Widgets.GridItem {
 
             TreeButton {
                 visible: model?.canCollapse === true
-                text: VLCIcons.expand_inverted
-                font.pixelSize: VLCStyle.icon_normal
+                up: true
                 description: treeButtons._active && visible
                              ? qsTr("Collapse into %1").arg(root.treeModel.collapseTarget(treeButtons._index())) : ""
                 onClicked: root.treeModel.collapseItem(treeButtons._index())
@@ -184,16 +215,8 @@ Widgets.GridItem {
 
             TreeButton {
                 visible: model?.canCollapseAll === true
-                text: VLCIcons.expand_inverted
-                font.pixelSize: VLCStyle.icon_normal
-                // two chevrons: all the way up
-                Widgets.IconLabel {
-                    anchors.centerIn: parent
-                    anchors.verticalCenterOffset: -VLCStyle.dp(5, VLCStyle.scale)
-                    text: VLCIcons.expand_inverted
-                    font.pixelSize: VLCStyle.icon_normal
-                    color: "white"
-                }
+                up: true
+                twoChevrons: true
                 description: treeButtons._active && visible
                              ? qsTr("Collapse all into %1, as when added").arg(root.treeModel.collapseAllTarget(treeButtons._index())) : ""
                 onClicked: root.treeModel.collapseAllItem(treeButtons._index())

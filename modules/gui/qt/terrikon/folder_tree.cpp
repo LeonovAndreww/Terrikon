@@ -46,16 +46,26 @@ FolderExpansion *FolderExpansion::instance()
     return self;
 }
 
+QSet<QString> FolderExpansion::expanded() const
+{
+    QMutexLocker locker(&m_lock);
+    return m_expanded;
+}
+
 void FolderExpansion::save() const
 {
-    settings().setValue(QStringLiteral("Videos/expanded-folders"), QStringList(m_expanded.begin(), m_expanded.end()));
+    const QSet<QString> set = expanded();
+    settings().setValue(QStringLiteral("Videos/expanded-folders"), QStringList(set.begin(), set.end()));
 }
 
 void FolderExpansion::expand(const QString &mrl)
 {
-    if (mrl.isEmpty() || m_expanded.contains(mrl))
-        return;
-    m_expanded.insert(mrl);
+    {
+        QMutexLocker locker(&m_lock);
+        if (mrl.isEmpty() || m_expanded.contains(mrl))
+            return;
+        m_expanded.insert(mrl);
+    }
     save();
     emit changed();
 }
@@ -63,15 +73,18 @@ void FolderExpansion::expand(const QString &mrl)
 void FolderExpansion::collapse(const QString &mrl)
 {
     bool any = false;
-    for (auto it = m_expanded.begin(); it != m_expanded.end();)
     {
-        if (it->startsWith(mrl))
+        QMutexLocker locker(&m_lock);
+        for (auto it = m_expanded.begin(); it != m_expanded.end();)
         {
-            it = m_expanded.erase(it);
-            any = true;
+            if (!mrl.isEmpty() && it->startsWith(mrl))
+            {
+                it = m_expanded.erase(it);
+                any = true;
+            }
+            else
+                ++it;
         }
-        else
-            ++it;
     }
     if (!any)
         return;

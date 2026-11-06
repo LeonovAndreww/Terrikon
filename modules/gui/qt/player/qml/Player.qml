@@ -1199,7 +1199,11 @@ FocusScope {
             useAcrylic: false
             focus: true
 
-            background.opacity: MainCtx.panelOpacity
+            Binding {
+                target: playlistView.background
+                property: "opacity"
+                value: MainCtx.panelOpacity
+            }
 
             wheelEnabled: true
 

@@ -44149,11 +44149,11 @@ msgstr "просмотрено %1"
 
 #: terrikon
 msgid "See-through parts: these menus, messages over the video"
-msgstr "Полупрозрачное: эти меню, сообщения поверх видео"
+msgstr "Полупрозрачное (меню, сообщения)"
 
 #: terrikon
 msgid "Solid parts: the queue, the clip panel"
-msgstr "Сплошное: очередь, панель клипа"
+msgstr "Сплошное (очередь, клип)"
 
 #: terrikon
 msgid "Opacity of the see-through parts of the player"

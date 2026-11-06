@@ -84,8 +84,6 @@ private:
                                                   const vlc_ml_query_params_t* queryParams) const override;
 
         std::unique_ptr<MLItem> loadItemById(vlc_medialibrary_t* ml, MLItemId itemId) const override;
-
-        QSet<QString> m_expanded;
     };
 };
 

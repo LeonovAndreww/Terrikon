@@ -648,14 +648,13 @@ void MLVideoFoldersModel::onVlcMlEvent(const MLEvent & event) /* override */
 
 MLVideoFoldersModel::Loader::Loader(const MLVideoFoldersModel &model)
     : MLOp(model)
-    , m_expanded(terrikon::FolderExpansion::instance()->expanded())
 {
 }
 
 size_t MLVideoFoldersModel::Loader::count(vlc_medialibrary_t * ml, const vlc_ml_query_params_t*) const /* override */
 {
     const auto tree = buildTree(ml);
-    return shownItems(*tree, m_parent, m_expanded, QString::fromUtf8(m_searchPattern)).size();
+    return shownItems(*tree, m_parent, terrikon::FolderExpansion::instance()->expanded(), QString::fromUtf8(m_searchPattern)).size();
 }
 
 std::vector<std::unique_ptr<MLItem>>
@@ -663,7 +662,7 @@ MLVideoFoldersModel::Loader::load(vlc_medialibrary_t * ml,
                                   const vlc_ml_query_params_t* queryParams) const /* override */
 {
     const auto tree = buildTree(ml);
-    std::vector<Shown> items = shownItems(*tree, m_parent, m_expanded, QString::fromUtf8(m_searchPattern));
+    std::vector<Shown> items = shownItems(*tree, m_parent, terrikon::FolderExpansion::instance()->expanded(), QString::fromUtf8(m_searchPattern));
     sortShown(*tree, items, m_sort, m_sortDesc);
 
     const size_t offset = queryParams ? queryParams->i_offset : 0;
@@ -679,7 +678,7 @@ std::unique_ptr<MLItem>
 MLVideoFoldersModel::Loader::loadItemById(vlc_medialibrary_t* ml, MLItemId itemId) const
 {
     const auto tree = buildTree(ml);
-    for (const Shown &s : shownItems(*tree, m_parent, m_expanded, QString::fromUtf8(m_searchPattern)))
+    for (const Shown &s : shownItems(*tree, m_parent, terrikon::FolderExpansion::instance()->expanded(), QString::fromUtf8(m_searchPattern)))
     {
         const int64_t id = s.video ? tree->media->p_items[s.index].i_id : tree->nodes[s.index].id;
         const vlc_ml_parent_type type = s.video ? VLC_ML_PARENT_UNKNOWN : VLC_ML_PARENT_FOLDER;
