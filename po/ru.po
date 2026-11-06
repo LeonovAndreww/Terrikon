@@ -44230,3 +44230,27 @@ msgstr "Открыть плеер"
 #: terrikon
 msgid "Close the mini window"
 msgstr "Закрыть мини-окно"
+
+#: terrikon
+msgid "Line"
+msgstr "Линия"
+
+#: terrikon
+msgid "Card"
+msgstr "Карточка"
+
+#: terrikon
+msgid "Round"
+msgstr "Круг"
+
+#: terrikon
+msgid "Strip"
+msgstr "Полоска"
+
+#: terrikon
+msgid "Visualization only"
+msgstr "Только визуализация"
+
+#: terrikon
+msgid "Shape: %1"
+msgstr "Форма: %1"

@@ -41,6 +41,8 @@ static const char styleKey[] = "Terrikon/visualizer-style";
 static const char backgroundKey[] = "Terrikon/visualizer-background";
 static const char miniKey[] = "Terrikon/visualizer-mini";
 static const char miniPositionKey[] = "Terrikon/visualizer-mini-position";
+static const char miniShapeKey[] = "Terrikon/visualizer-mini-shape";
+static const char miniSizeKey[] = "Terrikon/visualizer-mini-size-%1";
 static const char tapFilter[] = "terrikon_tap";
 
 Visualizer *Visualizer::s_instance = nullptr;
@@ -67,6 +69,8 @@ Visualizer::Visualizer(qt_intf_t *intf, QObject *parent)
 
     m_miniWindow = m_intf->mainSettings->value(QString::fromLatin1(miniKey), false).toBool();
     m_miniPosition = m_intf->mainSettings->value(QString::fromLatin1(miniPositionKey), QPoint(-1, -1)).toPoint();
+    m_miniShape = qBound(0, m_intf->mainSettings->value(QString::fromLatin1(miniShapeKey), int(Card)).toInt(),
+                         MiniShapeCount - 1);
 
     /* The audio output may only come with the first playback */
     connect(m_intf->p_mainPlayerController, &PlayerController::playingStateChanged,
@@ -104,6 +108,38 @@ void Visualizer::setMiniPosition(const QPoint &position)
     emit miniPositionChanged();
 }
 
+void Visualizer::setMiniShape(int shape)
+{
+    shape = qBound(0, shape, MiniShapeCount - 1);
+    if (shape == m_miniShape)
+        return;
+    m_miniShape = shape;
+    m_intf->mainSettings->setValue(QString::fromLatin1(miniShapeKey), shape);
+    emit miniShapeChanged();
+}
+
+QStringList Visualizer::miniShapeNames() const
+{
+    return { qtr("Card"), qtr("Round"), qtr("Strip"), qtr("Visualization only") };
+}
+
+QSize Visualizer::miniSize(int shape) const
+{
+    static const QSize defaults[MiniShapeCount] = {
+        QSize(240, 240), QSize(230, 230), QSize(380, 80), QSize(320, 90)
+    };
+    shape = qBound(0, shape, MiniShapeCount - 1);
+    const QSize size = m_intf->mainSettings->value(QString::fromLatin1(miniSizeKey).arg(shape)).toSize();
+    return size.isValid() ? size : defaults[shape];
+}
+
+void Visualizer::setMiniSize(int shape, const QSize &size)
+{
+    if (!size.isValid())
+        return;
+    m_intf->mainSettings->setValue(QString::fromLatin1(miniSizeKey).arg(qBound(0, shape, MiniShapeCount - 1)), size);
+}
+
 void Visualizer::setBackground(int background)
 {
     background = qBound(0, background, BackgroundCount - 1);
@@ -116,7 +152,8 @@ void Visualizer::setBackground(int background)
 
 QStringList Visualizer::styleNames() const
 {
-    return { qtr("Off"), qtr("Ring around the cover"), qtr("Bars"), qtr("Wave"), qtr("Hills") };
+    return { qtr("Off"), qtr("Ring around the cover"), qtr("Bars"), qtr("Wave"), qtr("Hills"),
+             qtr("Mirror"), qtr("Line") };
 }
 
 QStringList Visualizer::backgroundNames() const
@@ -243,6 +280,15 @@ void AudioVisualizer::setStyle(int style)
     m_style = style;
     emit styleChanged();
     itemChange(ItemVisibleHasChanged, ItemChangeData(isVisible()));
+    update();
+}
+
+void AudioVisualizer::setFill(bool fill)
+{
+    if (fill == m_fill)
+        return;
+    m_fill = fill;
+    emit fillChanged();
     update();
 }
 
@@ -415,7 +461,7 @@ QSGNode *AudioVisualizer::updatePaintNode(QSGNode *old, UpdatePaintNodeData *)
     case Visualizer::Ring:
     {
         QPointF c(w / 2, h / 2);
-        qreal r0 = std::min(w, h) * .2;
+        qreal r0 = std::min(w, h) * (m_fill ? .27 : .2);
         if (m_coverRect.isValid() && !m_coverRect.isEmpty())
         {
             c = m_coverRect.center();
@@ -454,10 +500,10 @@ QSGNode *AudioVisualizer::updatePaintNode(QSGNode *old, UpdatePaintNodeData *)
     }
     case Visualizer::Bars:
     {
-        const qreal margin = w * .06;
+        const qreal margin = m_fill ? 3 : w * .06;
         const qreal slot = (w - 2 * margin) / bands;
-        const qreal hw = std::max(1.0, slot * .32);
-        const qreal top = h * .24;
+        const qreal hw = std::max(.8, slot * .32);
+        const qreal top = m_fill ? h - 12 : h * .24;
         const qreal base = h - 2;
         for (int b = 0; b < bands; b++)
         {
@@ -474,9 +520,9 @@ QSGNode *AudioVisualizer::updatePaintNode(QSGNode *old, UpdatePaintNodeData *)
     }
     case Visualizer::Wave:
     {
-        const qreal amp = h * .09;
-        const qreal mid = h - amp * 1.4 - 6;
-        const qreal margin = w * .04;
+        const qreal amp = m_fill ? h * .3 : h * .09;
+        const qreal mid = m_fill ? h / 2 : h - amp * 1.4 - 6;
+        const qreal margin = m_fill ? 4 : w * .04;
         const int n = TERRIKON_TAP_WAVE;
         const qreal dx = (w - 2 * margin) / (n - 1);
         auto point = [&](int i) {
@@ -494,7 +540,7 @@ QSGNode *AudioVisualizer::updatePaintNode(QSGNode *old, UpdatePaintNodeData *)
     }
     case Visualizer::Hills:
     {
-        const qreal top = h * .28;
+        const qreal top = m_fill ? h * .8 : h * .28;
         const qreal base = h;
         const struct { const QVector<float> *values; qreal alpha; qreal lift; } layers[] = {
             { &m_echo2, .14, 1.15 }, { &m_echo1, .22, 1.05 }, { &m_bands, .4, 1.0 },
@@ -515,6 +561,46 @@ QSGNode *AudioVisualizer::updatePaintNode(QSGNode *old, UpdatePaintNodeData *)
                          mix(m_color2, m_color2, 0, layer.alpha + .2));
             }
         }
+        break;
+    }
+    case Visualizer::Mirror:
+    {
+        /* The spectrum both ways from a middle line, low in the middle */
+        const qreal half = m_fill ? h / 2 - 3 : h * .11;
+        const qreal mid = m_fill ? h / 2 : h - half - 6;
+        const qreal margin = m_fill ? 3 : w * .06;
+        const int count = bands * 2;
+        const qreal slot = (w - 2 * margin) / count;
+        const qreal hw = std::max(.8, slot * .3);
+        for (int i = 0; i < count; i++)
+        {
+            const int b = i < bands ? bands - 1 - i : i - bands;
+            const float v = m_bands[b];
+            const qreal x = margin + (i + .5) * slot;
+            const qreal len = 1 + v * half;
+            const QColor tip = mix(m_color, m_color2, v, .9);
+            const QColor core = mix(m_color, m_color, 0, .55);
+            mesh.bar(QPointF(x, mid), QPointF(x, mid - len), hw, core, tip);
+            mesh.bar(QPointF(x, mid), QPointF(x, mid + len), hw, core, tip);
+        }
+        break;
+    }
+    case Visualizer::Line:
+    {
+        /* The spectrum as one bare line, nothing filled */
+        const qreal top = m_fill ? h - 10 : h * .26;
+        const qreal base = h - 5;
+        const QVector<float> curve = smoothCurve(m_bands, 4);
+        const int n = curve.size();
+        const qreal margin = m_fill ? 4 : w * .04;
+        const qreal dx = (w - 2 * margin) / (n - 1);
+        auto point = [&](int i) { return QPointF(margin + i * dx, base - curve[i] * top); };
+        const QColor glow = mix(m_color, m_color, 0, .15 + m_level * .2);
+        const QColor core = mix(m_color, m_color2, m_level, .95);
+        for (int i = 0; i < n - 1; i++)
+            mesh.bar(point(i), point(i + 1), 4, glow, glow);
+        for (int i = 0; i < n - 1; i++)
+            mesh.bar(point(i), point(i + 1), 1.3, core, core);
         break;
     }
     default:

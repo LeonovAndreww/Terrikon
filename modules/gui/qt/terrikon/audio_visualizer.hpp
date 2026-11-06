@@ -26,6 +26,7 @@
 #include <QElapsedTimer>
 #include <QObject>
 #include <QPoint>
+#include <QSize>
 #include <QQuickItem>
 #include <QRectF>
 #include <QStringList>
@@ -47,9 +48,13 @@ class Visualizer : public QObject
     // A small window over all the others, with the cover and a ring
     Q_PROPERTY(bool miniWindow READ miniWindow WRITE setMiniWindow NOTIFY miniWindowChanged FINAL)
     Q_PROPERTY(QPoint miniPosition READ miniPosition WRITE setMiniPosition NOTIFY miniPositionChanged FINAL)
+    // Card (a square cover, as music services have it), round, strip, or
+    // the visualization alone
+    Q_PROPERTY(int miniShape READ miniShape WRITE setMiniShape NOTIFY miniShapeChanged FINAL)
+    Q_PROPERTY(QStringList miniShapeNames READ miniShapeNames CONSTANT FINAL)
 
 public:
-    enum Style { Off = 0, Ring, Bars, Wave, Hills, StyleCount };
+    enum Style { Off = 0, Ring, Bars, Wave, Hills, Mirror, Line, StyleCount };
     Q_ENUM(Style)
     enum Background { BlurredCover = 0, Black, Cover, BackgroundCount };
     Q_ENUM(Background)
@@ -68,6 +73,15 @@ public:
     QPoint miniPosition() const { return m_miniPosition; }
     void setMiniPosition(const QPoint &position);
 
+    enum MiniShape { Card = 0, Round, Strip, Bare, MiniShapeCount };
+    Q_ENUM(MiniShape)
+    int miniShape() const { return m_miniShape; }
+    void setMiniShape(int shape);
+    QStringList miniShapeNames() const;
+    // The size of the mini window, kept for each shape
+    Q_INVOKABLE QSize miniSize(int shape) const;
+    Q_INVOKABLE void setMiniSize(int shape, const QSize &size);
+
     QStringList styleNames() const;
     QStringList backgroundNames() const;
 
@@ -79,6 +93,7 @@ signals:
     void backgroundChanged();
     void miniWindowChanged();
     void miniPositionChanged();
+    void miniShapeChanged();
 
 private:
     void listen();
@@ -91,6 +106,7 @@ private:
     bool m_listening = false;
     bool m_miniWindow = false;
     QPoint m_miniPosition;
+    int m_miniShape = Card;
 };
 
 /* Draws what the tap heard, in step with the playing time */
@@ -103,6 +119,9 @@ class AudioVisualizer : public QQuickItem
     // The cover image: the ring goes around it
     Q_PROPERTY(QQuickItem *cover READ cover WRITE setCover NOTIFY coverChanged FINAL)
     Q_PROPERTY(qreal level READ level NOTIFY levelChanged FINAL)
+    // Use the whole item, as in the mini window, instead of keeping to the
+    // edges of the music player
+    Q_PROPERTY(bool fill READ fill WRITE setFill NOTIFY fillChanged FINAL)
 
 public:
     explicit AudioVisualizer(QQuickItem *parent = nullptr);
@@ -116,12 +135,15 @@ public:
     QQuickItem *cover() const { return m_cover; }
     void setCover(QQuickItem *cover);
     qreal level() const { return m_level; }
+    bool fill() const { return m_fill; }
+    void setFill(bool fill);
 
 signals:
     void styleChanged();
     void colorChanged();
     void coverChanged();
     void levelChanged();
+    void fillChanged();
 
 protected:
     QSGNode *updatePaintNode(QSGNode *old, UpdatePaintNodeData *) override;
@@ -137,6 +159,7 @@ private:
     QQuickItem *m_cover = nullptr;
     QRectF m_coverRect;
     qreal m_level = 0;
+    bool m_fill = false;
 
     QVector<float> m_bands;
     QVector<float> m_peaks;
