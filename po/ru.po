@@ -12458,7 +12458,7 @@ msgstr "Вывод звука через К Audio Interface"
 
 #: modules/audio_output/mmdevice.c:1556
 msgid "HDMI/SPDIF audio passthrough"
-msgstr ""
+msgstr "Передача звука по HDMI/S/PDIF без обработки"
 
 #: modules/audio_output/mmdevice.c:1558
 msgid ""
@@ -20450,9 +20450,7 @@ msgstr "Разрешение"
 msgid ""
 "You just need to fill one of the three following parameters, VLC will "
 "autodetect the other using the original aspect ratio"
-msgstr ""
-"Вам нужно заполнить только один из трёх следующих параметров, VLC сам "
-"определит другие, исходя из соотношения сторон"
+msgstr "Достаточно заполнить один из трёх параметров, остальные подберутся по исходным пропорциям"
 
 #: modules/gui/macosx/windows/convertandsave/VLCConvertAndSaveWindowController.m:208
 #: modules/gui/macosx/windows/convertandsave/VLCOutput.m:90
@@ -30836,7 +30834,7 @@ msgstr ""
 
 #: modules/video_output/win32/direct3d9.c:80
 msgid "Use hardware YUV to RGB conversions"
-msgstr ""
+msgstr "Аппаратное преобразование YUV в RGB"
 
 #: modules/video_output/win32/direct3d9.c:82
 msgid ""
@@ -32005,9 +32003,6 @@ msgstr "Отметка удалена"
 
 #~ msgid "Main interfaces"
 #~ msgstr "Основные интерфейсы"
-
-#~ msgid "Filters"
-#~ msgstr "Фильтры"
 
 #~ msgid "Output modules"
 #~ msgstr "Модули вывода"
@@ -33263,9 +33258,6 @@ msgstr "Отметка удалена"
 #~ msgid "SDL_image video decoder"
 #~ msgstr "Видеодекодер SDL_image"
 
-#~ msgid "Deinterlacing"
-#~ msgstr "Устранение чересстрочности"
-
 #~ msgid "WMA v1/v2 fixed point audio decoder"
 #~ msgstr "Аудиодекодер WMA v1/v2 с фикс. точкой"
 
@@ -33846,9 +33838,6 @@ msgstr "Отметка удалена"
 #~ msgid "Disable renderer discovery"
 #~ msgstr "Отключать заставку"
 
-#~ msgid "Continue playback?"
-#~ msgstr "Продолжить воспроизведение?"
-
 #~ msgid "Select an action to change the associated hotkey:"
 #~ msgstr "Выбрать действие для изменения соответствующей горячей клавиши:"
 
@@ -33857,9 +33846,6 @@ msgstr "Отметка удалена"
 
 #~ msgid "Interface style"
 #~ msgstr "Стиль интерфейса"
-
-#~ msgid "Dark"
-#~ msgstr "Тёмный"
 
 #~ msgid "Bright"
 #~ msgstr "Яркий"
@@ -33899,9 +33885,6 @@ msgstr "Отметка удалена"
 
 #~ msgid "sec."
 #~ msgstr "с."
-
-#~ msgid "Brightness Threshold"
-#~ msgstr "Порог яркости"
 
 #~ msgid "KB"
 #~ msgstr "КБ"
@@ -34024,14 +34007,6 @@ msgstr "Отметка удалена"
 
 #~ msgid "Dock/undock fullscreen controller to/from bottom of screen"
 #~ msgstr "Прикрепить/открепить панель полноэкранного режима внизу экрана"
-
-#~ msgctxt "Tooltip|Unmute"
-#~ msgid "Unmute"
-#~ msgstr "Включить звук"
-
-#~ msgctxt "Tooltip|Mute"
-#~ msgid "Mute"
-#~ msgstr "Выключить звук"
 
 #~ msgid "Pause the playback"
 #~ msgstr "Пауза"
@@ -34205,9 +34180,6 @@ msgstr "Отметка удалена"
 #, fuzzy
 #~ msgid "Store the Password"
 #~ msgstr "Пароль для RDP"
-
-#~ msgid "Privacy and Network Access Policy"
-#~ msgstr "Политика конфиденциальности и доступа в Сеть"
 
 #~ msgid ""
 #~ "<p>In order to protect your privacy, <i>VLC media player</i> does <b>not</"
@@ -35173,370 +35145,11 @@ msgstr "Отметка удалена"
 #~ msgid "vsxu"
 #~ msgstr "vsxu"
 
-#~ msgid "Dialog"
-#~ msgstr "Диалог"
-
-#~ msgid "Form"
-#~ msgstr "Форма"
-
-#~ msgid "Preset"
-#~ msgstr "Предустановка"
-
-#~ msgid "0.00 dB"
-#~ msgstr "0.00 дБ"
-
-#~ msgid "&Verbosity:"
-#~ msgstr "&Детализация:"
-
-#~ msgid "&Filter:"
-#~ msgstr "&Фильтр:"
-
-#~ msgid "&Save as..."
-#~ msgstr "&Сохранить как..."
-
-#~ msgid "Modules Tree"
-#~ msgstr "Дерево модулей"
-
-#~ msgid "Show extended options"
-#~ msgstr "Показать дополнительные параметры"
-
-#~ msgid "Show &more options"
-#~ msgstr "Показать дополнительные параметры"
-
-#~ msgid "Change the caching for the media"
-#~ msgstr "Изменить размер кэша медиаданных"
-
-#~ msgid " ms"
-#~ msgstr " мс"
-
-#~ msgid "MRL"
-#~ msgstr "MRL"
-
-#~ msgid "Start Time"
-#~ msgstr "Старт через"
-
-#, fuzzy
-#~ msgid "Stop Time"
-#~ msgstr "Время остановки"
-
-#~ msgid "Edit Options"
-#~ msgstr ""
-#~ "Строка\n"
-#~ "параметров"
-
-#~ msgid "Extra media"
-#~ msgstr "Другой файл"
-
-#~ msgid "Complete MRL for VLC internal"
-#~ msgstr "Полный MRL"
-
-#~ msgid "Select the file"
-#~ msgstr "Выберите файл"
-
-#~ msgid "Change the start time for the media"
-#~ msgstr "Изменить момент времени, с которого начинать воспроизведение"
-
-#~ msgid "HH'H':mm'm':ss's'.zzz"
-#~ msgstr "HH'H':mm'm':ss's'.zzz"
-
-#, fuzzy
-#~ msgid "Change the stop time for the media"
-#~ msgstr "Изменить момент времени, с которого начинать воспроизведение"
-
-#~ msgid "Play another media synchronously (extra audio file, ...)"
-#~ msgstr "Параллельно проигрывать другой медиафайл (аудио, ...)"
-
-#~ msgid "Capture mode"
-#~ msgstr "Режим захвата"
-
-#~ msgid "Select the capture device type"
-#~ msgstr "Выбрать тип устройства захвата"
-
-#~ msgid "Device Selection"
-#~ msgstr "Выбор устройства"
-
-#~ msgid "Options"
-#~ msgstr "Параметры"
-
-#~ msgid "Access advanced options to tweak the device"
-#~ msgstr "Показать дополнительные опции для настройки устройства"
-
-#~ msgid "Advanced options..."
-#~ msgstr "Другие..."
-
-#~ msgid "Disc Selection"
-#~ msgstr "Выбор диска"
-
-#~ msgid "SVCD/VCD"
-#~ msgstr "SVCD/VCD"
-
-#~ msgid "Disable Disc Menus"
-#~ msgstr "Отключает меню диска"
-
-#~ msgid "No disc menus"
-#~ msgstr "Без меню диска"
-
-#~ msgid "Disc device"
-#~ msgstr "Дисковое устройство"
-
-#~ msgid "Starting Position"
-#~ msgstr "Начальная позиция"
-
-#~ msgid "Audio and Subtitles"
-#~ msgstr "Аудио и субтитры"
-
-#~ msgid "Use a sub&title file"
-#~ msgstr "Использовать файл суб&титров"
-
-#~ msgid "Select the subtitle file"
-#~ msgstr "Выбрать файл субтитров"
-
-#~ msgid "Choose one or more media file to open"
-#~ msgstr "Выберите один или несколько файлов для воспроизведения"
-
-#~ msgid "File Selection"
-#~ msgstr "Выбор файлов"
-
-#~ msgid "You can select local files with the following list and buttons."
-#~ msgstr "Добавьте в этот список локальные файлы для воспроизведения."
-
-#~ msgid "Add..."
-#~ msgstr "Добавить..."
-
-#~ msgid "Network Protocol"
-#~ msgstr "Сетевой протокол"
-
-#~ msgid "Please enter a network URL:"
-#~ msgstr "Введите сетевой адрес:"
-
-#~ msgid "Profile edition"
-#~ msgstr "Редактирование профиля"
-
-#~ msgid "FLAC"
-#~ msgstr "FLAC"
-
-#~ msgid "MP&4/MOV"
-#~ msgstr "MP&4/MOV"
-
-#~ msgid "Ogg/Ogm"
-#~ msgstr "Ogg/Ogm"
-
-#~ msgid "M&KV"
-#~ msgstr "M&KV"
-
-#~ msgid "M&JPEG"
-#~ msgstr "M&JPEG"
-
-#~ msgid "MPEG-PS"
-#~ msgstr "MPEG-PS"
-
-#~ msgid "F&LV"
-#~ msgstr "F&LV"
-
-#~ msgid "&MPEG-TS"
-#~ msgstr "&MPEG-TS"
-
-#~ msgid "RAW"
-#~ msgstr "RAW"
-
-#~ msgid "WAV"
-#~ msgstr "WAV"
-
-#~ msgid "Webm"
-#~ msgstr "Webm"
-
-#~ msgid "MPEG &1"
-#~ msgstr "MPEG &1"
-
-#~ msgid "AVI"
-#~ msgstr "AVI"
-
-#~ msgid "ASF/WMV"
-#~ msgstr "ASF/WMV"
-
-#~ msgid "MP&3"
-#~ msgstr "MP&3"
-
-#~ msgid "Features"
-#~ msgstr "Характеристики"
-
-#~ msgid "Streamable"
-#~ msgstr "Транслируемый"
-
-#~ msgid "Menus"
-#~ msgstr "Меню"
-
-#~ msgid "Fra&me Rate"
-#~ msgstr "Час&тота кадров"
-
-#~ msgid "Same as source"
-#~ msgstr "Как в источнике"
-
-#~ msgid " fps"
-#~ msgstr " к/с"
-
-#~ msgid "Custom options"
-#~ msgstr "Настраиваемые параметры"
-
-#~ msgid "&Quality"
-#~ msgstr "&Качество"
-
-#~ msgid "Not Used"
-#~ msgstr "Не определено"
-
-#~ msgid " kb/s"
-#~ msgstr " кб/сек"
-
-#~ msgid "Encoding parameters"
-#~ msgstr "Параметры кодирования"
-
-#~ msgid "Frame size"
-#~ msgstr "Размер кадра"
-
-#~ msgid "px"
-#~ msgstr "пкс"
-
-#~ msgid "Sa&mple Rate"
-#~ msgstr "Ч&астота дискретизации"
-
-#~ msgid "Profile &Name"
-#~ msgstr "&Название профиля"
-
-#~ msgid "Set up media sources to stream"
-#~ msgstr "Выберите медиаисточники для вещания"
-
-#~ msgid "Destination Setup"
-#~ msgstr "Настройка вывода"
-
-#~ msgid "Select destinations to stream to"
-#~ msgstr "Выберите назначения потока"
-
-#~ msgid ""
-#~ "Add destinations following the streaming methods you need. Be sure to "
-#~ "check with transcoding that the format is compatible with the method used."
-#~ msgstr ""
-#~ "Добавьте требуемые пути назначения и методы вещания. Убедитесь в том, что "
-#~ "при перекодировании формат совместим с выбранным методом."
-
-#~ msgid "New destination"
-#~ msgstr "Новое назначение"
-
-#~ msgid "Display locally"
-#~ msgstr "Воспроизводить локально"
-
-#~ msgid "Transcoding Options"
-#~ msgstr "Параметры перекодирования"
-
-#~ msgid "Select and choose transcoding options"
-#~ msgstr "Выберите и настройте параметры перекодирования"
-
-#~ msgid "Activate Transcoding"
-#~ msgstr "Включить перекодирование"
-
-#~ msgid "Option Setup"
-#~ msgstr "Настройка параметров"
-
-#~ msgid "Set up any additional options for streaming"
-#~ msgstr "Установите дополнительные параметры вещания"
-
-#~ msgid "Miscellaneous Options"
-#~ msgstr "Прочие параметры"
-
-#~ msgid "Stream all elementary streams"
-#~ msgstr "Выводить все элементарные потоки"
-
-#~ msgid "Generated stream output string"
-#~ msgstr "Строка вывода для генерируемого потока"
-
-#~ msgid " %"
-#~ msgstr " %"
-
-#~ msgid "Output module:"
-#~ msgstr "Модуль вывода:"
-
-#~ msgid "Effects"
-#~ msgstr "Эффекты"
-
-#~ msgid "Visualization:"
-#~ msgstr "Визуализация:"
-
-#~ msgid "Enable Time-Stretching audio"
-#~ msgstr "Изменение скорости звука"
-
 #~ msgid "Dolby Surround:"
 #~ msgstr "Dolby Surround:"
 
-#~ msgid "Replay gain mode:"
-#~ msgstr "Режим выравнивания громкости:"
-
 #~ msgid "Headphone surround effect"
 #~ msgstr "Surround-эффект для наушников"
-
-#~ msgid "Normalize volume to:"
-#~ msgstr "Нормализовать громкость до:"
-
-#~ msgid "Preferred audio language:"
-#~ msgstr "Предпочитаемый язык аудио:"
-
-#~ msgid "Password:"
-#~ msgstr "Пароль:"
-
-#~ msgid "Username:"
-#~ msgstr "Имя пользователя:"
-
-#~ msgid "Submit played tracks stats to Last.fm"
-#~ msgstr "Сообщать на Last.fm о том, что вы слушаете"
-
-#~ msgid "Codecs"
-#~ msgstr "Кодеки"
-
-#~ msgid "x264 profile and level selection"
-#~ msgstr "Выбор профиля и уровня x264"
-
-#~ msgid "x264 preset and tuning selection"
-#~ msgstr "Выбор предустановки и настроек x264"
-
-#~ msgid "Hardware-accelerated decoding"
-#~ msgstr "Декодирование с аппаратным ускорением"
-
-#~ msgid "Skip H.264 in-loop deblocking filter"
-#~ msgstr "Выкл. устранение блочности H.264"
-
-#~ msgid "Video quality post-processing level"
-#~ msgstr "Качество обработки видео"
-
-#~ msgid "Optical drive"
-#~ msgstr "Оптический диск"
-
-#~ msgid "Default optical device"
-#~ msgstr "Устройство по умолчанию"
-
-#~ msgid "Damaged or incomplete AVI file"
-#~ msgstr "При открытии повреждённого AVI"
-
-#~ msgid "HTTP proxy URL"
-#~ msgstr "HTTP-прокси"
-
-#~ msgid "HTTP (default)"
-#~ msgstr "HTTP (по умолчанию)"
-
-#~ msgid "RTP over RTSP (TCP)"
-#~ msgstr "RTP поверх RTSP (TCP)"
-
-#~ msgid "Live555 stream transport"
-#~ msgstr "Транспорт потока Live555"
-
-#~ msgid "Default caching policy"
-#~ msgstr "Политика кэширования по умолчанию"
-
-#~ msgid "Menus language:"
-#~ msgstr "Язык меню:"
-
-#~ msgid "Look and feel"
-#~ msgstr "Оформление и поведение"
-
-#~ msgid "Use custom skin"
-#~ msgstr "Другой стиль"
 
 #~ msgid "This is VLC's default interface, with a native look and feel."
 #~ msgstr "Интерфейс VLC по умолчанию, с простым оформлением."
@@ -35544,92 +35157,11 @@ msgstr "Отметка удалена"
 #~ msgid "Use native style"
 #~ msgstr "Стандартный стиль"
 
-#~ msgid "Resize interface to video size"
-#~ msgstr "Подгонять размер интерфейса под размер видео"
-
-#~ msgid "Show controls in full screen mode"
-#~ msgstr "Панель управления в полноэкранном режиме"
-
-#~ msgid "Pause playback when minimized"
-#~ msgstr "Пауза при сворачивании"
-
-#~ msgid "Show media change popup:"
-#~ msgstr "Уведомлять о смене медиаисточника:"
-
-#~ msgid "Start in minimal view mode"
-#~ msgstr "Запускать в компактном режиме"
-
-#~ msgid "Force window style:"
-#~ msgstr "Стиль окон:"
-
-#~ msgid "Integrate video in interface"
-#~ msgstr "Встроить видео в интерфейс"
-
-#~ msgid "Show systray icon"
-#~ msgstr "Значок в системном лотке"
-
-#, fuzzy
-#~ msgid "Auto raising the interface:"
-#~ msgstr ""
-#~ "Вы используете интерфейс Qt4.\n"
-#~ "\n"
-
-#~ msgid "Skin resource file:"
-#~ msgstr "Файл оболочки:"
-
 #~ msgid "Playlist and Instances"
 #~ msgstr "Плейлист и поведение копий"
 
-#~ msgid "Allow only one instance"
-#~ msgstr "Разрешить только одну копию"
-
-#~ msgid "Pause on the last frame of a video"
-#~ msgstr "Пауза на последнем кадре видео"
-
-#~ msgid "Every "
-#~ msgstr "с интервалом "
-
 #~ msgid "Separate words by | (without space)"
 #~ msgstr "Разделяйте слова символом | (без пробелов)"
-
-#~ msgid "Activate updates notifier"
-#~ msgstr "Включить уведомления об обновлениях"
-
-#~ msgid "Operating System Integration"
-#~ msgstr "Интеграция с системой"
-
-#~ msgid "File extensions association"
-#~ msgstr "Привязки файлов"
-
-#~ msgid "Set up associations..."
-#~ msgstr "Настроить привязки..."
-
-#~ msgid "Enable On Screen Display (OSD)"
-#~ msgstr "Включить экранную индикацию"
-
-#~ msgid "Show media title on video start"
-#~ msgstr "Показывать название видео в начале"
-
-#~ msgid "Enable subtitles"
-#~ msgstr "Включить субтитры"
-
-#~ msgid "Subtitle Language"
-#~ msgstr "Язык субтитров"
-
-#~ msgid "Default encoding"
-#~ msgstr "Кодировка по умолчанию"
-
-#~ msgid "Subtitle effects"
-#~ msgstr "Эффекты субтитров"
-
-#~ msgid "Add a shadow"
-#~ msgstr "Добавить тень"
-
-#~ msgid " px"
-#~ msgstr " пкс"
-
-#~ msgid "Add a background"
-#~ msgstr "Добавить фон"
 
 #, fuzzy
 #~ msgid "O&utput"
@@ -35638,20 +35170,11 @@ msgstr "Отметка удалена"
 #~ msgid "Accelerated video output (Overlay)"
 #~ msgstr "Ускоренный вывод видео (оверлей)"
 
-#~ msgid "DirectX"
-#~ msgstr "DirectX"
-
 #~ msgid "Display device"
 #~ msgstr "Устройство отображения"
 
-#~ msgid "KVA"
-#~ msgstr "KVA"
-
 #~ msgid "Force Aspect Ratio"
 #~ msgstr "Принудительное использование соотношения сторон"
-
-#~ msgid "vlc-snap"
-#~ msgstr "vlc-snap"
 
 #~ msgid "Stuff"
 #~ msgstr "Настройки"
@@ -35683,105 +35206,6 @@ msgstr "Отметка удалена"
 #~ msgid "Clear List"
 #~ msgstr "Очистить список"
 
-#~ msgid "Check for VLC updates"
-#~ msgstr "Проверить обновления VLC"
-
-#~ msgid "Launching an update request..."
-#~ msgstr "Запуск процесса обновления..."
-
-#~ msgid "Do you want to download it?"
-#~ msgstr "Скачать его?"
-
-#~ msgid "Essential"
-#~ msgstr "Основные"
-
-#~ msgid ">HHHHHH;#"
-#~ msgstr ">HHHHHH;#"
-
-#~ msgid "Negate colors"
-#~ msgstr "Инверсия цветов"
-
-#~ msgid "Colors"
-#~ msgstr "Цвета"
-
-#~ msgid "Interactive Zoom"
-#~ msgstr "Интерактивное увеличение"
-
-#~ msgid "Angle"
-#~ msgstr "Угол"
-
-#~ msgid "..."
-#~ msgstr "..."
-
-#~ msgid "full"
-#~ msgstr "непрозрачность"
-
-#~ msgid "none"
-#~ msgstr "нет"
-
-#~ msgid "Logo erase"
-#~ msgstr "Стирание"
-
-#~ msgid "Mask"
-#~ msgstr "Маска"
-
-#~ msgid "Anaglyph 3D"
-#~ msgstr "Анаглиф 3D"
-
-#~ msgid "Mirror"
-#~ msgstr "Зеркало"
-
-#~ msgid "Motion detect"
-#~ msgstr "Детектор движения"
-
-#~ msgid "Spatial blur"
-#~ msgstr "Пространственное размытие"
-
-#~ msgid "Anti-Flickering"
-#~ msgstr "Устранение мерцания"
-
-#~ msgid "Soften"
-#~ msgstr "Смягчение"
-
-#~ msgid "Denoiser"
-#~ msgstr "Уменьшение шумов"
-
-#~ msgid "Spatial luma strength"
-#~ msgstr "Пространственная устойчивость яркости"
-
-#~ msgid "Temporal luma strength"
-#~ msgstr "Временная устойчивость яркости"
-
-#~ msgid "Spatial chroma strength"
-#~ msgstr "Пространственная устойчивость цветности"
-
-#~ msgid "Temporal chroma strength"
-#~ msgstr "Временная устойчивость цветности"
-
-#~ msgid "VLM configurator"
-#~ msgstr "Конфигуратор VLM"
-
-#~ msgid "Media Manager Edition"
-#~ msgstr "Настройка медиаменеджера"
-
-#~ msgid "Name:"
-#~ msgstr "Название:"
-
-#~ msgid "Input:"
-#~ msgstr "Вход:"
-
-#~ msgid "Select Input"
-#~ msgstr "Выбрать вход"
-
-#~ msgid "Output:"
-#~ msgstr "Выход:"
-
-#~ msgid "Select Output"
-#~ msgstr "Выбрать выход"
-
-#~ msgid "Time Control"
-#~ msgstr "Управление временем"
-
 #~ msgid "Mux Control"
 #~ msgstr "Управление мультиплексированием"
 
@@ -35790,9 +35214,6 @@ msgstr "Отметка удалена"
 
 #~ msgid "AAAA; "
 #~ msgstr "AAAA; "
-
-#~ msgid "Media Manager List"
-#~ msgstr "Список настроек медиаменеджера"
 
 #~ msgid "4:2:0"
 #~ msgstr "4:2:0"
@@ -40187,9 +39608,6 @@ msgstr "Отметка удалена"
 #~ "Ускорение видеовывода будет отключено. При воспроизведении видео с "
 #~ "большим разрешением может наблюдаться замедление."
 
-#~ msgid "Select a matching identity"
-#~ msgstr "Выберите подходящее соответствие"
-
 #~ msgid "---  DVD Menu"
 #~ msgstr "--- Меню DVD"
 
@@ -40222,15 +39640,6 @@ msgstr "Отметка удалена"
 
 #~ msgid "Save this Log..."
 #~ msgstr "Сохранить этот журнал..."
-
-#~ msgid "Audio Fingerprinting"
-#~ msgstr "Отпечаток аудиозаписи"
-
-#~ msgid "No fingerprint has been found"
-#~ msgstr "Отпечаток не был найден"
-
-#~ msgid "Fingerprinting track..."
-#~ msgstr "Создание отпечатка звукозаписи..."
 
 #~ msgid "VLC media player - Flash Viewer"
 #~ msgstr "Медиаплеер VLC — Flash Player"
@@ -43716,3 +43125,952 @@ msgstr "Зеркально"
 #: terrikon
 msgid "Above and below the bar (two tracks)"
 msgstr "Над и под полосой (две дорожки)"
+
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Audio Fingerprinting"
+msgstr "Определение трека по звуку"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Select a matching identity"
+msgstr "Выберите подходящий вариант"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "No fingerprint has been found"
+msgstr "Совпадений не найдено"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Fingerprinting track..."
+msgstr "Определение трека..."
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Dialog"
+msgstr "Окно"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "&Verbosity:"
+msgstr "&Подробность:"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "&Filter:"
+msgstr "&Фильтр:"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "&Save as..."
+msgstr "&Сохранить как..."
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Modules Tree"
+msgstr "Дерево модулей"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Capture mode"
+msgstr "Режим захвата"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Select the capture device type"
+msgstr "Тип устройства захвата"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Device Selection"
+msgstr "Выбор устройства"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Options"
+msgstr "Параметры"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Access advanced options to tweak the device"
+msgstr "Расширенные параметры устройства"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Advanced options..."
+msgstr "Расширенные параметры..."
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Use a sub&title file"
+msgstr "Файл &субтитров"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Select the subtitle file"
+msgstr "Выберите файл субтитров"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Choose one or more media file to open"
+msgstr "Выберите один или несколько файлов"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "File Selection"
+msgstr "Выбор файлов"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "You can select local files with the following list and buttons."
+msgstr "Выберите файлы на компьютере с помощью списка и кнопок."
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Add..."
+msgstr "Добавить..."
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Form"
+msgstr "Форма"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Network Protocol"
+msgstr "Сетевой протокол"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Please enter a network URL:"
+msgstr "Введите сетевой адрес:"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Clear History"
+msgstr "Очистить историю"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Clear the network URL browsing history"
+msgstr "Очистить историю сетевых адресов"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Disc Selection"
+msgstr "Выбор диска"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "DVD-Audio"
+msgstr "DVD-Audio"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Disc device"
+msgstr "Привод"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "SVCD/VCD"
+msgstr "SVCD/VCD"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Disable Disc Menus"
+msgstr "Без меню диска"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "No disc menus"
+msgstr "Без меню диска"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Starting Position"
+msgstr "Начальная позиция"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Audio and Subtitles"
+msgstr "Звук и субтитры"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Show extended options"
+msgstr "Показать дополнительные параметры"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Show &more options"
+msgstr "&Больше параметров"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Change the caching for the media"
+msgstr "Кэширование для этого файла"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid " ms"
+msgstr " мс"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "MRL"
+msgstr "MRL"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Start Time"
+msgstr "Начало"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Stop Time"
+msgstr "Конец"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Edit Options"
+msgstr "Параметры"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Extra media"
+msgstr "Дополнительный файл"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Complete MRL for VLC internal"
+msgstr "Полный внутренний адрес (MRL)"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Select the file"
+msgstr "Выберите файл"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Change the start time for the media"
+msgstr "Время начала воспроизведения"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "HH'H':mm'm':ss's'.zzz"
+msgstr "HH'ч':mm'м':ss'с'.zzz"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Change the stop time for the media"
+msgstr "Время окончания воспроизведения"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Play another media synchronously (extra audio file, ...)"
+msgstr "Воспроизводить ещё один файл одновременно (дополнительный звук и т. п.)"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid " %"
+msgstr " %"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Output module:"
+msgstr "Модуль вывода:"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Effects"
+msgstr "Эффекты"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Visualization:"
+msgstr "Визуализация:"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Enable Time-Stretching audio"
+msgstr "Сохранять высоту тона при смене скорости"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Replay gain mode:"
+msgstr "Выравнивание громкости:"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Normalize volume to:"
+msgstr "Нормализовать громкость до:"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Preferred audio language:"
+msgstr "Предпочтительный язык звука:"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Password:"
+msgstr "Пароль:"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Username:"
+msgstr "Имя пользователя:"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Submit played tracks stats to Last.fm"
+msgstr "Отправлять прослушанные треки в Last.fm"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Fullscreen video device"
+msgstr "Экран для полноэкранного режима"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "DirectX"
+msgstr "DirectX"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "KVA"
+msgstr "KVA"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Deinterlacing"
+msgstr "Устранение чересстрочности"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Force aspect ratio"
+msgstr "Принудительное соотношение сторон"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "vlc-snap"
+msgstr "vlc-snap"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Enable On Screen Display (OSD)"
+msgstr "Сообщения поверх видео (OSD)"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Show media title on video start"
+msgstr "Показывать название в начале видео"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Enable subtitles"
+msgstr "Включить субтитры"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Subtitle Language"
+msgstr "Язык субтитров"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Default encoding"
+msgstr "Кодировка по умолчанию"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Subtitle effects"
+msgstr "Оформление субтитров"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Add a shadow"
+msgstr "Тень"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid " px"
+msgstr " пикс."
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Add a background"
+msgstr "Фон"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Dual Subtitles"
+msgstr "Двойные субтитры"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Align"
+msgstr "Выравнивание"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Offset"
+msgstr "Смещение"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Codecs"
+msgstr "Кодеки"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "x264 profile and level selection"
+msgstr "Профиль и уровень x264"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Hardware-accelerated decoding"
+msgstr "Аппаратное декодирование"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Video quality post-processing level"
+msgstr "Уровень постобработки видео"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Skip H.264 in-loop deblocking filter"
+msgstr "Пропускать фильтр деблокинга H.264"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "x264 preset and tuning selection"
+msgstr "Предустановка и настройка x264"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Optical drive"
+msgstr "Оптический привод"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Default optical device"
+msgstr "Привод по умолчанию"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Damaged or incomplete AVI file"
+msgstr "Повреждённый или неполный AVI"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "HTTP proxy URL"
+msgstr "Адрес HTTP-прокси"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "HTTP (default)"
+msgstr "HTTP (по умолчанию)"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "RTP over RTSP (TCP)"
+msgstr "RTP через RTSP (TCP)"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Live555 stream transport"
+msgstr "Транспорт потоков Live555"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Default caching policy"
+msgstr "Кэширование по умолчанию"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Menus language:"
+msgstr "Язык интерфейса:"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Look and feel"
+msgstr "Внешний вид"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "VLC will use custom skin."
+msgstr "Будет использоваться своя обложка."
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Use custom skin"
+msgstr "Своя обложка"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "VLC will use a modern layout with\nno menubar or pinned controls but\nwith client-side decoration."
+msgstr "Современный вид:\nбез строки меню и закреплённых\nэлементов, со своей рамкой окна."
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Modern"
+msgstr "Современный"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "VLC will use a classic layout with\na menubar and pinned controls but\nwith no client-side decoration."
+msgstr "Классический вид:\nстрока меню, закреплённые\nэлементы, системная рамка окна."
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Classic"
+msgstr "Классический"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Customize Toolbar"
+msgstr "Настроить панели"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Resize interface to video size"
+msgstr "Подгонять окно под размер видео"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Integrate video in interface"
+msgstr "Видео внутри окна плеера"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Show media change popup:"
+msgstr "Уведомление о смене трека:"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Show systray icon"
+msgstr "Значок в области уведомлений"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Force window style:"
+msgstr "Стиль окон:"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Color scheme:"
+msgstr "Цветовая схема:"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Start in minimal view mode"
+msgstr "Запускать в минимальном виде"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Auto raising the interface:"
+msgstr "Поднимать окно плеера:"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Pause playback when minimized"
+msgstr "Пауза при сворачивании"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Interface scale factor:"
+msgstr "Масштаб интерфейса:"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Show controls in full screen mode"
+msgstr "Панель управления в полноэкранном режиме"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Disables autohiding of controls when playing videos"
+msgstr "Не скрывать элементы управления во время видео"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Skin resource file:"
+msgstr "Файл обложки:"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Play Queue and Instances"
+msgstr "Очередь и экземпляры"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Allow only one instance"
+msgstr "Только один экземпляр"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Pause on the last frame of a video"
+msgstr "Пауза на последнем кадре"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Continue playback?"
+msgstr "Продолжать воспроизведение?"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Every "
+msgstr "Каждые "
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Clear Recently Played Items"
+msgstr "Очистить недавние"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Activate updates notifier"
+msgstr "Сообщать об обновлениях"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Operating System Integration"
+msgstr "Интеграция с системой"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "File extensions association"
+msgstr "Связь с типами файлов"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Set up associations..."
+msgstr "Настроить связи..."
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Folders scanned by the Media Library:"
+msgstr "Папки медиатеки:"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Add banned folder"
+msgstr "Исключить папку"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "+"
+msgstr "+"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Add scanned folder"
+msgstr "Добавить папку"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Banned folders:"
+msgstr "Исключённые папки:"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Reload All Folders"
+msgstr "Пересканировать все папки"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "⟳"
+msgstr "⟳"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Set up media sources to stream"
+msgstr "Источники для трансляции"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Destination Setup"
+msgstr "Назначение"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Select destinations to stream to"
+msgstr "Куда транслировать"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Add destinations following the streaming methods you need. Be sure to check with transcoding that the format is compatible with the method used."
+msgstr "Добавьте назначения для нужных способов трансляции. Проверьте, что формат перекодирования подходит для выбранного способа."
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "New destination"
+msgstr "Новое назначение"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Display locally"
+msgstr "Показывать здесь же"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Transcoding Options"
+msgstr "Перекодирование"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Select and choose transcoding options"
+msgstr "Параметры перекодирования"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Activate Transcoding"
+msgstr "Перекодировать"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Option Setup"
+msgstr "Параметры"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Set up any additional options for streaming"
+msgstr "Дополнительные параметры трансляции"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Miscellaneous Options"
+msgstr "Прочее"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Stream all elementary streams"
+msgstr "Транслировать все элементарные потоки"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Generated stream output string"
+msgstr "Итоговая строка вывода потока"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Profile edition"
+msgstr "Редактирование профиля"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "FLAC"
+msgstr "FLAC"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "MP&4/MOV"
+msgstr "MP&4/MOV"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Ogg/Ogm"
+msgstr "Ogg/Ogm"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "M&KV"
+msgstr "M&KV"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "M&JPEG"
+msgstr "M&JPEG"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "MPEG-PS"
+msgstr "MPEG-PS"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "F&LV"
+msgstr "F&LV"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "&MPEG-TS"
+msgstr "&MPEG-TS"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "RAW"
+msgstr "RAW"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "WAV"
+msgstr "WAV"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Webm"
+msgstr "WebM"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "MPEG &1"
+msgstr "MPEG &1"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "AVI"
+msgstr "AVI"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "ASF/WMV"
+msgstr "ASF/WMV"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "MP&3"
+msgstr "MP&3"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Features"
+msgstr "Возможности"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Streamable"
+msgstr "Для трансляции"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Menus"
+msgstr "Меню"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Fra&me Rate"
+msgstr "&Частота кадров"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Same as source"
+msgstr "Как в исходнике"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid " fps"
+msgstr " кадр/с"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Custom options"
+msgstr "Свои параметры"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "&Quality"
+msgstr "&Качество"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Not Used"
+msgstr "Не используется"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid " kb/s"
+msgstr " кбит/с"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Encoding parameters"
+msgstr "Параметры кодирования"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Frame size"
+msgstr "Размер кадра"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "px"
+msgstr "пикс."
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Filters"
+msgstr "Фильтры"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Sa&mple Rate"
+msgstr "&Частота дискретизации"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Boost or reduce the audio volume of the output file.\n0 = No change. 100% = original volume. 200% = double volume."
+msgstr "Сделать звук в итоговом файле громче или тише.\n0 — без изменений. 100% — исходная громкость. 200% — вдвое громче."
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "No change"
+msgstr "Без изменений"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Profile &Name"
+msgstr "&Название профиля"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Check for VLC updates"
+msgstr "Проверить обновления"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Launching an update request..."
+msgstr "Проверка обновлений..."
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Do you want to download it?"
+msgstr "Скачать её?"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "VLM configurator"
+msgstr "Настройка VLM"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Media Manager Edition"
+msgstr "Редактирование менеджера медиа"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Name:"
+msgstr "Название:"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Input:"
+msgstr "Источник:"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Select Input"
+msgstr "Выбрать источник"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Output:"
+msgstr "Вывод:"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Select Output"
+msgstr "Выбрать вывод"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Time Control"
+msgstr "Управление временем"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Media Manager List"
+msgstr "Список менеджера медиа"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Preset"
+msgstr "Предустановка"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "0.00 dB"
+msgstr "0.00 дБ"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Brightness Threshold"
+msgstr "Порог яркости"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Essential"
+msgstr "Основное"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid ">HHHHHH;#"
+msgstr ">HHHHHH;#"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Negate colors"
+msgstr "Негатив"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Colors"
+msgstr "Цвета"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Interactive Zoom"
+msgstr "Интерактивное увеличение"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Angle"
+msgstr "Угол"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "..."
+msgstr "..."
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "full"
+msgstr "полный"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "none"
+msgstr "нет"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Logo erase"
+msgstr "Удаление логотипа"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Mask"
+msgstr "Маска"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Anaglyph 3D"
+msgstr "Анаглиф 3D"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Mirror"
+msgstr "Зеркало"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Motion detect"
+msgstr "Обнаружение движения"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Spatial blur"
+msgstr "Пространственное размытие"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Anti-Flickering"
+msgstr "Подавление мерцания"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Soften"
+msgstr "Смягчение"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Denoiser"
+msgstr "Шумоподавление"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Spatial luma strength"
+msgstr "Пространственная сила (яркость)"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Temporal luma strength"
+msgstr "Временная сила (яркость)"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Spatial chroma strength"
+msgstr "Пространственная сила (цвет)"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Temporal chroma strength"
+msgstr "Временная сила (цвет)"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Privacy and Network Access Policy"
+msgstr "Конфиденциальность и доступ к сети"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "<small>For a full list of settings, see the <b>preferences</b> tab</small>"
+msgstr "<small>Все параметры — в <b>настройках</b></small>"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Enable the Media Library"
+msgstr "Включить медиатеку"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Folders scanned by the Media Library"
+msgstr "Папки медиатеки"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Light"
+msgstr "Светлая"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Dark"
+msgstr "Тёмная"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Select a color scheme"
+msgstr "Выберите цветовую схему"
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "System "
+msgstr "Как в системе "
+
+#. Qt .ui file string, kept out of vlc.pot by VLC
+msgid "Select a layout"
+msgstr "Выберите вид"
+
+#: terrikon
+msgid "Sound waves"
+msgstr "Звуковые волны"
+
+#: terrikon
+msgid "Thin columns"
+msgstr "Столбики"
+
+#: terrikon
+msgid "Add your video folders"
+msgstr "Добавьте папки с видео"
+
+#: terrikon
+msgid "Their videos show up here and in Videos, grouped by folder, and new recordings appear on their own."
+msgstr "Их видео появятся здесь и в разделе «Видео», по папкам, а новые записи будут добавляться сами."
+
+#: terrikon
+msgid "%1 videos"
+msgstr "видео: %1"
+
+#: terrikon
+msgid "Choose another folder…"
+msgstr "Выбрать другую папку…"
+
+#: terrikon
+msgid "Media library folders: %1"
+msgstr "Папок в медиатеке: %1"
+
+#: terrikon
+msgid "Add folder"
+msgstr "Добавить папку"
+
+#: terrikon
+msgid "NVIDIA recordings"
+msgstr "Записи NVIDIA"
+
+#: terrikon
+msgid "Xbox Game Bar recordings"
+msgstr "Записи Xbox Game Bar"
+
+#: terrikon
+msgid "OBS recordings"
+msgstr "Записи OBS"
+
+#: terrikon
+msgid "Choose a folder with videos"
+msgstr "Выберите папку с видео"
