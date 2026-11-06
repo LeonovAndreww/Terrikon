@@ -13,7 +13,7 @@ bug is upstream's; when unsure, the original build is run.
 | Area | Bug in VLC 4 | Fix in Terrikon |
 |------|--------------|-----------------|
 | Player | After a seek the time and the seek bar freeze for about a second, then jump | `src/player/timer.c`: the first point after a seek is sent at once |
-| Player | Some media show a duration of -1 ms | duration only shown when known |
+| Media library | Media of unknown length show "-1 ms" in the lists | shown as "--:--" |
 | Media library | Bookmarks model nests a reset inside a reset each time a media starts ("beginResetModel called ... without calling endResetModel first") | `mlbookmarkmodel.cpp`: no second refresh inside the reset |
 | Interface | Service names (network, devices) not translated | `qtr` instead of `qfu` for module long names |
 | Interface | Random visualization switching | visualization chosen from a menu |
