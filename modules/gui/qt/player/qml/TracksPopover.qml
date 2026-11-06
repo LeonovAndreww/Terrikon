@@ -31,6 +31,11 @@ import VLC.Widgets as Widgets
 T.Popup {
     id: root
 
+    // Terrikon: the time line leaves the pointer alone while this is open
+    onOpened: { stack.pop(null); MainCtx.openPlayerMenus += 1 }
+    onClosed: MainCtx.openPlayerMenus -= 1
+    Component.onDestruction: if (opened) MainCtx.openPlayerMenus -= 1
+
     padding: VLCStyle.margin_xsmall
     // Stays inside the window, whichever side of the bar its button is on
     margins: VLCStyle.margin_small
@@ -67,7 +72,6 @@ T.Popup {
     Connections { target: Player.subtitleTracks; function onDataChanged() { root._revision++ } }
     Connections { target: Player.audioTracks; function onDataChanged() { root._revision++ } }
 
-    onOpened: stack.pop(null)
 
     background: Rectangle {
         radius: VLCStyle.dp(10, VLCStyle.scale)

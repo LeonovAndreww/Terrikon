@@ -29,6 +29,11 @@ import VLC.Widgets as Widgets
 T.Popup {
     id: root
 
+    // Terrikon: the time line leaves the pointer alone while this is open
+    onOpened: MainCtx.openPlayerMenus += 1
+    onClosed: MainCtx.openPlayerMenus -= 1
+    Component.onDestruction: if (opened) MainCtx.openPlayerMenus -= 1
+
     // Kept open while the pointer is over the button or the popover
     property bool buttonHovered: false
     readonly property bool _hovered: buttonHovered || popoverHover.hovered || contentHover.hovered

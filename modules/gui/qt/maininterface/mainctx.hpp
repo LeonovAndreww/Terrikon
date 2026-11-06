@@ -128,6 +128,9 @@ class MainCtx : public QObject
     // over the video, messages), and its solid ones (queue, clip panel)
     Q_PROPERTY(double overlayOpacity READ overlayOpacity WRITE setOverlayOpacity NOTIFY overlayOpacityChanged FINAL)
     Q_PROPERTY(double panelOpacity READ panelOpacity WRITE setPanelOpacity NOTIFY panelOpacityChanged FINAL)
+    // Terrikon: how many menus of the player are open; the time line does not
+    // take the pointer meanwhile, so a slider in a menu over it stays in reach
+    Q_PROPERTY(int openPlayerMenus READ openPlayerMenus WRITE setOpenPlayerMenus NOTIFY openPlayerMenusChanged FINAL)
     Q_PROPERTY(bool playerFromPip MEMBER m_playerFromPip NOTIFY playerFromPipChanged FINAL)
     Q_PROPERTY(bool pinVideoControls READ pinVideoControls WRITE setPinVideoControls NOTIFY pinVideoControlsChanged FINAL)
     Q_PROPERTY(float pinOpacity READ pinOpacity WRITE setPinOpacity NOTIFY pinOpacityChanged FINAL)
@@ -262,6 +265,14 @@ public:
     QString waveformStyle() const { return stringOption(QStringLiteral("qt-waveform-style")); }
     double overlayOpacity() const { return var_InheritFloat(p_intf, "qt-overlay-opacity"); }
     double panelOpacity() const { return var_InheritFloat(p_intf, "qt-panel-opacity"); }
+    int openPlayerMenus() const { return m_openPlayerMenus; }
+    void setOpenPlayerMenus(int count) {
+        count = std::max(count, 0);
+        if (count == m_openPlayerMenus)
+            return;
+        m_openPlayerMenus = count;
+        emit openPlayerMenusChanged();
+    }
     void setOverlayOpacity(double opacity);
     void setPanelOpacity(double opacity);
     /* Writes the settings changed so far to the disk */
@@ -592,6 +603,7 @@ signals:
     void waveformStyleChanged();
     void overlayOpacityChanged();
     void panelOpacityChanged();
+    void openPlayerMenusChanged();
     void fullscreenInterfaceToggled( bool );
     void setInterfaceVisibible(bool, bool requestActivate = false);
     void setInterfaceFullScreen( bool );
@@ -657,6 +669,7 @@ signals:
     void usingTouchChanged();
 
 private:
+    int m_openPlayerMenus = 0;
     void loadPrefs(bool callSignals);
     void loadFromSettingsImpl(bool callSignals);
 };

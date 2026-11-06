@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 import QtQuick
+import VLC.MainInterface
 import QtQuick.Templates as T
 import QtQuick.Layouts
 import QtQml.Models
@@ -29,6 +30,11 @@ import VLC.Util
 // FIXME: Keyboard navigation needs to be fixed for this Popup.
 T.Popup {
     id: root
+
+    // Terrikon: the time line leaves the pointer alone while this is open
+    onOpened: MainCtx.openPlayerMenus += 1
+    onClosed: MainCtx.openPlayerMenus -= 1
+    Component.onDestruction: if (opened) MainCtx.openPlayerMenus -= 1
 
     // Settings
     property var preferredWidth : stackView.currentItem.preferredWidth

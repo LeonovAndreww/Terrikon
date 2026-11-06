@@ -421,6 +421,7 @@ T.ProgressBar {
 
         TapHandler {
             acceptedButtons: Qt.LeftButton
+            enabled: MainCtx.openPlayerMenus === 0
 
             gesturePolicy: TapHandler.WithinBounds
 
@@ -440,6 +441,7 @@ T.ProgressBar {
         DragHandler {
             id: dragHandler
             acceptedButtons: Qt.LeftButton
+            enabled: MainCtx.openPlayerMenus === 0
 
             // Make it easier to drag with touch screen:
             margin: MainCtx.usingTouch ? control.touchHandlerMargin : 0
