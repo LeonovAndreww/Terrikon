@@ -191,6 +191,8 @@ Widgets.GridItem {
                 TapHandler { onTapped: treeButton.clicked() }
 
                 Widgets.ToolTipExt {
+
+                    colorContext.palette: VLCStyle.palette
                     visible: buttonHover.hovered && treeButton.description !== ""
                     text: treeButton.description
                 }

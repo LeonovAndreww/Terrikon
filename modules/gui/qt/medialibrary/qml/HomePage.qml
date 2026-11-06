@@ -334,6 +334,8 @@ Widgets.PageExt {
                         HoverHandler { id: chipHover }
 
                         Widgets.ToolTipExt {
+
+                            colorContext.palette: VLCStyle.palette
                             visible: chipHover.hovered && !removeButton.hovered
                             text: chip._path
                         }
@@ -390,6 +392,8 @@ Widgets.PageExt {
                         TapHandler { onTapped: foldersCard.addFolder(offer.modelData.url) }
 
                         Widgets.ToolTipExt {
+
+                            colorContext.palette: VLCStyle.palette
                             visible: offerHover.hovered
                             text: qsTr("Add %1 to the media library").arg(offer.modelData.path)
                         }
