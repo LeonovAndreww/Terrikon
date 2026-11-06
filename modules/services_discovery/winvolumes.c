@@ -27,6 +27,7 @@
 #include <vlc_services_discovery.h>
 #include <vlc_threads.h>
 
+#include <vlc_charset.h>
 #include <windows.h>
 #include <dbt.h>
 
@@ -56,20 +57,35 @@ typedef struct volumes_observer_t
  */
 static input_item_t *CreateInput( const char letter )
 {
-    char mrl[12] = "file:///A:/", name[MAX_PATH+1] = {0};
-    char path[4] = "A:\\";
+    char mrl[12] = "file:///A:/";
+    wchar_t path[4] = L"A:\\", label[MAX_PATH+1] = {0};
 
     path[0] = letter;
     mrl[8] = letter;
 
-    if (GetVolumeInformationA(path, name, sizeof(name),
+    /* The wide call: the label may be in any language */
+    if (GetVolumeInformationW(path, label, ARRAY_SIZE(label),
                               NULL, NULL, NULL, NULL, 0) == 0)
         return NULL;
 
-    if (GetDriveTypeA (path) == DRIVE_CDROM)
-        return input_item_NewDisc( mrl, name, INPUT_DURATION_INDEFINITE );
+    /* As the file explorer names them: "Label (E:)", and a drive without
+     * a label is a local disk */
+    char *utf8 = FromWide(label);
+    char *name;
+    if (asprintf(&name, "%s (%c:)", (utf8 && *utf8) ? utf8 : _("Local disk"),
+                 letter) < 0)
+        name = NULL;
+    free(utf8);
+    if (name == NULL)
+        return NULL;
+
+    input_item_t *item;
+    if (GetDriveTypeW (path) == DRIVE_CDROM)
+        item = input_item_NewDisc( mrl, name, INPUT_DURATION_INDEFINITE );
     else
-        return input_item_NewDirectory( mrl, name, ITEM_LOCAL );
+        item = input_item_NewDirectory( mrl, name, ITEM_LOCAL );
+    free(name);
+    return item;
 }
 
 
