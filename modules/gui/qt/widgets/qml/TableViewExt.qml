@@ -321,7 +321,8 @@ ListViewExt {
                         // Right after the text of the header
                         Text {
                             id: sortArrow
-                            text: (root.model.sortOrder === Qt.AscendingOrder) ? "▼" : "▲"
+                            // Terrikon: up for A to Z, as in the file explorer
+                            text: (root.model.sortOrder === Qt.AscendingOrder) ? "▲" : "▼"
                             visible: root.model.sortCriteria === modelData.model.criteria
                             font.pixelSize: VLCStyle.fontSize_small
                             color: root.colorContext.accent
@@ -346,8 +347,11 @@ ListViewExt {
                                 }
                                 if (!(modelData.model.isSortable ?? true))
                                     return
-                                else if (root.model.sortCriteria !== modelData.model.criteria)
+                                else if (root.model.sortCriteria !== modelData.model.criteria) {
+                                    // A new column starts from A to Z
                                     root.model.sortCriteria = modelData.model.criteria
+                                    root.model.sortOrder = Qt.AscendingOrder
+                                }
                                 else
                                     root.model.sortOrder = (root.model.sortOrder === Qt.AscendingOrder) ? Qt.DescendingOrder : Qt.AscendingOrder
                             }
