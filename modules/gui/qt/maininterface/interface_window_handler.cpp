@@ -24,6 +24,9 @@
 #include "dialogs/systray/systray.hpp"
 #include "widgets/native/qvlcframe.hpp"
 #include "dialogs/dialogs/dialogmodel.hpp"
+#include "terrikon/audio_visualizer.hpp"
+#include "terrikon/compact_player.hpp"
+#include "player/input_models.hpp"
 #include <QScreen>
 #include <QQmlProperty>
 #include <cmath>
@@ -175,6 +178,11 @@ InterfaceWindowHandler::InterfaceWindowHandler(qt_intf_t *_p_intf, MainCtx* main
 InterfaceWindowHandler::~InterfaceWindowHandler()
 {
     m_window->removeEventFilter(this);
+    /* Terrikon: never remember the small window of picture in picture,
+     * whichever way the player quits */
+    if (terrikon::CompactPlayer *compact = terrikon::CompactPlayer::instance();
+        compact && compact->active())
+        compact->leave();
     /* Save this size */
     QVLCTools::saveWindowPosition(getSettings(), m_window);
     assert(qApp);
@@ -225,6 +233,24 @@ bool InterfaceWindowHandler::eventFilter(QObject*, QEvent* event)
         {
 
             m_hasPausedWhenMinimized = false;
+
+            /* Terrikon: a video goes on in picture in picture instead of
+             * leaving the screen; music shows the mini window (from QML) */
+            terrikon::CompactPlayer *compact = terrikon::CompactPlayer::instance();
+            if( compact && !compact->active() &&
+                THEMIM->getPlayingState() == PlayerController::PLAYING_STATE_PLAYING &&
+                THEMIM->hasVideoOutput() && THEMIM->getVideoTracks()->getCount() > 0 )
+            {
+                /* Back to the state before minimizing (maximized say), so
+                 * that leaving picture in picture returns to it */
+                const Qt::WindowStates before = oldState & ~Qt::WindowMinimized;
+                QMetaObject::invokeMethod(compact, [this, compact, before]() {
+                    m_window->setWindowStates(before);
+                    m_window->show();
+                    compact->enter();
+                }, Qt::QueuedConnection);
+                break;
+            }
 
             if( THEMIM->getPlayingState() == PlayerController::PLAYING_STATE_PLAYING &&
                 THEMIM->hasVideoOutput() && !THEMIM->hasAudioVisualization() &&
@@ -295,6 +321,22 @@ bool InterfaceWindowHandler::eventFilter(QObject*, QEvent* event)
 #else
         setInterfaceHiden();
 #endif
+
+        /* Terrikon: while the mini window plays music, closing keeps it
+         * playing there, with the main window put away (in the tray when
+         * there is one) */
+        if (const terrikon::Visualizer *visualizer = terrikon::Visualizer::instance();
+            visualizer && visualizer->miniWindow() &&
+            THEMIM->getPlayingState() == PlayerController::PLAYING_STATE_PLAYING &&
+            THEMIM->getVideoTracks()->getCount() == 0)
+        {
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+            if (platformIsWayland)
+                setInterfaceHiden();
+#endif
+            event->ignore();
+            return true;
+        }
 
         if (var_InheritBool(p_intf, "qt-close-to-system-tray"))
         {

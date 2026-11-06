@@ -361,8 +361,16 @@ Item {
         }
 
         // Terrikon: the mini window of the visualizer, over all the others
+        // Also while the player is minimized or put away, for music
         Loader {
-            active: Visualizer.miniWindow
+            active: {
+                if (Visualizer.miniWindow)
+                    return true
+                const visibility = MainCtx.intfMainWindow.visibility
+                return (visibility === Window.Minimized || visibility === Window.Hidden)
+                        && Player.playingState !== Player.PLAYING_STATE_STOPPED
+                        && Player.videoTracks.count === 0
+            }
             source: "qrc:///qt/qml/VLC/Player/MiniVisualizer.qml"
         }
 

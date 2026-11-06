@@ -53,12 +53,15 @@ Window {
 
     color: "transparent"
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
+    // A window of its own: not hidden or minimized along with the player
+    transientParent: null
     title: qsTr("Visualizer")
 
     minimumWidth: shape === 2 ? 200 : 80
     minimumHeight: shape === 2 ? 44 : (shape === 3 ? 24 : 80)
 
-    visible: Player.playingState !== Player.PLAYING_STATE_STOPPED
+    // Music only: a video goes on in picture in picture with its picture
+    visible: Player.playingState !== Player.PLAYING_STATE_STOPPED && Player.videoTracks.count === 0
 
     function _applySize() {
         const s = Visualizer.miniSize(shape)

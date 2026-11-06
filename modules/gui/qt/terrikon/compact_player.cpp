@@ -36,10 +36,19 @@
 
 namespace terrikon {
 
+CompactPlayer *CompactPlayer::s_instance = nullptr;
+
+CompactPlayer::~CompactPlayer()
+{
+    if (s_instance == this)
+        s_instance = nullptr;
+}
+
 CompactPlayer::CompactPlayer(MainCtx *ctx, QObject *parent)
     : QObject(parent)
     , m_ctx(ctx)
 {
+    s_instance = this;
     /* The window size is saved once the event loop is over; quitting from
      * picture in picture must not make the small window the remembered one */
     connect(qApp, &QCoreApplication::aboutToQuit, this, &CompactPlayer::leave);

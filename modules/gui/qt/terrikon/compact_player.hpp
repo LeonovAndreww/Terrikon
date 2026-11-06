@@ -47,6 +47,9 @@ public:
     static constexpr int minimumHeight = 90;
 
     explicit CompactPlayer(MainCtx *ctx, QObject *parent = nullptr);
+    ~CompactPlayer() override;
+
+    static CompactPlayer *instance() { return s_instance; }
 
     bool active() const { return m_active; }
 
@@ -58,6 +61,7 @@ signals:
     void activeChanged();
 
 private:
+    static CompactPlayer *s_instance;
     MainCtx *m_ctx;
     bool m_active = false;
 
