@@ -19,6 +19,8 @@
 #include "mlrecentvideomodel.hpp"
 #include "mlhelper.hpp"
 
+#include <QUrl>
+
 // Ctor / dtor
 
 MLRecentVideoModel::MLRecentVideoModel(QObject * parent) : MLVideoModel(parent) {}
@@ -50,29 +52,64 @@ void MLRecentVideoModel::onVlcMlEvent(const MLEvent & event) /* override */
 
 // Loader
 
+/* Terrikon: a video opened from a phone or from an archive is played from
+ * a copy Windows makes in a temporary folder; going on with it later makes
+ * no sense, and its folder is not one to show. Such copies stay out. */
+static bool isTemporaryCopy(const vlc_ml_media_t &media)
+{
+    if (media.p_files == nullptr)
+        return false;
+    for (size_t i = 0; i < media.p_files->i_nb_items; ++i)
+    {
+        const vlc_ml_file_t &file = media.p_files->p_items[i];
+        if (file.i_type != VLC_ML_FILE_TYPE_MAIN || file.psz_mrl == nullptr)
+            continue;
+        const QString mrl = QUrl::fromPercentEncoding(QByteArray(file.psz_mrl)).toLower();
+        return mrl.contains(QLatin1String("/appdata/local/microsoft/windows/inetcache/"))
+            || mrl.contains(QLatin1String("/appdata/local/temp/"))
+            || mrl.contains(QLatin1String("/windows/temp/"));
+    }
+    return false;
+}
+
+/* The history without the temporary copies; offset and count apply after */
+static std::vector<std::unique_ptr<MLItem>>
+listKept(vlc_medialibrary_t *ml, const vlc_ml_query_params_t *queryParams, size_t *total)
+{
+    vlc_ml_query_params_t all = queryParams ? *queryParams : vlc_ml_query_params_create();
+    all.i_offset = 0;
+    all.i_nbResults = 0;
+    ml_unique_ptr<vlc_ml_media_list_t> media_list { vlc_ml_list_video_history(ml, &all) };
+
+    std::vector<std::unique_ptr<MLItem>> res;
+    size_t kept = 0;
+    const size_t offset = queryParams ? queryParams->i_offset : 0;
+    const size_t limit = (queryParams && queryParams->i_nbResults) ? queryParams->i_nbResults : SIZE_MAX;
+    if (media_list)
+        for (const vlc_ml_media_t &media : ml_range_iterate<vlc_ml_media_t>(media_list))
+        {
+            if (isTemporaryCopy(media))
+                continue;
+            if (kept >= offset && res.size() < limit && !total)
+                res.emplace_back(std::make_unique<MLVideo>(&media));
+            kept++;
+        }
+    if (total)
+        *total = kept;
+    return res;
+}
+
 size_t MLRecentVideoModel::Loader::count(vlc_medialibrary_t* ml, const vlc_ml_query_params_t* queryParams) const /* override */
 {
-    return vlc_ml_count_video_history(ml, queryParams);
+    size_t total = 0;
+    listKept(ml, queryParams, &total);
+    return total;
 }
 
 std::vector<std::unique_ptr<MLItem>>
 MLRecentVideoModel::Loader::load(vlc_medialibrary_t* ml, const vlc_ml_query_params_t* queryParams) const /* override */
 {
-    ml_unique_ptr<vlc_ml_media_list_t> media_list {
-        vlc_ml_list_video_history(ml, queryParams)
-    };
-
-    if (media_list == nullptr)
-        return {};
-
-    std::vector<std::unique_ptr<MLItem>> res;
-
-    for (const vlc_ml_media_t & media : ml_range_iterate<vlc_ml_media_t>(media_list))
-    {
-        res.emplace_back( std::make_unique<MLVideo>(&media));
-    }
-
-    return res;
+    return listKept(ml, queryParams, nullptr);
 }
 
 std::unique_ptr<MLItem>
