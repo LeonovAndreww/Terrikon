@@ -28,6 +28,8 @@
 
 #include "qt.hpp"
 
+#include <vlc_configuration.h>
+
 #include <QQmlEngine>
 #include <QJSEngine>
 
@@ -315,6 +317,16 @@ MainCtx::MainCtx(qt_intf_t *_p_intf)
     } catch (...) { }
 
     m_initialEffectiveMainInterfaceMode = getEffectiveMainInterfaceMode();
+}
+
+void MainCtx::setWaveformStyle(const QString &style)
+{
+    if (style == waveformStyle())
+        return;
+    config_PutPsz("qt-waveform-style", qtu(style));
+    /* Kept for the next start too */
+    config_SaveConfigFile(p_intf);
+    emit waveformStyleChanged();
 }
 
 MainCtx::~MainCtx()

@@ -121,6 +121,9 @@ class MainCtx : public QObject
     Q_PROPERTY(bool hasToolbarMenu READ hasToolbarMenu WRITE setHasToolbarMenu NOTIFY hasToolbarMenuChanged FINAL)
     Q_PROPERTY(bool canShowVideoPIP READ canShowVideoPIP CONSTANT FINAL)
     Q_PROPERTY(bool backToPip READ backToPip CONSTANT FINAL)
+    /* How the sound waves along the seek bar look: "curve", "bars",
+     * "mirror" or "split" (the qt-waveform-style option) */
+    Q_PROPERTY(QString waveformStyle READ waveformStyle WRITE setWaveformStyle NOTIFY waveformStyleChanged FINAL)
     Q_PROPERTY(bool playerFromPip MEMBER m_playerFromPip NOTIFY playerFromPipChanged FINAL)
     Q_PROPERTY(bool pinVideoControls READ pinVideoControls WRITE setPinVideoControls NOTIFY pinVideoControlsChanged FINAL)
     Q_PROPERTY(float pinOpacity READ pinOpacity WRITE setPinOpacity NOTIFY pinOpacityChanged FINAL)
@@ -252,6 +255,9 @@ public:
     inline void setCanShowVideoPIP(bool canShowVideoPIP) { m_canShowVideoPIP = canShowVideoPIP; }
     inline bool backToPip() const { return var_InheritBool(p_intf, "qt-back-to-pip"); }
     /* Value of a string option of the interface */
+    QString waveformStyle() const { return stringOption(QStringLiteral("qt-waveform-style")); }
+    void setWaveformStyle(const QString &style);
+
     Q_INVOKABLE QString stringOption(const QString &name) const
     {
         char *value = var_InheritString(p_intf, qtu(name));
@@ -573,6 +579,7 @@ protected slots:
 
 signals:
     void playerFromPipChanged();
+    void waveformStyleChanged();
     void fullscreenInterfaceToggled( bool );
     void setInterfaceVisibible(bool, bool requestActivate = false);
     void setInterfaceFullScreen( bool );

@@ -305,7 +305,7 @@ static void ShowDialog   ( intf_thread_t *, int, int, intf_dialog_args_t * );
 #define WAVEFORM_STYLE_LONGTEXT N_( "How the sound of the playing audio tracks is drawn along the seek bar." )
 static const char *const waveform_style_values[] = { "curve", "bars", "mirror", "split" };
 static const char *const waveform_style_texts[] = {
-    N_("Smooth line"), N_("Columns"), N_("Mirrored"),
+    N_("Smooth line"), N_("Thin columns"), N_("Mirrored"),
     N_("Above and below the bar (two tracks)") };
 
 #define ACCENT_COLOR_TEXT N_( "Accent color" )

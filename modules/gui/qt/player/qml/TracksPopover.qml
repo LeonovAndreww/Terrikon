@@ -21,6 +21,7 @@ import QtQuick.Templates as T
 
 import VLC.MainInterface
 import VLC.Player
+import VLC.Terrikon
 import VLC.Style
 import VLC.Util
 import VLC.Widgets as Widgets
@@ -31,6 +32,8 @@ T.Popup {
     id: root
 
     padding: VLCStyle.margin_xsmall
+    // Stays inside the window, whichever side of the bar its button is on
+    margins: VLCStyle.margin_small
     closePolicy: T.Popup.CloseOnEscape | T.Popup.CloseOnPressOutside
 
     // The synchronization page needs more room than the lists
@@ -201,6 +204,12 @@ T.Popup {
                 onClicked: stack.push(syncPage)
             }
             Row {
+                text: qsTr("Sound waves")
+                opensPage: true
+                value: root._waveStyles.find(s => s.id === MainCtx.waveformStyle)?.name ?? ""
+                onClicked: stack.push(wavesPage)
+            }
+            Row {
                 text: qsTr("Open subtitle file…")
                 onClicked: {
                     root.close()
@@ -274,6 +283,108 @@ T.Popup {
                     text: root._speedName(modelData)
                     checkMark: Math.abs(Player.rate - modelData) < 0.001
                     onClicked: Player.rate = modelData
+                }
+            }
+        }
+    }
+
+    // Looks of the sound waves along the seek bar, each shown on the sound
+    // of what is playing
+    readonly property var _waveStyles: [
+        { id: "curve", name: qsTr("Smooth line"), style: WaveformView.Curve },
+        { id: "bars", name: qsTr("Thin columns"), style: WaveformView.Bars },
+        { id: "mirror", name: qsTr("Mirrored"), style: WaveformView.Mirror },
+        { id: "split", name: qsTr("Above and below the bar (two tracks)"), style: WaveformView.Curve }
+    ]
+
+    Component {
+        id: wavesPage
+
+        ColumnLayout {
+            spacing: 0
+
+            PageHeader { text: qsTr("Sound waves"); onClicked: stack.pop() }
+
+            // Cached on disk by the seek bar's loader, so this is quick
+            WaveformLoader {
+                id: previewLoader
+                Component.onCompleted: loadUrl(Player.url)
+            }
+
+            Repeater {
+                model: root._waveStyles
+
+                T.ItemDelegate {
+                    id: choice
+
+                    required property var modelData
+                    readonly property bool current: MainCtx.waveformStyle === modelData.id
+
+                    Layout.fillWidth: true
+                    padding: VLCStyle.margin_small
+                    leftPadding: VLCStyle.margin_normal
+                    rightPadding: VLCStyle.margin_normal
+                    // A template control has no size of its own
+                    implicitWidth: implicitContentWidth + leftPadding + rightPadding
+                    implicitHeight: implicitContentHeight + topPadding + bottomPadding
+
+                    onClicked: MainCtx.waveformStyle = modelData.id
+
+                    background: Rectangle {
+                        radius: VLCStyle.dp(6, VLCStyle.scale)
+                        color: choice.current ? Qt.rgba(1, 1, 1, 0.1)
+                             : choice.hovered ? Qt.rgba(1, 1, 1, 0.06) : "transparent"
+                    }
+
+                    contentItem: ColumnLayout {
+                        spacing: VLCStyle.margin_xxsmall
+
+                        Text {
+                            text: (choice.current ? "✓  " : "") + choice.modelData.name
+                            color: "white"
+                            font.pixelSize: VLCStyle.fontSize_normal
+                        }
+
+                        // The bar with the waves over it (and under it, split)
+                        Item {
+                            Layout.fillWidth: true
+                            implicitHeight: VLCStyle.dp(choice.modelData.id === "split" ? 40 : 30, VLCStyle.scale)
+
+                            readonly property var _tracks: Player.audioTracks.trackStates()
+                                                               .filter(t => t.enabled).map(t => t.index)
+
+                            WaveformView {
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.top: parent.top
+                                height: VLCStyle.dp(24, VLCStyle.scale)
+                                loader: previewLoader
+                                colors: [ "#ffffff", "#d0d0d0" ]
+                                style: choice.modelData.style
+                                tracks: choice.modelData.id === "split" ? parent._tracks.slice(0, 1) : parent._tracks
+                            }
+
+                            Rectangle {
+                                y: VLCStyle.dp(26, VLCStyle.scale)
+                                width: parent.width
+                                height: VLCStyle.dp(2, VLCStyle.scale)
+                                color: Qt.rgba(1, 1, 1, 0.4)
+                            }
+
+                            WaveformView {
+                                visible: choice.modelData.id === "split"
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                y: VLCStyle.dp(29, VLCStyle.scale)
+                                height: VLCStyle.dp(11, VLCStyle.scale)
+                                loader: previewLoader
+                                colors: [ "#d0d0d0" ]
+                                style: WaveformView.Curve
+                                tracks: parent._tracks.slice(1, 2)
+                                transform: Scale { origin.y: VLCStyle.dp(5.5, VLCStyle.scale); yScale: -1 }
+                            }
+                        }
+                    }
                 }
             }
         }

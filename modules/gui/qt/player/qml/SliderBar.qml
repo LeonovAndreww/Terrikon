@@ -143,7 +143,7 @@ T.ProgressBar {
 
     // "curve", "bars", "mirror" or "split": the first playing track above
     // the bar, the second below it, upside down
-    readonly property string _waveStyle: MainCtx.stringOption("qt-waveform-style")
+    readonly property string _waveStyle: MainCtx.waveformStyle
     readonly property bool _splitWaves: _waveStyle === "split"
 
     TrackWaveforms {
