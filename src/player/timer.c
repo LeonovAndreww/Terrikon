@@ -66,6 +66,11 @@ vlc_player_SendTimerSeek(vlc_player_t *player,
         }
         else
         {
+            /* The first point after a seek is sent at once, not once the
+             * refresh delay since the last one before the seek is over:
+             * otherwise the position stands still for up to that delay,
+             * then jumps */
+            timer->last_update_date = VLC_TICK_INVALID;
             if (timer->cbs->on_seek != NULL)
                 timer->cbs->on_seek(point, timer->data);
         }
