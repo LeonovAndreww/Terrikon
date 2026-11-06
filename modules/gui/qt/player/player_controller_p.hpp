@@ -141,6 +141,8 @@ public:
     vlc_player_timer_id* m_player_timer_smpte = nullptr;
     struct vlc_player_timer_point m_player_time;
     bool seeking = false;
+    // Terrikon: a seek just ended, the next point starts the playback again
+    bool m_resumingFromSeek = false;
     QTimer m_position_timer;
     QTimer m_time_timer;
 

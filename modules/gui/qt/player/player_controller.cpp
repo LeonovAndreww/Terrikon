@@ -1024,6 +1024,16 @@ static void on_player_timer_update(const struct vlc_player_timer_point *point,
         that->m_player_time = point_copy;
         bool lengthOrRateChanged = false;
 
+        /* Terrikon: the first point after a seek comes without a date, so
+         * that nothing is interpolated before a second one, which only
+         * comes with the next update, a second later: the position stood
+         * still for that second while the playback went on. When playing,
+         * go on from now; the next point puts it right. */
+        if (that->m_player_time.system_date == VLC_TICK_MAX && that->m_resumingFromSeek
+         && that->m_playing_status == PlayerController::PLAYING_STATE_PLAYING)
+            that->m_player_time.system_date = vlc_tick_now();
+        that->m_resumingFromSeek = false;
+
         if (that->m_length.toVLCTick() != that->m_player_time.length)
         {
             that->m_length = that->m_player_time.length > 0 ? VLCDuration(that->m_player_time.length) : VLCDuration();
@@ -1112,7 +1122,10 @@ static void on_player_timer_seek(const struct vlc_player_timer_point *point,
         });
     }
     else
+    {
         that->seeking = false;
+        that->callAsync([that](){ that->m_resumingFromSeek = true; });
+    }
 }
 static void on_player_timer_smpte_update(const struct vlc_player_timer_smpte_timecode *tc,
                                          void *data)
