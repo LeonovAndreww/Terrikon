@@ -130,6 +130,14 @@ vlc_modules += {
     'plugin_dir' : 'audio_filter',
 }
 
+# Terrikon visualizer tap
+vlc_modules += {
+    'name' : 'terrikon_tap',
+    'sources' : files('terrikon_tap.c'),
+    'dependencies' : [m_lib],
+    'plugin_dir' : 'audio_filter',
+}
+
 # Spatializer module
 vlc_modules += {
     'name' : 'spatializer',

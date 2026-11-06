@@ -287,6 +287,7 @@ libqt_plugin_la_SOURCES = \
 	style/defaultthemeproviders.hpp \
 	style/systempalettethemeprovider.cpp \
 	player/input_models.cpp player/input_models.hpp \
+	terrikon/audio_visualizer.cpp terrikon/audio_visualizer.hpp \
 	terrikon/autoplay.cpp terrikon/autoplay.hpp \
 	terrikon/clip_selection.cpp terrikon/clip_selection.hpp \
 	terrikon/compact_player.cpp terrikon/compact_player.hpp \
@@ -503,6 +504,7 @@ nodist_libqt_plugin_la_SOURCES = \
 	style/vlcicons.moc.cpp \
 	player/delay_estimator.moc.cpp \
 	player/input_models.moc.cpp \
+	terrikon/audio_visualizer.moc.cpp \
 	terrikon/autoplay.moc.cpp \
 	terrikon/clip_selection.moc.cpp \
 	terrikon/compact_player.moc.cpp \

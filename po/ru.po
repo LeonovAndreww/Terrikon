@@ -44170,3 +44170,39 @@ msgstr "Непрозрачность сплошных частей плеера"
 #: terrikon
 msgid "How opaque the queue and the clip panel over the video are."
 msgstr "Насколько непрозрачны очередь и панель клипа поверх видео."
+
+#: terrikon
+msgid "Ring around the cover"
+msgstr "Кольцо вокруг обложки"
+
+#: terrikon
+msgid "Bars"
+msgstr "Столбики"
+
+#: terrikon
+msgid "Hills"
+msgstr "Холмы"
+
+#: terrikon
+msgid "Background: blurred cover"
+msgstr "Фон: размытая обложка"
+
+#: terrikon
+msgid "Background: black"
+msgstr "Фон: чёрный"
+
+#: terrikon
+msgid "VLC: %1"
+msgstr "VLC: %1"
+
+#: terrikon
+msgid "Listens to the audio for the Terrikon visualizer"
+msgstr "Слушает звук для визуализатора Terrikon"
+
+#: terrikon
+msgid "Terrikon tap"
+msgstr "Отвод Terrikon"
+
+#: terrikon
+msgid "Background: cover"
+msgstr "Фон: обложка"

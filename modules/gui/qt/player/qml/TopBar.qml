@@ -52,6 +52,11 @@ FocusScope{
     property bool showToolbar: false
     property bool pinControls: false
 
+    // Terrikon: a VLC visualization takes the whole view; this is the way
+    // back to the cover and to the other visualizers
+    property bool showVisualization: false
+    signal visualizationRequested(point globalPos)
+
     readonly property ColorContext colorContext: ColorContext {
         id: theme
         colorSet: ColorContext.Window
@@ -433,6 +438,18 @@ FocusScope{
         anchors.rightMargin: root._sideMargin + extraRightMargin
 
         visible: root._showTopBar
+
+        Widgets.IconToolButton {
+            anchors.verticalCenter: parent.verticalCenter
+            visible: root.showVisualization
+            font.pixelSize: VLCStyle.icon_banner
+            width: VLCStyle.bannerButton_width
+            height: VLCStyle.bannerButton_height
+            text: VLCIcons.visualization
+            description: qsTr("Visualization")
+            onClicked: root.visualizationRequested(this.mapToGlobal(0, height))
+            onHoveredChanged: root.requestLockUnlockAutoHide(hovered)
+        }
 
         Widgets.IconToolButton {
             id: menuSelector

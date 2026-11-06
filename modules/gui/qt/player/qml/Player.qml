@@ -72,7 +72,10 @@ FocusScope {
 
     // Events
 
-    Component.onCompleted: MainCtx.preferHotkeys = true
+    Component.onCompleted: {
+        MainCtx.preferHotkeys = true
+        _vlcVisualization = _vlcVisualizationIndex()
+    }
     Component.onDestruction: MainCtx.preferHotkeys = false
 
     // Terrikon keys (clip, marks, picture in picture) are VLC hotkeys,
@@ -146,34 +149,98 @@ FocusScope {
         }
     }
 
+    // Terrikon's own first (drawn in the player, around and under the
+    // cover), then the backgrounds for them, then VLC's, which take the
+    // whole view. Choosing one side turns the other off.
     StringListMenu {
         id: visualizationMenu
         ctx: MainCtx
-        onSelected: (index, text) => Player.audioVisualization.toggleIndex(index)
+        onSelected: (index, text) => {
+            const own = Visualizer.styleNames.length - 1
+            const backgrounds = Visualizer.backgroundNames.length
+            if (index < own) {
+                const style = index + 1
+                if (Visualizer.style === style) {
+                    Visualizer.style = 0
+                } else if (rootPlayer._vlcVisualizationIndex() > 0) {
+                    // Switching both at once stalls the audio output: first
+                    // VLC's goes, then ours comes
+                    visualizationSwitch.schedule(() => { Visualizer.style = style })
+                    Player.audioVisualization.toggleIndex(0)
+                } else {
+                    Visualizer.style = style
+                }
+            } else if (index < own + backgrounds) {
+                Visualizer.background = index - own
+            } else {
+                const vlcIndex = index - own - backgrounds
+                if (Visualizer.style !== 0 && vlcIndex > 0) {
+                    visualizationSwitch.schedule(() => { Player.audioVisualization.toggleIndex(vlcIndex) })
+                    Visualizer.style = 0
+                } else {
+                    Visualizer.style = 0
+                    Player.audioVisualization.toggleIndex(vlcIndex)
+                }
+            }
+        }
+    }
+
+    // Carries out the second half of a switch once the audio output has
+    // settled after the first
+    Timer {
+        id: visualizationSwitch
+
+        property var _next: null
+
+        interval: 700
+        function schedule(next) {
+            _next = next
+            restart()
+        }
+        onTriggered: {
+            const next = _next
+            _next = null
+            if (next)
+                next()
+        }
+    }
+
+    // Read from the model itself: the delegates above do not follow changes
+    function _vlcVisualizationIndex() {
+        const model = Player.audioVisualization
+        for (let i = 0; i < model.rowCount(); ++i) {
+            const checked = model.data(model.index(i, 0), Qt.CheckStateRole)
+            if (checked === true || checked === Qt.Checked)
+                return i
+        }
+        return -1
+    }
+
+    // Which VLC visualization is shown, kept up to date
+    property int _vlcVisualization: -1
+
+    Connections {
+        target: Player.audioVisualization
+        function onDataChanged() { rootPlayer._vlcVisualization = rootPlayer._vlcVisualizationIndex() }
+        function onModelReset() { rootPlayer._vlcVisualization = rootPlayer._vlcVisualizationIndex() }
     }
 
     function chooseVisualization(globalPos) {
+        const mark = (on) => on ? "✓  " : "     "
         const names = []
+        const styles = Visualizer.styleNames
+        for (let s = 1; s < styles.length; ++s)
+            names.push(mark(Visualizer.style === s) + styles[s])
+        const backgrounds = Visualizer.backgroundNames
+        for (let b = 0; b < backgrounds.length; ++b)
+            names.push(mark(Visualizer.background === b) + backgrounds[b])
+        const vlcOn = Visualizer.style === 0
+        const current = _vlcVisualizationIndex()
         for (let i = 0; i < visualizations.count; ++i) {
             const v = visualizations.objectAt(i)
-            names.push((v.checked === true || v.checked === Qt.Checked ? "✓  " : "     ") + v.display)
+            names.push(mark(vlcOn && i === current) + qsTr("VLC: %1").arg(v.display))
         }
         visualizationMenu.popup(globalPos, names)
-    }
-
-    // While a visualization is shown (music, no video), the way back to the
-    // cover and to the other visualizations
-    Widgets.IconToolButton {
-        z: 2
-        anchors.top: topBar.bottom
-        anchors.right: parent.right
-        anchors.margins: VLCStyle.margin_normal
-        visible: Player.videoTracks.count === 0 && Player.hasVideoOutput
-        opacity: topBar.opacity
-        text: VLCIcons.visualization
-        font.pixelSize: VLCStyle.icon_audioPlayerButton
-        description: qsTr("Visualization")
-        onClicked: rootPlayer.chooseVisualization(mapToGlobal(0, height))
     }
 
     function _onNavigationCancel() {
@@ -550,6 +617,42 @@ FocusScope {
                     }
                 }
 
+                // Terrikon: the chosen background behind the visualizer
+                Rectangle {
+                    anchors.fill: parent
+                    color: "black"
+                    visible: Visualizer.style !== 0 && Visualizer.background === 1
+                }
+
+                Image {
+                    anchors.fill: parent
+                    visible: Visualizer.style !== 0 && Visualizer.background === 2
+                    source: visible ? cover.source : ""
+                    fillMode: Image.PreserveAspectCrop
+                    asynchronous: true
+                    cache: false
+
+                    Rectangle {
+                        anchors.fill: parent
+                        color: Qt.rgba(0, 0, 0, 0.5)
+                    }
+                }
+
+                AudioVisualizer {
+                    id: visualizer
+
+                    anchors.fill: parent
+                    anchors.topMargin: audioFocusScope.topPadding
+                    anchors.bottomMargin: audioFocusScope.bottomPadding
+
+                    style: Visualizer.style
+                    visible: style !== 0 && !audioFocusScope.lyricsLayoutActive
+                    color: "#ff7a1a"
+                    color2: "#ffe2bf"
+
+                    cover: cover
+                }
+
                 MouseArea {
                     id: centerContent
 
@@ -728,6 +831,10 @@ FocusScope {
                                 }
 
                                 sourceSize: Qt.size(maximumSize, maximumSize)
+
+                                // Terrikon: beats with the ring around it
+                                scale: visualizer.visible && Visualizer.style === 1
+                                       ? 1 + visualizer.level * 0.05 : 1
 
                                 Accessible.role: Accessible.Graphic
                                 Accessible.name: qsTr("Cover")
@@ -1026,6 +1133,9 @@ FocusScope {
 
     TopBar {
         id: topBar
+
+        showVisualization: rootPlayer._vlcVisualization > 0
+        onVisualizationRequested: (globalPos) => rootPlayer.chooseVisualization(globalPos)
 
         anchors.top: parent.top
         anchors.left: parent.left

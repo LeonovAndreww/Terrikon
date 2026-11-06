@@ -92,6 +92,7 @@
 #endif
 #include "mainctx_submodels.hpp"
 
+#include "terrikon/audio_visualizer.hpp"
 #include "terrikon/autoplay.hpp"
 #include "terrikon/clip_selection.hpp"
 #include "terrikon/compact_player.hpp"
@@ -479,6 +480,9 @@ void MainUI::registerQMLTypes()
         qmlRegisterType<terrikon::WaveformLoader>(uri, versionMajor, versionMinor, "WaveformLoader");
         qmlRegisterType<terrikon::ThumbnailStrip>(uri, versionMajor, versionMinor, "ThumbnailStrip");
         qmlRegisterType<terrikon::WaveformView>(uri, versionMajor, versionMinor, "WaveformView");
+        qmlRegisterType<terrikon::AudioVisualizer>(uri, versionMajor, versionMinor, "AudioVisualizer");
+        qmlRegisterSingletonInstance<terrikon::Visualizer>(uri, versionMajor, versionMinor, "Visualizer",
+                                                           new terrikon::Visualizer(m_mainCtx->getIntf(), this));
         qmlRegisterSingletonInstance<terrikon::Autoplay>(uri, versionMajor, versionMinor, "Autoplay",
                                                          new terrikon::Autoplay(m_mainCtx->getIntf(), this));
         auto *clipSelection = new terrikon::ClipSelection(this);
