@@ -129,7 +129,9 @@ public:
                 if (homeAdded) {
                     return;
                 } else {
-                    addItem(homePath, qtr("Home"), {});
+                    // Terrikon: on Windows the home of VLC is the documents
+                    // folder; it keeps its own name
+                    addItem(homePath, label, {});
                     homeAdded = true;
                 }
             } else {
@@ -142,11 +144,11 @@ public:
         addItem(homePath, qtr("Home"), {});
         homeAdded = true;
 #endif
-        addFilterHome(QVLCUserDir(VLC_DESKTOP_DIR), qtr("Desktop"));
+        addFilterHome(QVLCUserDir(VLC_DESKTOP_DIR), qtr("Desktop folder"));
         addFilterHome(QVLCUserDir(VLC_DOCUMENTS_DIR), qtr("Documents"));
         addFilterHome(QVLCUserDir(VLC_MUSIC_DIR), qtr("Music"));
         addFilterHome(QVLCUserDir(VLC_VIDEOS_DIR), qtr("Videos"));
-        addFilterHome(QVLCUserDir(VLC_DOWNLOAD_DIR), qtr("Download"));
+        addFilterHome(QVLCUserDir(VLC_DOWNLOAD_DIR), qtr("Downloads"));
 
         //model is never updated, but this is still needed to fit the LocalListBaseModelPrivate requirements
         ++m_revision;

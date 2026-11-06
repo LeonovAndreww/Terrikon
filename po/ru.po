@@ -44206,3 +44206,15 @@ msgstr "Отвод Terrikon"
 #: terrikon
 msgid "Background: cover"
 msgstr "Фон: обложка"
+
+#: terrikon
+msgid "Desktop folder"
+msgstr "Рабочий стол"
+
+#: terrikon
+msgid "Downloads"
+msgstr "Загрузки"
+
+#: terrikon
+msgid "Local disk"
+msgstr "Локальный диск"
