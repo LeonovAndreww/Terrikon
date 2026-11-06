@@ -13,10 +13,10 @@ Function AssociateExtension
   ; back up old value for extension $R0 (eg. ".opt")
   ReadRegStr $1 HKCR "$R0" ""
   StrCmp $1 "" NoBackup
-    StrCmp $1 "VLC$R0" "NoBackup"
-    WriteRegStr HKCR "$R0" "VLC.backup" $1
+    StrCmp $1 "Terrikon$R0" "NoBackup"
+    WriteRegStr HKCR "$R0" "Terrikon.backup" $1
 NoBackup:
-  WriteRegStr HKCR "$R0" "" "VLC$R0"
+  WriteRegStr HKCR "$R0" "" "Terrikon$R0"
 FunctionEnd
 
 ;; Function that registers one extension for VLC
@@ -26,30 +26,30 @@ Function RegisterExtension
   ${StrRep} $R2 $R0 "." ""
   ; And capitalize the extension
   ${StrCase} $R2 $R2 "U"
-  ; for instance: MKV Video File (VLC)
-  WriteRegStr HKCR "VLC$R0" "" "$R2 $R1 File (VLC)"
-  WriteRegStr HKCR "VLC$R0\shell" "" "Open"
-  WriteRegStr HKCR "VLC$R0\shell\Open" "" "$(ShellAssociation_Play)"
-  WriteRegStr HKCR "VLC$R0\shell\Open" "MultiSelectModel" "Player"
-  WriteRegStr HKCR "VLC$R0\shell\Open\command" "" '"$INSTDIR\vlc.exe" --started-from-file "%1"'
-  WriteRegStr HKCR "VLC$R0\DefaultIcon" "" '"$INSTDIR\vlc.exe",0'
-  WriteRegStr HKCR "Applications\vlc.exe\SupportedTypes" $0 ""
+  ; for instance: MKV Video File (Terrikon)
+  WriteRegStr HKCR "Terrikon$R0" "" "$R2 $R1 File (Terrikon)"
+  WriteRegStr HKCR "Terrikon$R0\shell" "" "Open"
+  WriteRegStr HKCR "Terrikon$R0\shell\Open" "" "$(ShellAssociation_Play)"
+  WriteRegStr HKCR "Terrikon$R0\shell\Open" "MultiSelectModel" "Player"
+  WriteRegStr HKCR "Terrikon$R0\shell\Open\command" "" '"$INSTDIR\terrikon.exe" --started-from-file "%1"'
+  WriteRegStr HKCR "Terrikon$R0\DefaultIcon" "" '"$INSTDIR\terrikon.exe",0'
+  WriteRegStr HKCR "Applications\terrikon.exe\SupportedTypes" $0 ""
 
   ${If} ${AtLeastWinVista}
-    WriteRegStr HKLM "Software\Clients\Media\VLC\Capabilities\FileAssociations" "$R0" "VLC$R0"
+    WriteRegStr HKLM "Software\Clients\Media\Terrikon\Capabilities\FileAssociations" "$R0" "Terrikon$R0"
   ${EndIf}
 FunctionEnd
 
 ;; Function that registers one skin extension for VLC
 Function RegisterSkinExtension
-  WriteRegStr HKCR "VLC$R0" "" "VLC skin file ($R0)"
-  WriteRegStr HKCR "VLC$R0\shell" "" "Open"
-  WriteRegStr HKCR "VLC$R0\shell\Open" "" ""
-  WriteRegStr HKCR "VLC$R0\shell\Open\command" "" '"$INSTDIR\vlc.exe" -Iskins --skins2-last "%1"'
-  WriteRegStr HKCR "VLC$R0\DefaultIcon" "" '"$INSTDIR\vlc.exe",0'
+  WriteRegStr HKCR "Terrikon$R0" "" "Terrikon skin file ($R0)"
+  WriteRegStr HKCR "Terrikon$R0\shell" "" "Open"
+  WriteRegStr HKCR "Terrikon$R0\shell\Open" "" ""
+  WriteRegStr HKCR "Terrikon$R0\shell\Open\command" "" '"$INSTDIR\terrikon.exe" -Iskins --skins2-last "%1"'
+  WriteRegStr HKCR "Terrikon$R0\DefaultIcon" "" '"$INSTDIR\terrikon.exe",0'
 
   ${If} ${AtLeastWinVista}
-    WriteRegStr HKLM "Software\Clients\Media\VLC\Capabilities\FileAssociations" "$R0" "VLC$R0"
+    WriteRegStr HKLM "Software\Clients\Media\Terrikon\Capabilities\FileAssociations" "$R0" "Terrikon$R0"
   ${EndIf}
 FunctionEnd
 
@@ -57,18 +57,18 @@ FunctionEnd
 Function un.RegisterExtension
   ;start of restore script
   ReadRegStr $1 HKCR "$R0" ""
-  StrCmp $1 "VLC$R0" 0 NoOwn ; only do this if we own it
+  StrCmp $1 "Terrikon$R0" 0 NoOwn ; only do this if we own it
     ; Read the old value from Backup
-    ReadRegStr $1 HKCR "$R0" "VLC.backup"
+    ReadRegStr $1 HKCR "$R0" "Terrikon.backup"
     StrCmp $1 "" 0 Restore ; if backup="" then delete the whole key
       DeleteRegKey HKCR "$R0"
     Goto NoOwn
 Restore:
       WriteRegStr HKCR "$R0" "" $1
-      DeleteRegValue HKCR "$R0" "VLC.backup"
+      DeleteRegValue HKCR "$R0" "Terrikon.backup"
 NoOwn:
-    DeleteRegKey HKCR "VLC$R0" ;Delete key with association settings
-    DeleteRegKey HKLM "Software\Clients\Media\VLC\Capabilities\FileAssociations\VLC$R0" ; for vista
+    DeleteRegKey HKCR "Terrikon$R0" ;Delete key with association settings
+    DeleteRegKey HKLM "Software\Clients\Media\Terrikon\Capabilities\FileAssociations\Terrikon$R0" ; for vista
 FunctionEnd
 
 !macro AssociateExtensionSection TYPE EXT
@@ -291,28 +291,28 @@ FunctionEnd
 
 ; Generic function for adding the context menu for one ext.
 !macro AddContextMenuExt EXT
-  WriteRegStr HKCR ${EXT}\shell\PlayWithVLC "" "$(ContextMenuEntry_PlayWith)"
-  WriteRegStr HKCR ${EXT}\shell\PlayWithVLC "Icon" '"$INSTDIR\vlc.exe",0'
-  WriteRegStr HKCR ${EXT}\shell\PlayWithVLC "MultiSelectModel" "Player"
-  WriteRegStr HKCR ${EXT}\shell\PlayWithVLC\command "" '"$INSTDIR\vlc.exe" --started-from-file --no-playlist-enqueue "%1"'
+  WriteRegStr HKCR ${EXT}\shell\PlayWithTerrikon "" "$(ContextMenuEntry_PlayWith)"
+  WriteRegStr HKCR ${EXT}\shell\PlayWithTerrikon "Icon" '"$INSTDIR\terrikon.exe",0'
+  WriteRegStr HKCR ${EXT}\shell\PlayWithTerrikon "MultiSelectModel" "Player"
+  WriteRegStr HKCR ${EXT}\shell\PlayWithTerrikon\command "" '"$INSTDIR\terrikon.exe" --started-from-file --no-playlist-enqueue "%1"'
 
-  WriteRegStr HKCR ${EXT}\shell\AddToPlaylistVLC "" "$(ContextMenuEntry_AddToPlaylist)"
-  WriteRegStr HKCR ${EXT}\shell\AddToPlaylistVLC "Icon" '"$INSTDIR\vlc.exe",0'
-  WriteRegStr HKCR ${EXT}\shell\AddToPlaylistVLC "MultiSelectModel" "Player"
-  WriteRegStr HKCR ${EXT}\shell\AddToPlaylistVLC\command "" '"$INSTDIR\vlc.exe" --started-from-file --playlist-enqueue "%1"'
+  WriteRegStr HKCR ${EXT}\shell\AddToPlaylistTerrikon "" "$(ContextMenuEntry_AddToPlaylist)"
+  WriteRegStr HKCR ${EXT}\shell\AddToPlaylistTerrikon "Icon" '"$INSTDIR\terrikon.exe",0'
+  WriteRegStr HKCR ${EXT}\shell\AddToPlaylistTerrikon "MultiSelectModel" "Player"
+  WriteRegStr HKCR ${EXT}\shell\AddToPlaylistTerrikon\command "" '"$INSTDIR\terrikon.exe" --started-from-file --playlist-enqueue "%1"'
 !macroend
 
 !macro AddContextMenu TYPE EXT
-  !insertmacro AddContextMenuExt VLC${EXT}
+  !insertmacro AddContextMenuExt Terrikon${EXT}
 !macroend
 
 !macro DeleteContextMenuExt EXT
-  DeleteRegKey HKCR ${EXT}\shell\PlayWithVLC
-  DeleteRegKey HKCR ${EXT}\shell\AddToPlaylistVLC
+  DeleteRegKey HKCR ${EXT}\shell\PlayWithTerrikon
+  DeleteRegKey HKCR ${EXT}\shell\AddToPlaylistTerrikon
 !macroend
 
 !macro DeleteContextMenu TYPE EXT
-  !insertmacro DeleteContextMenuExt VLC${EXT}
+  !insertmacro DeleteContextMenuExt Terrikon${EXT}
 !macroend
 
 

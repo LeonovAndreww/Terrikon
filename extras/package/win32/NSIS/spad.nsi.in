@@ -115,29 +115,29 @@ FunctionEnd
 
 ; Remove shortcuts
 !macro HideIcons
-  WriteRegDWORD HKLM "Software\Clients\Media\VLC\InstallInfo" "IconsVisible" 0
+  WriteRegDWORD HKLM "Software\Clients\Media\Terrikon\InstallInfo" "IconsVisible" 0
   SetShellVarContext all  ; Set $DESKTOP to All Users
-  ${Unless} ${FileExists} "$DESKTOP\VLC media player.lnk"
+  ${Unless} ${FileExists} "$DESKTOP\Terrikon.lnk"
     SetShellVarContext current  ; Set $DESKTOP to the current user's desktop
   ${EndUnless}
-  ${If} ${FileExists} "$DESKTOP\VLC media player.lnk"
-    Delete "$DESKTOP\VLC media player.lnk"
+  ${If} ${FileExists} "$DESKTOP\Terrikon.lnk"
+    Delete "$DESKTOP\Terrikon.lnk"
   ${EndIf}
-  ${If} ${FileExists} "$QUICKLAUNCH\VLC media player.lnk"
-    Delete "$QUICKLAUNCH\VLC media player.lnk"
+  ${If} ${FileExists} "$QUICKLAUNCH\Terrikon.lnk"
+    Delete "$QUICKLAUNCH\Terrikon.lnk"
   ${EndIf}
 !macroend
 !define HideIcons "!insertmacro HideIcons"
 
 ; Adds shortcuts 
 !macro ShowIcons
-  WriteRegDWORD HKLM "Software\Clients\Media\VLC\InstallInfo" "IconsVisible" 1
+  WriteRegDWORD HKLM "Software\Clients\Media\Terrikon\InstallInfo" "IconsVisible" 1
   SetShellVarContext all  ; Set $DESKTOP to All Users
-  ${Unless} ${FileExists} "$DESKTOP\VLC media player.lnk"
-    CreateShortCut "$DESKTOP\VLC media player.lnk" "$EXEDIR\vlc.exe" "" "$EXEDIR\vlc.exe" 0
+  ${Unless} ${FileExists} "$DESKTOP\Terrikon.lnk"
+    CreateShortCut "$DESKTOP\Terrikon.lnk" "$EXEDIR\terrikon.exe" "" "$EXEDIR\terrikon.exe" 0
   ${EndUnless}
-  ${Unless} ${FileExists} "$QUICKLAUNCH\VLC media player.lnk"
-    CreateShortCut "$QUICKLAUNCH\VLC media player.lnk" "$EXEDIR\vlc.exe" "" "$EXEDIR\vlc.exe" 0
+  ${Unless} ${FileExists} "$QUICKLAUNCH\Terrikon.lnk"
+    CreateShortCut "$QUICKLAUNCH\Terrikon.lnk" "$EXEDIR\terrikon.exe" "" "$EXEDIR\terrikon.exe" 0
   ${EndUnless}
 !macroend
 !define ShowIcons "!insertmacro ShowIcons"

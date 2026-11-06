@@ -19,29 +19,29 @@ ${LangFileString} Desc_Section02a \
 ${LangFileString} Desc_Section02b \
     "Добавяне на икона на десктоп за бърз достъп"
 ${LangFileString} Desc_Section04 \
-    "Плъгин на VLC за ActiveX"
+    "Плъгин на Terrikon за ActiveX"
 ${LangFileString} Desc_Section05 \
     "Възпроизвеждане на CD и DVD дискове"
 ${LangFileString} Desc_Section06 \
-    "Задаване на VLC media player, като програма по подразбиране за определените типове файлове"
+    "Задаване на Terrikon, като програма по подразбиране за определените типове файлове"
 ${LangFileString} Desc_Section07 \
-    "Добавяне на елементи в контекстното меню ('Възпроизвеждане с VLC' и 'Добавяне към плейлиста на VLC')"
+    "Добавяне на елементи в контекстното меню ('Възпроизвеждане с Terrikon' и 'Добавяне към плейлиста на Terrikon')"
 ${LangFileString} Desc_Section08 \
-    "Изтриване на файловете с настройките и кеша на VLC media player останали от предишните инсталации"
+    "Изтриване на файловете с настройките и кеша на Terrikon останали от предишните инсталации"
 
 ${LangFileString} Name_Section91 "Деинсталиране"
 ${LangFileString} Name_Section92 "Изтриване на настройките и кеша"
 
 ${LangFileString} Desc_Section91 \
-"Деинсталиране на VLC media player и на всичките му компоненти"
+"Деинсталиране на Terrikon и на всичките му компоненти"
 ${LangFileString} Desc_Section92 \
-"Изтриване на файловете с настройките и кеша на VLC media player"
+"Изтриване на файловете с настройките и кеша на Terrikon"
 
 ${LangFileString} ShellAssociation_Play "Възпроизвеждане"
-${LangFileString} ContextMenuEntry_PlayWith "Възпроизвеждане с VLC media player"
-${LangFileString} ContextMenuEntry_AddToPlaylist "Добавяне към плейлиста на VLC media player"
+${LangFileString} ContextMenuEntry_PlayWith "Възпроизвеждане с Terrikon"
+${LangFileString} ContextMenuEntry_AddToPlaylist "Добавяне към плейлиста на Terrikon"
 
-${LangFileString} Link_VisitWebsite "Посетете уебсайта на VideoLAN VLC media player"
+${LangFileString} Link_VisitWebsite "Посетете уебсайта на Terrikon Terrikon"
 
 ${LangFileString} Name_InstTypeRecommended "Препоръчителна"
 ${LangFileString} Name_InstTypeMinimum "Минимална"
