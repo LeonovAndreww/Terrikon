@@ -124,6 +124,10 @@ class MainCtx : public QObject
     /* How the sound waves along the seek bar look: "curve", "bars",
      * "mirror" or "split" (the qt-waveform-style option) */
     Q_PROPERTY(QString waveformStyle READ waveformStyle WRITE setWaveformStyle NOTIFY waveformStyleChanged FINAL)
+    // Terrikon: how opaque the see-through parts of the player are (menus
+    // over the video, messages), and its solid ones (queue, clip panel)
+    Q_PROPERTY(double overlayOpacity READ overlayOpacity WRITE setOverlayOpacity NOTIFY overlayOpacityChanged FINAL)
+    Q_PROPERTY(double panelOpacity READ panelOpacity WRITE setPanelOpacity NOTIFY panelOpacityChanged FINAL)
     Q_PROPERTY(bool playerFromPip MEMBER m_playerFromPip NOTIFY playerFromPipChanged FINAL)
     Q_PROPERTY(bool pinVideoControls READ pinVideoControls WRITE setPinVideoControls NOTIFY pinVideoControlsChanged FINAL)
     Q_PROPERTY(float pinOpacity READ pinOpacity WRITE setPinOpacity NOTIFY pinOpacityChanged FINAL)
@@ -256,6 +260,12 @@ public:
     inline bool backToPip() const { return var_InheritBool(p_intf, "qt-back-to-pip"); }
     /* Value of a string option of the interface */
     QString waveformStyle() const { return stringOption(QStringLiteral("qt-waveform-style")); }
+    double overlayOpacity() const { return var_InheritFloat(p_intf, "qt-overlay-opacity"); }
+    double panelOpacity() const { return var_InheritFloat(p_intf, "qt-panel-opacity"); }
+    void setOverlayOpacity(double opacity);
+    void setPanelOpacity(double opacity);
+    /* Writes the settings changed so far to the disk */
+    Q_INVOKABLE void saveConfig();
     void setWaveformStyle(const QString &style);
 
     Q_INVOKABLE QString stringOption(const QString &name) const
@@ -580,6 +590,8 @@ protected slots:
 signals:
     void playerFromPipChanged();
     void waveformStyleChanged();
+    void overlayOpacityChanged();
+    void panelOpacityChanged();
     void fullscreenInterfaceToggled( bool );
     void setInterfaceVisibible(bool, bool requestActivate = false);
     void setInterfaceFullScreen( bool );

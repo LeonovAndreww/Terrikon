@@ -329,6 +329,23 @@ void MainCtx::setWaveformStyle(const QString &style)
     emit waveformStyleChanged();
 }
 
+void MainCtx::setOverlayOpacity(double opacity)
+{
+    config_PutFloat("qt-overlay-opacity", opacity);
+    emit overlayOpacityChanged();
+}
+
+void MainCtx::setPanelOpacity(double opacity)
+{
+    config_PutFloat("qt-panel-opacity", opacity);
+    emit panelOpacityChanged();
+}
+
+void MainCtx::saveConfig()
+{
+    config_SaveConfigFile(p_intf);
+}
+
 MainCtx::~MainCtx()
 {
     /* Save states */

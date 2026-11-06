@@ -62,6 +62,8 @@ T.Popup {
         to: 2
         stepSize: 0.01
 
+        toolTipTextProvider: (v) => Math.round(snapped(v) * 100) + "%"
+
         function snapped(v) {
             return (v > 1 - snapBelow && v < 1 + snapAbove) ? 1 : v
         }
@@ -91,7 +93,7 @@ T.Popup {
 
     background: Rectangle {
         radius: VLCStyle.dp(10, VLCStyle.scale)
-        color: Qt.rgba(0.09, 0.09, 0.09, 0.82)
+        color: Qt.rgba(0.09, 0.09, 0.09, MainCtx.overlayOpacity)
         border.color: Qt.rgba(1, 1, 1, 0.1)
 
         HoverHandler {

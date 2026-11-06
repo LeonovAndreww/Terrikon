@@ -224,7 +224,7 @@ FocusScope {
         anchors.fill: parent
         radius: VLCStyle.dp(10, VLCStyle.scale)
         color: theme.bg.primary
-        opacity: 0.94
+        opacity: 0.94 * MainCtx.panelOpacity
     }
 
     ColumnLayout {

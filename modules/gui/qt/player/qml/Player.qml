@@ -30,6 +30,7 @@ import VLC.PlayerControls
 import VLC.Dialogs
 import VLC.Util
 import VLC.Terrikon
+import VLC.Menus
 
 FocusScope {
     id: rootPlayer
@@ -126,11 +127,53 @@ FocusScope {
     // Leaving the player stops the video, unless it goes on in the small
     // view: when asked for in the settings, or when it came from there
     function _leavePlayer() {
-        const keepPlaying = MainCtx.canShowVideoPIP
-                            && (MainCtx.backToPip || MainCtx.playerFromPip)
+        const audioOnly = Player.videoTracks.count === 0
+        const keepPlaying = audioOnly
+                            || (MainCtx.canShowVideoPIP
+                                && (MainCtx.backToPip || MainCtx.playerFromPip))
         MainCtx.playerFromPip = false
         if (MainCtx.hasEmbededVideo && !keepPlaying)
             MainPlaylistController.stop()
+    }
+
+    // Terrikon: the visualizations by name, the one shown marked
+    Instantiator {
+        id: visualizations
+        model: Player.audioVisualization
+        delegate: QtObject {
+            required property string display
+            required property var checked
+        }
+    }
+
+    StringListMenu {
+        id: visualizationMenu
+        ctx: MainCtx
+        onSelected: (index, text) => Player.audioVisualization.toggleIndex(index)
+    }
+
+    function chooseVisualization(globalPos) {
+        const names = []
+        for (let i = 0; i < visualizations.count; ++i) {
+            const v = visualizations.objectAt(i)
+            names.push((v.checked === true || v.checked === Qt.Checked ? "✓  " : "     ") + v.display)
+        }
+        visualizationMenu.popup(globalPos, names)
+    }
+
+    // While a visualization is shown (music, no video), the way back to the
+    // cover and to the other visualizations
+    Widgets.IconToolButton {
+        z: 2
+        anchors.top: topBar.bottom
+        anchors.right: parent.right
+        anchors.margins: VLCStyle.margin_normal
+        visible: Player.videoTracks.count === 0 && Player.hasVideoOutput
+        opacity: topBar.opacity
+        text: VLCIcons.visualization
+        font.pixelSize: VLCStyle.icon_audioPlayerButton
+        description: qsTr("Visualization")
+        onClicked: rootPlayer.chooseVisualization(mapToGlobal(0, height))
     }
 
     function _onNavigationCancel() {
@@ -866,7 +909,7 @@ FocusScope {
                             Widgets.IconToolButton {
                                 text: VLCIcons.visualization
                                 font.pixelSize: VLCStyle.icon_audioPlayerButton
-                                onClicked: Player.toggleVisualization()
+                                onClicked: rootPlayer.chooseVisualization(mapToGlobal(width / 2, height))
                                 description: qsTr("Visualization")
 
                                 AccessibleCompat.id: "audioVisualizationButton"
@@ -1156,6 +1199,8 @@ FocusScope {
             useAcrylic: false
             focus: true
 
+            background.opacity: MainCtx.panelOpacity
+
             wheelEnabled: true
 
             rightPadding: VLCStyle.applicationHorizontalMargin
@@ -1361,7 +1406,7 @@ FocusScope {
         width: osdLabel.implicitWidth + VLCStyle.margin_normal * 2
         height: osdLabel.implicitHeight + VLCStyle.margin_xsmall * 2
         radius: height / 2
-        color: Qt.rgba(0, 0, 0, 0.6)
+        color: Qt.rgba(0, 0, 0, 0.73 * MainCtx.overlayOpacity)
 
         Text {
             id: osdLabel
@@ -1420,7 +1465,7 @@ FocusScope {
         width: speedLabel.implicitWidth + VLCStyle.margin_normal * 2
         height: speedLabel.implicitHeight + VLCStyle.margin_xsmall * 2
         radius: height / 2
-        color: Qt.rgba(0, 0, 0, 0.6)
+        color: Qt.rgba(0, 0, 0, 0.73 * MainCtx.overlayOpacity)
 
         Text {
             id: speedLabel

@@ -71,7 +71,7 @@ T.Popup {
 
     background: Rectangle {
         radius: VLCStyle.dp(10, VLCStyle.scale)
-        color: Qt.rgba(0.09, 0.09, 0.09, 0.82)
+        color: Qt.rgba(0.09, 0.09, 0.09, MainCtx.overlayOpacity)
         border.color: Qt.rgba(1, 1, 1, 0.1)
     }
 
@@ -208,6 +208,11 @@ T.Popup {
                 opensPage: true
                 value: root._waveStyles.find(s => s.id === MainCtx.waveformStyle)?.name ?? ""
                 onClicked: stack.push(wavesPage)
+            }
+            Row {
+                text: qsTr("Transparency")
+                opensPage: true
+                onClicked: stack.push(opacityPage)
             }
             Row {
                 text: qsTr("Open subtitle file…")
@@ -403,6 +408,69 @@ T.Popup {
                 Layout.margins: VLCStyle.margin_small
                 colorContext: root.colorContext
                 showTitle: false
+            }
+        }
+    }
+
+    Component {
+        id: opacityPage
+
+        ColumnLayout {
+            spacing: VLCStyle.margin_xsmall
+
+            PageHeader { text: qsTr("Transparency"); onClicked: stack.pop() }
+
+            component OpacitySlider: ColumnLayout {
+                id: opacityRow
+
+                property alias text: opacityLabel.text
+                property real value
+                signal moved(real value)
+
+                Layout.fillWidth: true
+                Layout.leftMargin: VLCStyle.margin_normal
+                Layout.rightMargin: VLCStyle.margin_normal
+                Layout.bottomMargin: VLCStyle.margin_small
+                spacing: VLCStyle.margin_xxsmall
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Text {
+                        id: opacityLabel
+                        Layout.fillWidth: true
+                        color: theme.fg.secondary
+                        font.pixelSize: VLCStyle.fontSize_small
+                    }
+                    Text {
+                        text: Math.round(opacityRow.value * 100) + "%"
+                        color: theme.fg.secondary
+                        font.pixelSize: VLCStyle.fontSize_small
+                    }
+                }
+
+                Widgets.SliderExt {
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: VLCStyle.dp(240, VLCStyle.scale)
+                    from: 0.2
+                    to: 1
+                    stepSize: 0.01
+                    value: opacityRow.value
+                    toolTipTextProvider: (v) => Math.round(v * 100) + "%"
+                    onMoved: opacityRow.moved(value)
+                    onPressedChanged: if (!pressed) MainCtx.saveConfig()
+                }
+            }
+
+            OpacitySlider {
+                text: qsTr("See-through parts: these menus, messages over the video")
+                value: MainCtx.overlayOpacity
+                onMoved: (v) => MainCtx.overlayOpacity = v
+            }
+
+            OpacitySlider {
+                text: qsTr("Solid parts: the queue, the clip panel")
+                value: MainCtx.panelOpacity
+                onMoved: (v) => MainCtx.panelOpacity = v
             }
         }
     }

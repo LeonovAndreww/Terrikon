@@ -301,6 +301,10 @@ static void ShowDialog   ( intf_thread_t *, int, int, intf_dialog_args_t * );
 #define PIP_MODE_TEXT N_( "Enable picture-in-picture (PiP) mode" )
 #define PIP_MODE_LONGTEXT N_( "Picture-in-picture mode allows playing video contained in a smaller area so that the interface remains usable." )
 
+#define OVERLAY_OPACITY_TEXT N_( "Opacity of the see-through parts of the player" )
+#define OVERLAY_OPACITY_LONGTEXT N_( "How opaque the menus over the video and the messages on it are." )
+#define PANEL_OPACITY_TEXT N_( "Opacity of the solid parts of the player" )
+#define PANEL_OPACITY_LONGTEXT N_( "How opaque the queue and the clip panel over the video are." )
 #define WAVEFORM_STYLE_TEXT N_( "Sound waves along the seek bar" )
 #define WAVEFORM_STYLE_LONGTEXT N_( "How the sound of the playing audio tracks is drawn along the seek bar." )
 static const char *const waveform_style_values[] = { "curve", "bars", "mirror", "split" };
@@ -499,6 +503,9 @@ vlc_module_begin ()
 
     add_string( "qt-waveform-style", "curve", WAVEFORM_STYLE_TEXT, WAVEFORM_STYLE_LONGTEXT )
         change_string_list( waveform_style_values, waveform_style_texts )
+
+    add_float_with_range( "qt-overlay-opacity", 0.82, 0.2, 1.0, OVERLAY_OPACITY_TEXT, OVERLAY_OPACITY_LONGTEXT )
+    add_float_with_range( "qt-panel-opacity", 1.0, 0.2, 1.0, PANEL_OPACITY_TEXT, PANEL_OPACITY_LONGTEXT )
 
     cannot_unload_broken_library()
 
