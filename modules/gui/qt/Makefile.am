@@ -290,6 +290,7 @@ libqt_plugin_la_SOURCES = \
 	terrikon/autoplay.cpp terrikon/autoplay.hpp \
 	terrikon/clip_selection.cpp terrikon/clip_selection.hpp \
 	terrikon/compact_player.cpp terrikon/compact_player.hpp \
+	terrikon/media_folders.cpp terrikon/media_folders.hpp \
 	terrikon/media_tools.cpp terrikon/media_tools.hpp \
 	terrikon/moment_marks.cpp terrikon/moment_marks.hpp \
 	terrikon/selftest.cpp terrikon/selftest.hpp \
@@ -504,6 +505,7 @@ nodist_libqt_plugin_la_SOURCES = \
 	terrikon/autoplay.moc.cpp \
 	terrikon/clip_selection.moc.cpp \
 	terrikon/compact_player.moc.cpp \
+	terrikon/media_folders.moc.cpp \
 	terrikon/media_tools.moc.cpp \
 	terrikon/moment_marks.moc.cpp \
 	terrikon/subtitle_style.moc.cpp \
@@ -986,13 +988,13 @@ libqt_plugin_la_RES = \
 	pixmaps/prefs/sample_complete.png \
 	pixmaps/prefs/sample_minimal.png \
 	pixmaps/prefs/sample_skins.png \
-	pixmaps/prefs/spref_audio.png \
-	pixmaps/prefs/spref_hotkeys.png \
-	pixmaps/prefs/spref_input.png \
-	pixmaps/prefs/spref_interface.png \
-	pixmaps/prefs/spref_medialibrary.png \
-	pixmaps/prefs/spref_subtitles.png \
-	pixmaps/prefs/spref_video.png \
+	pixmaps/prefs/spref_audio.svg \
+	pixmaps/prefs/spref_hotkeys.svg \
+	pixmaps/prefs/spref_input.svg \
+	pixmaps/prefs/spref_interface.svg \
+	pixmaps/prefs/spref_medialibrary.svg \
+	pixmaps/prefs/spref_subtitles.svg \
+	pixmaps/prefs/spref_video.svg \
 	pixmaps/sd/assembleenationale.svg \
 	pixmaps/sd/capture-card.svg \
 	pixmaps/sd/directory.svg \

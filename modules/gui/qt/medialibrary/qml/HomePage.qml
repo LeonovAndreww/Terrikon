@@ -27,6 +27,7 @@ import VLC.MainInterface
 import VLC.Widgets as Widgets
 import VLC.Util
 import VLC.Style
+import VLC.Terrikon
 
 Widgets.PageExt {
     id: root
@@ -79,10 +80,11 @@ Widgets.PageExt {
         id: flickable
 
         implicitWidth: Math.max(coneNButtons.implicitWidth, mediaRows.implicitWidth)
-        implicitHeight: coneNButtons.implicitHeight + (_hasMedias ? mediaRows.implicitHeight : 0)
+        implicitHeight: coneNButtons.implicitHeight + foldersCard.height
+                        + (_hasMedias ? mediaRows.implicitHeight : 0)
 
         contentWidth: width
-        contentHeight: _hasMedias ? coneNButtons.implicitHeight + mediaRows.implicitHeight
+        contentHeight: _hasMedias ? coneNButtons.implicitHeight + foldersCard.height + mediaRows.implicitHeight
                                   : height - topMargin - bottomMargin
 
         flickableDirection: Flickable.AutoFlickIfNeeded
@@ -176,10 +178,153 @@ Widgets.PageExt {
             }
         }
 
+        // Terrikon: the folders of the media library, from here rather
+        // than from the preferences. With none yet, the folders where game
+        // recorders and Windows keep videos are offered, one click each.
+        MLFolderModel {
+            id: mlFolders
+            ctx: MainCtx
+
+            onModelReset: foldersCard.refresh()
+            onRowsInserted: foldersCard.refresh()
+            onRowsRemoved: foldersCard.refresh()
+        }
+
+        Item {
+            id: foldersCard
+
+            property int folderCount: 0
+            property var suggestions: []
+
+            function refresh() {
+                folderCount = mlFolders.rowCount()
+                if (folderCount === 0)
+                    suggestions = MediaFolders.suggestions()
+            }
+
+            function addFolder(url) {
+                if (url.toString() !== "")
+                    mlFolders.add(url)
+            }
+
+            Component.onCompleted: refresh()
+
+            readonly property ColorContext colorContext: ColorContext {
+                id: cardTheme
+                colorSet: ColorContext.View
+            }
+
+            anchors.top: coneNButtons.bottom
+            anchors.topMargin: VLCStyle.margin_normal
+            anchors.left: flickable._hasMedias ? parent.left : undefined
+            anchors.leftMargin: flickable._hasMedias ? newVideoRow.contentLeftMargin : 0
+            anchors.horizontalCenter: flickable._hasMedias ? undefined : parent.horizontalCenter
+
+            width: Math.min(VLCStyle.dp(620, VLCStyle.scale), flickable.width - 2 * VLCStyle.margin_large)
+            height: card.visible ? card.implicitHeight + VLCStyle.margin_normal
+                  : (addLine.visible ? addLine.implicitHeight + VLCStyle.margin_small : 0)
+
+            // No folder yet: what to add
+            Rectangle {
+                id: card
+
+                visible: foldersCard.folderCount === 0
+                width: parent.width
+                implicitHeight: cardColumn.implicitHeight + 2 * VLCStyle.margin_normal
+                radius: VLCStyle.dp(10, VLCStyle.scale)
+                color: Qt.rgba(1, 1, 1, 0.05)
+                border.color: Qt.rgba(1, 1, 1, 0.08)
+
+                Column {
+                    id: cardColumn
+
+                    anchors.fill: parent
+                    anchors.margins: VLCStyle.margin_normal
+                    spacing: VLCStyle.margin_small
+
+                    Widgets.SubtitleLabel {
+                        text: qsTr("Add your video folders")
+                        color: cardTheme.fg.primary
+                    }
+
+                    Widgets.CaptionLabel {
+                        width: parent.width
+                        wrapMode: Text.WordWrap
+                        text: qsTr("Their videos show up here and in Videos, grouped by folder, and new recordings appear on their own.")
+                        color: cardTheme.fg.secondary
+                    }
+
+                    Repeater {
+                        model: foldersCard.suggestions
+
+                        Item {
+                            required property var modelData
+
+                            width: cardColumn.width
+                            height: VLCStyle.dp(48, VLCStyle.scale)
+
+                            Column {
+                                anchors.left: parent.left
+                                anchors.right: addButton.left
+                                anchors.rightMargin: VLCStyle.margin_small
+                                anchors.verticalCenter: parent.verticalCenter
+
+                                Widgets.ListLabel {
+                                    width: parent.width
+                                    text: parent.parent.modelData.title + "  ·  "
+                                          + qsTr("%1 videos").arg(parent.parent.modelData.videos)
+                                    color: cardTheme.fg.primary
+                                }
+
+                                Widgets.CaptionLabel {
+                                    width: parent.width
+                                    elide: Text.ElideMiddle
+                                    text: parent.parent.modelData.path
+                                    color: cardTheme.fg.secondary
+                                }
+                            }
+
+                            Widgets.ButtonExt {
+                                id: addButton
+                                anchors.right: parent.right
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: qsTr("Add")
+                                onClicked: foldersCard.addFolder(parent.modelData.url)
+                            }
+                        }
+                    }
+
+                    Widgets.ButtonExt {
+                        text: qsTr("Choose another folder…")
+                        onClicked: foldersCard.addFolder(MediaFolders.pickFolder())
+                    }
+                }
+            }
+
+            // Folders there already: how many, and a way to add one more
+            Row {
+                id: addLine
+
+                visible: !card.visible && flickable._hasMedias
+                spacing: VLCStyle.margin_small
+
+                Widgets.CaptionLabel {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: qsTr("Media library folders: %1").arg(foldersCard.folderCount)
+                    color: cardTheme.fg.secondary
+                }
+
+                Widgets.ButtonExt {
+                    text: qsTr("Add folder")
+                    onClicked: foldersCard.addFolder(MediaFolders.pickFolder())
+                }
+            }
+        }
+
         Widgets.NavigableCol {
             id: mediaRows
 
-            anchors.top: coneNButtons.bottom
+            anchors.top: foldersCard.bottom
             anchors.left: parent.left
             anchors.right: parent.right
 

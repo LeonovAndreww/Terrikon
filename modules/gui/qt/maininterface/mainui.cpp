@@ -96,6 +96,7 @@
 #include "terrikon/clip_selection.hpp"
 #include "terrikon/compact_player.hpp"
 #include "terrikon/media_tools.hpp"
+#include "terrikon/media_folders.hpp"
 #include "terrikon/moment_marks.hpp"
 #include "terrikon/subtitle_style.hpp"
 #include "terrikon/terrikon_actions.hpp"
@@ -489,6 +490,8 @@ void MainUI::registerQMLTypes()
         qmlRegisterSingletonInstance<terrikon::MomentMarks>(uri, versionMajor, versionMinor, "MomentMarks", momentMarks);
         qmlRegisterSingletonInstance<terrikon::CompactPlayer>(uri, versionMajor, versionMinor, "CompactPlayer", compactPlayer);
         qmlRegisterSingletonInstance<terrikon::TerrikonActions>(uri, versionMajor, versionMinor, "TerrikonActions", actions);
+        qmlRegisterSingletonInstance<terrikon::MediaFolders>(uri, versionMajor, versionMinor, "MediaFolders",
+                                                             new terrikon::MediaFolders(this));
         qmlRegisterSingletonInstance<terrikon::SubtitleStyle>(uri, versionMajor, versionMinor, "SubtitleStyle",
                                                               new terrikon::SubtitleStyle(m_mainCtx->getIntf(), this));
 

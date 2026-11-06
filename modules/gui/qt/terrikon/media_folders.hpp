@@ -1,0 +1,50 @@
+/*****************************************************************************
+ * Copyright (C) 2026 Terrikon authors
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * ( at your option ) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
+ *****************************************************************************/
+#ifndef TERRIKON_MEDIA_FOLDERS_HPP
+#define TERRIKON_MEDIA_FOLDERS_HPP
+
+#include <QObject>
+#include <QUrl>
+#include <QVariantList>
+
+namespace terrikon {
+
+/* Folders worth putting in the media library, found on this computer:
+ * where game recorders save (NVIDIA, Xbox Game Bar, OBS) and the Videos
+ * folder, so that they can be added with one click. */
+class MediaFolders : public QObject
+{
+    Q_OBJECT
+
+public:
+    explicit MediaFolders(QObject *parent = nullptr);
+
+    /* [{ title, url, path, videos }], only folders that exist and hold
+     * videos; videos is how many (counted two levels deep, at most 999) */
+    Q_INVOKABLE QVariantList suggestions() const;
+
+    /* Asks for a folder; empty if cancelled */
+    Q_INVOKABLE QUrl pickFolder() const;
+
+    /* How many videos a folder holds, two levels deep, at most 999 */
+    Q_INVOKABLE int countVideos(const QUrl &folder) const;
+};
+
+}
+
+#endif
