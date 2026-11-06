@@ -22,7 +22,7 @@ bug is upstream's; when unsure, the original build is run.
 | Core | `spawn.c` lost the child's error output | kept |
 | Core | Signals emitted while a lock is held | emitted after unlocking |
 | Browse | A drive without a label (usually C:) has no name; labels in other languages come out garbled (ANSI call) | "Label (E:)", "Local disk (C:)", read with the wide call |
-| Browse | On Windows the Documents folder is shown as "Home"; Desktop and Downloads share their translations with unrelated strings ("Screen", the verb "Download") | each folder keeps its own name |
+| Browse | On Windows the Documents folder is shown as "Home"; the Desktop folder shares its string with the screen capture, translated "Screen" | each folder keeps its own name |
 | Tables | The sort arrow points up for Z to A, unlike the file explorer | up is A to Z; a new column starts from A to Z |
 
 ## Our own bugs (introduced by Terrikon, fixed)
@@ -31,6 +31,7 @@ bug is upstream's; when unsure, the original build is run.
 |-----|-------|
 | Videos and the player failed to load (b89e9d3) | missing QML imports, a grouped property set on an instance |
 | Blurry simple preferences icons | our SVG icons were scaled with VLC's pixmap code meant for its PNGs |
+| Folder names "Скачать" (the verb) and "Главная" (the home page) in Browse | our out-of-context translations of "Download" and "Home" |
 | Pink (magenta) tool tips over the folder chips on Home and the folder buttons on covers | tool tips placed directly without the palette VLC's own ones carry |
 | Leaving the player while a visualization played stopped the music; once a grey view was left behind (not seen again since) | our leaving code stopped playback; now music goes on |
 
