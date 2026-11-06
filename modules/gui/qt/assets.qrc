@@ -122,7 +122,9 @@
         <file alias="spref_subtitles.svg">pixmaps/prefs/spref_subtitles.svg</file>
         <file alias="spref_video.svg">pixmaps/prefs/spref_video.svg</file>
         <file alias="sample_complete.png">pixmaps/prefs/sample_complete.png</file>
+        <file alias="sample_complete@2x.png">pixmaps/prefs/sample_complete@2x.png</file>
         <file alias="sample_minimal.png">pixmaps/prefs/sample_minimal.png</file>
+        <file alias="sample_minimal@2x.png">pixmaps/prefs/sample_minimal@2x.png</file>
         <file alias="sample_skins.png">pixmaps/prefs/sample_skins.png</file>
     </qresource>
     <qresource prefix="/addons">

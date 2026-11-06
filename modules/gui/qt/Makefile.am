@@ -990,7 +990,9 @@ libqt_plugin_la_RES = \
 	pixmaps/prefs/advprefs_sout.svg \
 	pixmaps/prefs/advprefs_video.svg \
 	pixmaps/prefs/sample_complete.png \
+	pixmaps/prefs/sample_complete@2x.png \
 	pixmaps/prefs/sample_minimal.png \
+	pixmaps/prefs/sample_minimal@2x.png \
 	pixmaps/prefs/sample_skins.png \
 	pixmaps/prefs/spref_audio.svg \
 	pixmaps/prefs/spref_hotkeys.svg \
