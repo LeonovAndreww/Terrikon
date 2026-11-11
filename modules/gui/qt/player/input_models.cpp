@@ -138,10 +138,19 @@ QVariantList TrackListModel::trackStates() const
 {
     QVariantList states;
     states.reserve(m_data.size());
+    /* "index" is for ffmpeg (0:a:index): the place of the track among the
+     * audio streams of the file, in their order there (the id the demuxer
+     * gave it), which the order of this list need not follow */
+    std::vector<int> ids;
+    for (const Data &track : m_data)
+        ids.push_back(track.m_id ? vlc_es_id_GetInputId(track.m_id.get()) : -1);
     for (qsizetype i = 0; i < m_data.size(); ++i)
     {
+        int rank = int(i);
+        if (ids[i] >= 0)
+            rank = int(std::count_if(ids.begin(), ids.end(), [&](int id) { return id >= 0 && id < ids[i]; }));
         states.append(QVariantMap{
-            { QStringLiteral("index"), int(i) },
+            { QStringLiteral("index"), rank },
             { QStringLiteral("title"), m_data[i].m_title },
             { QStringLiteral("enabled"), m_data[i].m_selected && !m_data[i].m_muted },
             { QStringLiteral("volume"), double(m_data[i].m_volume) },

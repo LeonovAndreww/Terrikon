@@ -53,6 +53,15 @@ bug is upstream's; when unsure, the original build is run.
 | Waveform, thumbnails and size measuring waited forever when ffmpeg could not start | a start failure ends them as a failure |
 | The player stopped responding at start (for a minute or more) when a media library folder was on a network drive that did not answer: the folder suggestions of the home page looked at every library folder on disk, on the interface thread | the suggestions are worked out on a thread of their own; library folders are compared by name |
 | The player stopped responding while the current media was on a network drive that did not answer: the seek bar's thumbnails and waveform and the moment marks looked up the file's size and date on the interface thread | looked up on a thread of their own (`offThread`); measured with a media on an unreachable `\\10.255.255.1` path: 21 of 25 s not responding before, none after |
+| Random crashes (some a dozen a day), often at start or quit: a Qt thread pool thread that had used a regular expression ended (after 30 s idle) and Qt's per-thread PCRE2 JIT stack, a `thread_local`, crashed in its destructor under MinGW's emulated TLS | regular expressions without JIT (`QT_ENABLE_REGEXP_JIT=0`); crashes now leave a minidump in `%LOCALAPPDATA%\terrikon\crashes` |
+| The next episode's opening got no "Skip opening" button when it was the same chapter number as in the last one | the countdown starts again with each media |
+| A clip range could shrink under its minimum length when the media turned out shorter | it starts earlier instead |
+| Playing a folder from Videos queued its audio files too | videos only |
+| The mini window was placed at the default spot when left on a screen left of the main one, and off screen when its screen was gone | kept where it was if that is on a screen, else the bottom right of the main one |
+| Minimizing and restoring quickly could still send the video to picture in picture | the state is checked again when it happens |
+| Clip export could take another audio track than the one ticked when the player lists them in another order than the file | the track's place among the file's audio streams |
+| The Videos folder tree was built again for the count, each page and each lookup | built once, again after a library change |
+| A folder dropped (or picked) that is already in the library, inside one of its folders, did nothing visible | Videos opens on it |
 
 ## Known upstream issues, not fixed yet
 

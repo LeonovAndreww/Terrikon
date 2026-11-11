@@ -42,6 +42,9 @@
 #include <QUrl>
 
 #include <algorithm>
+#include <atomic>
+#include <memory>
+#include <mutex>
 
 // NOTE: We multiply by 3 to cover most dpi settings.
 static const int MLVIDEOFOLDERSMODEL_COVER_WIDTH  = 260 * 3; // 16 / 10 ratio
@@ -223,6 +226,33 @@ static std::unique_ptr<Tree> buildTree(vlc_medialibrary_t *ml)
 
     for (int r : tree->roots)
         sumUp(*tree, r);
+    return tree;
+}
+
+/* The tree is the same for every page, the count and the lookups, and for
+ * every folder model: built once, again after a change in the library */
+static std::mutex s_treeLock;
+static std::shared_ptr<const Tree> s_tree;
+static std::atomic<unsigned> s_treeGeneration{ 0 };
+static unsigned s_treeBuiltFor = ~0u;
+
+static void invalidateTree()
+{
+    ++s_treeGeneration;
+}
+
+static std::shared_ptr<const Tree> cachedTree(vlc_medialibrary_t *ml)
+{
+    const unsigned generation = s_treeGeneration.load();
+    {
+        std::lock_guard<std::mutex> lock(s_treeLock);
+        if (s_tree && s_treeBuiltFor == generation)
+            return s_tree;
+    }
+    std::shared_ptr<const Tree> tree(buildTree(ml));
+    std::lock_guard<std::mutex> lock(s_treeLock);
+    s_tree = tree;
+    s_treeBuiltFor = generation;
     return tree;
 }
 
@@ -464,6 +494,8 @@ static QString dateText(time_t date)
 
 /* explicit */ MLVideoFoldersModel::MLVideoFoldersModel(QObject * parent) : MLVideoModel(parent)
 {
+    /* changes made while no folder model listened are not known */
+    invalidateTree();
     connect(terrikon::FolderExpansion::instance(), &terrikon::FolderExpansion::changed,
             this, &MLVideoFoldersModel::resetRequested);
 }
@@ -628,6 +660,7 @@ void MLVideoFoldersModel::collapseAllItem(const QModelIndex &index)
 
 void MLVideoFoldersModel::onVlcMlEvent(const MLEvent & event) /* override */
 {
+    invalidateTree();
     switch (event.i_type)
     {
         case VLC_ML_EVENT_FOLDER_ADDED:
@@ -653,7 +686,7 @@ MLVideoFoldersModel::Loader::Loader(const MLVideoFoldersModel &model)
 
 size_t MLVideoFoldersModel::Loader::count(vlc_medialibrary_t * ml, const vlc_ml_query_params_t*) const /* override */
 {
-    const auto tree = buildTree(ml);
+    const auto tree = cachedTree(ml);
     return shownItems(*tree, m_parent, terrikon::FolderExpansion::instance()->expanded(), QString::fromUtf8(m_searchPattern)).size();
 }
 
@@ -661,7 +694,7 @@ std::vector<std::unique_ptr<MLItem>>
 MLVideoFoldersModel::Loader::load(vlc_medialibrary_t * ml,
                                   const vlc_ml_query_params_t* queryParams) const /* override */
 {
-    const auto tree = buildTree(ml);
+    const auto tree = cachedTree(ml);
     std::vector<Shown> items = shownItems(*tree, m_parent, terrikon::FolderExpansion::instance()->expanded(), QString::fromUtf8(m_searchPattern));
     sortShown(*tree, items, m_sort, m_sortDesc);
 
@@ -677,7 +710,7 @@ MLVideoFoldersModel::Loader::load(vlc_medialibrary_t * ml,
 std::unique_ptr<MLItem>
 MLVideoFoldersModel::Loader::loadItemById(vlc_medialibrary_t* ml, MLItemId itemId) const
 {
-    const auto tree = buildTree(ml);
+    const auto tree = cachedTree(ml);
     for (const Shown &s : shownItems(*tree, m_parent, terrikon::FolderExpansion::instance()->expanded(), QString::fromUtf8(m_searchPattern)))
     {
         const int64_t id = s.video ? tree->media->p_items[s.index].i_id : tree->nodes[s.index].id;
