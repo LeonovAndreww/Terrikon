@@ -41,6 +41,8 @@ public:
 
 signals:
     void videoFieldsChanged();
+    /* the answer to requestSuggestions() */
+    void suggestionsReady(const QVariantList &suggestions);
 
 public:
 
@@ -49,6 +51,11 @@ public:
      * the folders in the media library); videos is how many, counted two
      * levels deep, at most 999 */
     Q_INVOKABLE QVariantList suggestions(const QStringList &have = {}) const;
+
+    /* The same, worked out on a thread of its own and sent with
+     * suggestionsReady(): looking at folders can take a minute when one of
+     * them is on a network drive that does not answer */
+    Q_INVOKABLE void requestSuggestions(const QStringList &have);
 
     /* Asks for a folder; empty if cancelled */
     Q_INVOKABLE QUrl pickFolder() const;

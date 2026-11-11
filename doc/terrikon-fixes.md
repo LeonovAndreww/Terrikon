@@ -51,6 +51,7 @@ bug is upstream's; when unsure, the original build is run.
 | The clip could take a cover picture for the video | the first real video stream (`0:V:0`) |
 | Vertical clip of a source narrower than 9:16 failed, anamorphic sources came out with the wrong shape | the 9:16 window fits in the frame; square pixels first |
 | Waveform, thumbnails and size measuring waited forever when ffmpeg could not start | a start failure ends them as a failure |
+| The player stopped responding at start (for a minute or more) when a media library folder was on a network drive that did not answer: the folder suggestions of the home page looked at every library folder on disk, on the interface thread | the suggestions are worked out on a thread of their own; library folders are compared by name |
 
 ## Known upstream issues, not fixed yet
 

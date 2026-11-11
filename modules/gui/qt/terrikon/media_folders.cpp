@@ -26,6 +26,9 @@
 
 #include <QCursor>
 #include <QDir>
+#include <thread>
+#include <QGuiApplication>
+#include <QPointer>
 #include <QMenu>
 #include <QDirIterator>
 #include <QFileDialog>
@@ -104,7 +107,27 @@ static QStringList obsFolders()
     return out;
 }
 
+static QVariantList collectSuggestions(const QStringList &have);
+
 QVariantList MediaFolders::suggestions(const QStringList &have) const
+{
+    return collectSuggestions(have);
+}
+
+void MediaFolders::requestSuggestions(const QStringList &have)
+{
+    QPointer<MediaFolders> self(this);
+    std::thread([self, have] {
+        const QVariantList found = collectSuggestions(have);
+        /* back on the interface thread, if it is still there */
+        QMetaObject::invokeMethod(qApp, [self, found] {
+            if (self)
+                emit self->suggestionsReady(found);
+        }, Qt::QueuedConnection);
+    }).detach();
+}
+
+static QVariantList collectSuggestions(const QStringList &have)
 {
     const QString videos = QStandardPaths::writableLocation(QStandardPaths::MoviesLocation);
     const QString music = QStandardPaths::writableLocation(QStandardPaths::MusicLocation);
@@ -121,9 +144,9 @@ QVariantList MediaFolders::suggestions(const QStringList &have) const
     QStringList seen;
     for (const QString &url : have)
     {
-        const QString canonical = QFileInfo(QUrl(url).toLocalFile()).canonicalFilePath();
-        if (!canonical.isEmpty())
-            seen << canonical;
+        const QString local = QDir::cleanPath(QUrl(url).toLocalFile());
+        if (!local.isEmpty())
+            seen << local;
     }
     for (const auto &[title, path] : candidates)
     {

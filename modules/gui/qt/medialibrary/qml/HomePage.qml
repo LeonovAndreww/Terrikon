@@ -200,7 +200,12 @@ Widgets.PageExt {
                 const have = []
                 for (let i = 0; i < folderCount; ++i)
                     have.push(String(mlFolders.data(mlFolders.index(i, 0), 259 /* MRL */)))
-                suggestions = MediaFolders.suggestions(have)
+                MediaFolders.requestSuggestions(have)
+            }
+
+            Connections {
+                target: MediaFolders
+                function onSuggestionsReady(found) { foldersCard.suggestions = found }
             }
 
             function addFolder(url) {
