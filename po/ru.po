@@ -31917,7 +31917,7 @@ msgstr "развернуть плеер"
 
 #: modules/gui/qt/player/qml/PipOverlay.qml:161
 msgid "Back to the player"
-msgstr "Вернуть в плеер"
+msgstr "Вернуться в плеер"
 
 #: modules/gui/qt/player/qml/PipOverlay.qml:236
 msgid "Unmute"
@@ -44264,3 +44264,35 @@ msgstr "Home"
 msgctxt "key"
 msgid "Delete"
 msgstr "Delete"
+
+#: terrikon
+msgid "Working out the size…"
+msgstr "Считаю размер…"
+
+#: terrikon
+msgid "%1, %2 left"
+msgstr "%1, осталось %2"
+
+#: terrikon
+msgid "Came out at %1, over the limit; the file is kept."
+msgstr "Получилось %1, больше лимита; файл сохранён."
+
+#: terrikon
+msgid "%1%"
+msgstr "%1%"
+
+#: terrikon
+msgid "Colour of the cover"
+msgstr "как у обложки"
+
+#: terrikon
+msgid "My colour"
+msgstr "свой"
+
+#: terrikon
+msgid "Colour: %1"
+msgstr "Цвет: %1"
+
+#: terrikon
+msgid "Colour of the visualization"
+msgstr "Цвет визуализации"
