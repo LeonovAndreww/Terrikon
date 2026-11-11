@@ -155,35 +155,12 @@ FocusScope {
     StringListMenu {
         id: visualizationMenu
         ctx: MainCtx
+        // What each line does, filled in with the names
+        property var actions: []
         onSelected: (index, text) => {
-            const own = Visualizer.styleNames.length - 1
-            const backgrounds = Visualizer.backgroundNames.length
-            if (index < own) {
-                const style = index + 1
-                if (Visualizer.style === style) {
-                    Visualizer.style = 0
-                } else if (rootPlayer._vlcVisualizationIndex() > 0) {
-                    // Switching both at once stalls the audio output: first
-                    // VLC's goes, then ours comes
-                    visualizationSwitch.schedule(() => { Visualizer.style = style })
-                    Player.audioVisualization.toggleIndex(0)
-                } else {
-                    Visualizer.style = style
-                }
-            } else if (index < own + backgrounds) {
-                Visualizer.background = index - own
-            } else if (index === own + backgrounds) {
-                Visualizer.miniWindow = !Visualizer.miniWindow
-            } else {
-                const vlcIndex = index - own - backgrounds - 1
-                if (Visualizer.style !== 0 && vlcIndex > 0) {
-                    visualizationSwitch.schedule(() => { Player.audioVisualization.toggleIndex(vlcIndex) })
-                    Visualizer.style = 0
-                } else {
-                    Visualizer.style = 0
-                    Player.audioVisualization.toggleIndex(vlcIndex)
-                }
-            }
+            const action = actions[index]
+            if (action)
+                action()
         }
     }
 
@@ -227,22 +204,70 @@ FocusScope {
         function onModelReset() { rootPlayer._vlcVisualization = rootPlayer._vlcVisualizationIndex() }
     }
 
+    function _chooseOwn(style) {
+        if (Visualizer.style === style) {
+            Visualizer.style = 0
+        } else if (rootPlayer._vlcVisualizationIndex() > 0) {
+            // Switching both at once stalls the audio output: first
+            // VLC's goes, then ours comes
+            visualizationSwitch.schedule(() => { Visualizer.style = style })
+            Player.audioVisualization.toggleIndex(0)
+        } else {
+            Visualizer.style = style
+        }
+    }
+
+    function _chooseVlc(vlcIndex) {
+        if (Visualizer.style !== 0 && vlcIndex > 0) {
+            visualizationSwitch.schedule(() => { Player.audioVisualization.toggleIndex(vlcIndex) })
+            Visualizer.style = 0
+        } else {
+            Visualizer.style = 0
+            Player.audioVisualization.toggleIndex(vlcIndex)
+        }
+    }
+
+    // Terrikon's own first (drawn in the player, around and under the
+    // cover), then their colour and background, then VLC's, which take the
+    // whole view. Choosing one side turns the other off.
     function chooseVisualization(globalPos) {
         const mark = (on) => on ? "✓  " : "     "
         const names = []
+        const actions = []
+        const add = (name, action) => { names.push(name); actions.push(action) }
+
         const styles = Visualizer.styleNames
-        for (let s = 1; s < styles.length; ++s)
-            names.push(mark(Visualizer.style === s) + styles[s])
+        for (let s = 1; s < styles.length; ++s) {
+            const style = s
+            add(mark(Visualizer.style === s) + styles[s], () => rootPlayer._chooseOwn(style))
+        }
+        const colors = Visualizer.colorModeNames
+        for (let c = 0; c < colors.length; ++c) {
+            const mode = c
+            add(mark(Visualizer.colorMode === c) + qsTr("Colour: %1").arg(colors[c]) + (c === 2 ? "…" : ""),
+                () => {
+                    if (mode === 2)
+                        Visualizer.pickCustomColor()
+                    else
+                        Visualizer.colorMode = mode
+                })
+        }
         const backgrounds = Visualizer.backgroundNames
-        for (let b = 0; b < backgrounds.length; ++b)
-            names.push(mark(Visualizer.background === b) + backgrounds[b])
-        names.push(mark(Visualizer.miniWindow) + qsTr("Mini window over all the others"))
+        for (let b = 0; b < backgrounds.length; ++b) {
+            const background = b
+            add(mark(Visualizer.background === b) + backgrounds[b], () => { Visualizer.background = background })
+        }
+        add(mark(Visualizer.miniWindow) + qsTr("Mini window over all the others"),
+            () => { Visualizer.miniWindow = !Visualizer.miniWindow })
+
         const vlcOn = Visualizer.style === 0
         const current = _vlcVisualizationIndex()
         for (let i = 0; i < visualizations.count; ++i) {
             const v = visualizations.objectAt(i)
-            names.push(mark(vlcOn && i === current) + qsTr("VLC: %1").arg(v.display))
+            const index = i
+            add(mark(vlcOn && i === current) + qsTr("VLC: %1").arg(v.display), () => rootPlayer._chooseVlc(index))
         }
+        visualizationMenu.actions = actions
         visualizationMenu.popup(globalPos, names)
     }
 
@@ -650,8 +675,8 @@ FocusScope {
 
                     style: Visualizer.style
                     visible: style !== 0 && !audioFocusScope.lyricsLayoutActive
-                    color: "#ff7a1a"
-                    color2: "#ffe2bf"
+                    color: Visualizer.color
+                    color2: Visualizer.color2
 
                     cover: cover
                 }
@@ -667,6 +692,11 @@ FocusScope {
                     anchors.fill: parent
                     anchors.topMargin: VLCStyle.margin_xsmall + audioFocusScope.topPadding
                     anchors.bottomMargin: VLCStyle.margin_xsmall + audioFocusScope.bottomPadding
+
+                    // Terrikon: a right click gives the menu of the
+                    // visualization, its colour and background
+                    acceptedButtons: Qt.RightButton
+                    onClicked: (mouse) => rootPlayer.chooseVisualization(mapToGlobal(mouse.x, mouse.y))
 
                     onWheel: (wheel) => {
                         wheel.accepted = true

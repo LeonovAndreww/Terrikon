@@ -368,6 +368,7 @@ Item {
                     return true
                 const visibility = MainCtx.intfMainWindow.visibility
                 return (visibility === Window.Minimized || visibility === Window.Hidden)
+                && !Visualizer.miniDismissed
                         && Player.playingState !== Player.PLAYING_STATE_STOPPED
                         && Player.videoTracks.count === 0
             }

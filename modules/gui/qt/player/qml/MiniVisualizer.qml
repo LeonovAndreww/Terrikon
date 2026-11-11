@@ -48,8 +48,8 @@ Window {
     readonly property url coverSource: (Player.artwork && Player.artwork.toString())
                                        ? VLCAccessImage.uri(Player.artwork) : VLCStyle.noArtAlbumCover
 
-    readonly property color accent: "#ff7a1a"
-    readonly property color accent2: "#ffe2bf"
+    readonly property color accent: Visualizer.color
+    readonly property color accent2: Visualizer.color2
 
     color: "transparent"
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
@@ -93,6 +93,12 @@ Window {
         onTriggered: Visualizer.setMiniSize(root.shape, Qt.size(root.width, root.height))
     }
 
+    // Off, and not shown again on minimizing until the player is back
+    function _close() {
+        Visualizer.miniWindow = false
+        Visualizer.miniDismissed = true
+    }
+
     function _openPlayer() {
         MainCtx.intfMainWindow.show()
         MainCtx.intfMainWindow.raise()
@@ -122,7 +128,7 @@ Window {
             else if (index < 2 + shapes)
                 Visualizer.miniShape = index - 2
             else
-                Visualizer.miniWindow = false
+                root._close()
         }
     }
 
@@ -215,6 +221,30 @@ Window {
                 color: Qt.rgba(1, 1, 1, 0.6)
             }
         }
+
+        // Back to the player and close, as in the picture in picture of a
+        // video
+        Row {
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.margins: 6
+            spacing: 4
+            visible: root.hovered
+            z: 1
+
+            RoundButton {
+                size: 22
+                image: SVGColorImage.colorize("qrc:///icons/compact_player_exit.svg").color1("white").uri()
+                tip: qsTr("Back to the player")
+                onClicked: root._openPlayer()
+            }
+            RoundButton {
+                size: 22
+                icon: VLCIcons.close
+                tip: qsTr("Close")
+                onClicked: root._close()
+            }
+        }
     }
 
     // --- pieces shared by the shapes
@@ -223,6 +253,8 @@ Window {
         id: button
 
         property string icon
+        property url image
+        property string tip
         property real size: 32
         signal clicked()
 
@@ -237,9 +269,23 @@ Window {
 
         Widgets.IconLabel {
             anchors.centerIn: parent
+            visible: button.icon !== ""
             text: button.icon
             font.pixelSize: button.size * 0.62
             color: "white"
+        }
+
+        Image {
+            anchors.centerIn: parent
+            visible: button.image.toString() !== ""
+            source: button.image
+            sourceSize: Qt.size(button.size * 0.55, button.size * 0.55)
+        }
+
+        Widgets.ToolTipExt {
+            visible: buttonHover.hovered && button.tip !== ""
+            text: button.tip
+            colorContext.palette: VLCStyle.palette
         }
 
         HoverHandler { id: buttonHover; cursorShape: Qt.PointingHandCursor }

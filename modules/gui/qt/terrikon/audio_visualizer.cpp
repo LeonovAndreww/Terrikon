@@ -30,6 +30,8 @@
 #include <QSettings>
 #include <QSGGeometryNode>
 #include <QSGVertexColorMaterial>
+#include <QImage>
+#include <QColorDialog>
 #include <QtMath>
 
 #include <vlc_player.h>
@@ -43,6 +45,8 @@ static const char miniKey[] = "Terrikon/visualizer-mini";
 static const char miniPositionKey[] = "Terrikon/visualizer-mini-position";
 static const char miniShapeKey[] = "Terrikon/visualizer-mini-shape";
 static const char miniSizeKey[] = "Terrikon/visualizer-mini-size-%1";
+static const char colorModeKey[] = "Terrikon/visualizer-color-mode";
+static const char customColorKey[] = "Terrikon/visualizer-color";
 static const char tapFilter[] = "terrikon_tap";
 
 Visualizer *Visualizer::s_instance = nullptr;
@@ -71,6 +75,15 @@ Visualizer::Visualizer(qt_intf_t *intf, QObject *parent)
     m_miniPosition = m_intf->mainSettings->value(QString::fromLatin1(miniPositionKey), QPoint(-1, -1)).toPoint();
     m_miniShape = qBound(0, m_intf->mainSettings->value(QString::fromLatin1(miniShapeKey), int(Card)).toInt(),
                          MiniShapeCount - 1);
+
+    m_colorMode = qBound(0, m_intf->mainSettings->value(QString::fromLatin1(colorModeKey), int(White)).toInt(),
+                         ColorModeCount - 1);
+    const QColor custom(m_intf->mainSettings->value(QString::fromLatin1(customColorKey)).toString());
+    if (custom.isValid())
+        m_customColor = custom;
+    connect(m_intf->p_mainPlayerController, &PlayerController::currentMetaChanged,
+            this, &Visualizer::readCoverColor);
+    readCoverColor();
 
     /* The audio output may only come with the first playback */
     connect(m_intf->p_mainPlayerController, &PlayerController::playingStateChanged,
@@ -148,6 +161,103 @@ void Visualizer::setBackground(int background)
     m_background = background;
     m_intf->mainSettings->setValue(QString::fromLatin1(backgroundKey), background);
     emit backgroundChanged();
+}
+
+void Visualizer::setColorMode(int mode)
+{
+    mode = qBound(0, mode, ColorModeCount - 1);
+    if (mode == m_colorMode)
+        return;
+    m_colorMode = mode;
+    m_intf->mainSettings->setValue(QString::fromLatin1(colorModeKey), mode);
+    emit colorsChanged();
+}
+
+QStringList Visualizer::colorModeNames() const
+{
+    return { qtr("White"), qtr("Colour of the cover"), qtr("My colour") };
+}
+
+void Visualizer::setCustomColor(const QColor &color)
+{
+    if (!color.isValid() || color == m_customColor)
+        return;
+    m_customColor = color;
+    m_intf->mainSettings->setValue(QString::fromLatin1(customColorKey), color.name());
+    emit colorsChanged();
+}
+
+void Visualizer::pickCustomColor()
+{
+    const QColor chosen = QColorDialog::getColor(m_customColor, nullptr, qtr("Colour of the visualization"));
+    if (!chosen.isValid())
+        return;
+    setCustomColor(chosen);
+    setColorMode(Custom);
+}
+
+QColor Visualizer::color() const
+{
+    switch (m_colorMode)
+    {
+    case CoverColor:
+        return m_coverColor.isValid() ? m_coverColor : QColor(Qt::white);
+    case Custom:
+        return m_customColor;
+    default:
+        return QColor(Qt::white);
+    }
+}
+
+/* The second colour, for the tips and the lines: the first one paler */
+QColor Visualizer::color2() const
+{
+    const QColor c = color();
+    return QColor::fromRgbF(float(c.redF() + (1. - c.redF()) * .6),
+                            float(c.greenF() + (1. - c.greenF()) * .6),
+                            float(c.blueF() + (1. - c.blueF()) * .6));
+}
+
+/* The most telling colour of the cover: of its pixels, the vivid and not too
+ * dark ones count most, so a red title on a grey photo still wins */
+void Visualizer::readCoverColor()
+{
+    const QUrl url = m_intf->p_mainPlayerController->getArtwork();
+    if (url == m_coverUrl)
+        return;
+    m_coverUrl = url;
+    QColor found;
+    QImage image;
+    if (url.isLocalFile() && image.load(url.toLocalFile()))
+    {
+        const QImage small = image.scaled(24, 24, Qt::IgnoreAspectRatio, Qt::SmoothTransformation)
+                                  .convertToFormat(QImage::Format_RGB32);
+        double r = 0., g = 0., b = 0., total = 0.;
+        for (int y = 0; y < small.height(); ++y)
+            for (int x = 0; x < small.width(); ++x)
+            {
+                const QColor pixel = QColor::fromRgb(small.pixel(x, y));
+                const double weight = .02 + pixel.hsvSaturationF() * pixel.hsvSaturationF()
+                                            * std::min(1., pixel.valueF() * 1.6);
+                r += pixel.redF() * weight;
+                g += pixel.greenF() * weight;
+                b += pixel.blueF() * weight;
+                total += weight;
+            }
+        if (total > 0.)
+        {
+            found = QColor::fromRgbF(float(r / total), float(g / total), float(b / total));
+            /* Light enough to show on the dark player */
+            float hue, saturation, value;
+            found.getHsvF(&hue, &saturation, &value);
+            found = QColor::fromHsvF(hue, saturation, std::max(value, .85f));
+        }
+    }
+    if (found == m_coverColor)
+        return;
+    m_coverColor = found;
+    if (m_colorMode == CoverColor)
+        emit colorsChanged();
 }
 
 QStringList Visualizer::styleNames() const
@@ -522,7 +632,7 @@ QSGNode *AudioVisualizer::updatePaintNode(QSGNode *old, UpdatePaintNodeData *)
     {
         const qreal amp = m_fill ? h * .3 : h * .09;
         const qreal mid = m_fill ? h / 2 : h - amp * 1.4 - 6;
-        const qreal margin = m_fill ? 4 : w * .04;
+        const qreal margin = m_fill ? 4 : 0; // edge to edge in the player
         const int n = TERRIKON_TAP_WAVE;
         const qreal dx = (w - 2 * margin) / (n - 1);
         auto point = [&](int i) {
@@ -592,7 +702,7 @@ QSGNode *AudioVisualizer::updatePaintNode(QSGNode *old, UpdatePaintNodeData *)
         const qreal base = h - 5;
         const QVector<float> curve = smoothCurve(m_bands, 4);
         const int n = curve.size();
-        const qreal margin = m_fill ? 4 : w * .04;
+        const qreal margin = m_fill ? 4 : 0; // edge to edge in the player
         const qreal dx = (w - 2 * margin) / (n - 1);
         auto point = [&](int i) { return QPointF(margin + i * dx, base - curve[i] * top); };
         const QColor glow = mix(m_color, m_color, 0, .15 + m_level * .2);

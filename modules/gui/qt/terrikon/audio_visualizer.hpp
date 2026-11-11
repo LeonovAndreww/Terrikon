@@ -30,6 +30,7 @@
 #include <QQuickItem>
 #include <QRectF>
 #include <QStringList>
+#include <QUrl>
 #include <QVector>
 
 struct terrikon_tap;
@@ -52,6 +53,15 @@ class Visualizer : public QObject
     // the visualization alone
     Q_PROPERTY(int miniShape READ miniShape WRITE setMiniShape NOTIFY miniShapeChanged FINAL)
     Q_PROPERTY(QStringList miniShapeNames READ miniShapeNames CONSTANT FINAL)
+    // Closed by the user: not shown on minimizing until the player is back
+    Q_PROPERTY(bool miniDismissed READ miniDismissed WRITE setMiniDismissed NOTIFY miniDismissedChanged FINAL)
+    // White, taken from the cover, or one of the user's
+    Q_PROPERTY(int colorMode READ colorMode WRITE setColorMode NOTIFY colorsChanged FINAL)
+    Q_PROPERTY(QStringList colorModeNames READ colorModeNames CONSTANT FINAL)
+    Q_PROPERTY(QColor customColor READ customColor WRITE setCustomColor NOTIFY colorsChanged FINAL)
+    // The colours to draw with, following the mode and the cover
+    Q_PROPERTY(QColor color READ color NOTIFY colorsChanged FINAL)
+    Q_PROPERTY(QColor color2 READ color2 NOTIFY colorsChanged FINAL)
 
 public:
     enum Style { Off = 0, Ring, Bars, Wave, Hills, Mirror, Line, StyleCount };
@@ -69,6 +79,14 @@ public:
     void setBackground(int background);
 
     bool miniWindow() const { return m_miniWindow; }
+    bool miniDismissed() const { return m_miniDismissed; }
+    void setMiniDismissed(bool dismissed)
+    {
+        if (dismissed == m_miniDismissed)
+            return;
+        m_miniDismissed = dismissed;
+        emit miniDismissedChanged();
+    }
     void setMiniWindow(bool on);
     QPoint miniPosition() const { return m_miniPosition; }
     void setMiniPosition(const QPoint &position);
@@ -85,6 +103,18 @@ public:
     QStringList styleNames() const;
     QStringList backgroundNames() const;
 
+    enum ColorMode { White = 0, CoverColor, Custom, ColorModeCount };
+    Q_ENUM(ColorMode)
+    int colorMode() const { return m_colorMode; }
+    void setColorMode(int mode);
+    QStringList colorModeNames() const;
+    QColor customColor() const { return m_customColor; }
+    void setCustomColor(const QColor &color);
+    QColor color() const;
+    QColor color2() const;
+    // Asks for a colour of one's own and draws with it
+    Q_INVOKABLE void pickCustomColor();
+
     qt_intf_t *intf() const { return m_intf; }
     terrikon_tap *tap() const { return m_tap; }
 
@@ -94,9 +124,12 @@ signals:
     void miniWindowChanged();
     void miniPositionChanged();
     void miniShapeChanged();
+    void colorsChanged();
+    void miniDismissedChanged();
 
 private:
     void listen();
+    void readCoverColor();
 
     static Visualizer *s_instance;
     qt_intf_t *m_intf;
@@ -107,6 +140,11 @@ private:
     bool m_miniWindow = false;
     QPoint m_miniPosition;
     int m_miniShape = Card;
+    int m_colorMode = White;
+    bool m_miniDismissed = false;
+    QColor m_customColor = QColor(0x4f, 0xc3, 0xf7);
+    QColor m_coverColor;
+    QUrl m_coverUrl;
 };
 
 /* Draws what the tap heard, in step with the playing time */
