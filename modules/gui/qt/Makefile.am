@@ -289,6 +289,7 @@ libqt_plugin_la_SOURCES = \
 	player/input_models.cpp player/input_models.hpp \
 	terrikon/audio_visualizer.cpp terrikon/audio_visualizer.hpp \
 	terrikon/autoplay.cpp terrikon/autoplay.hpp \
+	terrikon/autoscroll.cpp terrikon/autoscroll.hpp \
 	terrikon/clip_selection.cpp terrikon/clip_selection.hpp \
 	terrikon/compact_player.cpp terrikon/compact_player.hpp \
 	terrikon/media_folders.cpp terrikon/media_folders.hpp \
@@ -505,6 +506,7 @@ nodist_libqt_plugin_la_SOURCES = \
 	player/input_models.moc.cpp \
 	terrikon/audio_visualizer.moc.cpp \
 	terrikon/autoplay.moc.cpp \
+	terrikon/autoscroll.moc.cpp \
 	terrikon/clip_selection.moc.cpp \
 	terrikon/compact_player.moc.cpp \
 	terrikon/media_folders.moc.cpp \
