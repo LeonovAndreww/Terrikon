@@ -23,6 +23,7 @@
 
 #include "link_resolver.hpp"
 #include "media_tools.hpp"
+#include "components.hpp"
 
 #include <vlc_common.h>
 #include <vlc_interface.h> /* EXTENSIONS_MEDIA */
@@ -120,6 +121,10 @@ void resolveLink(QObject *context, const QUrl &url,
         ResolvedLink link;
         link.error = QStringLiteral("yt-dlp was not found.");
         QTimer::singleShot(0, context, [done, link] { done(link); });
+        if (Components *components = Components::instance())
+            QTimer::singleShot(0, components, [components] {
+                components->offer(QStringLiteral("yt-dlp"), qtr("Opening links to video sites"));
+            });
         return;
     }
 

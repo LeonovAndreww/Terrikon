@@ -23,6 +23,7 @@
 
 #include "qt.hpp"
 #include "media_tools.hpp"
+#include "components.hpp"
 
 #include <vlc_configuration.h>
 
@@ -30,6 +31,7 @@
 #include <QCoreApplication>
 #include <QCryptographicHash>
 #include <QDateTime>
+#include <QTimer>
 #include <QSaveFile>
 #include <QDesktopServices>
 #include <QDir>
@@ -62,7 +64,11 @@ QString findTool(const QString &name)
     const QString exe = name;
 #endif
     const QDir appDir(QCoreApplication::applicationDirPath());
-    for (const QString &candidate : { appDir.filePath(exe),
+    /* the components Terrikon downloads itself go where it can write
+     * without administrator rights: %LOCALAPPDATA%\terrikon\tools */
+    const QDir local(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation)
+                     + QStringLiteral("/terrikon/tools"));
+    for (const QString &candidate : { local.filePath(exe), appDir.filePath(exe),
                                       appDir.filePath(QStringLiteral("tools/") + exe) })
     {
         if (QFileInfo(candidate).isExecutable())
@@ -527,6 +533,10 @@ bool ClipExporter::start(const QVariantMap &params)
     if (findTool(QStringLiteral("ffmpeg")).isEmpty())
     {
         emit finished(false, {}, QStringLiteral("ffmpeg was not found."));
+        if (Components *components = Components::instance())
+            QTimer::singleShot(0, components, [components] {
+                components->offer(QStringLiteral("ffmpeg"), qtr("Making a clip"));
+            });
         return false;
     }
 

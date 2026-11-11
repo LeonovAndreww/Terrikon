@@ -44296,3 +44296,115 @@ msgstr "Цвет: %1"
 #: terrikon
 msgid "Colour of the visualization"
 msgstr "Цвет визуализации"
+
+#: modules/gui/qt/terrikon/components.cpp
+msgid "Clips, waveforms and the frames of the seek bar"
+msgstr "Клипы, волна звука и кадры на полосе перемотки"
+
+#: modules/gui/qt/terrikon/components.cpp
+msgid "Links to YouTube, TikTok, Bilibili and other sites"
+msgstr "Ссылки на YouTube, TikTok, Bilibili и другие сайты"
+
+#: modules/gui/qt/terrikon/components.cpp
+msgid "curl, which comes with Windows, could not be started."
+msgstr "Не удалось запустить curl, входящий в Windows."
+
+#: modules/gui/qt/terrikon/components.cpp
+msgid "The download failed."
+msgstr "Не удалось скачать."
+
+#: modules/gui/qt/terrikon/components.cpp
+msgid "The file could not be put in place."
+msgstr "Не удалось положить файл на место."
+
+#: modules/gui/qt/terrikon/components.cpp
+msgid "The archive could not be unpacked."
+msgstr "Не удалось распаковать архив."
+
+#: modules/gui/qt/terrikon/components.cpp
+msgid "%1 is not in the archive."
+msgstr "В архиве нет %1."
+
+#: modules/gui/qt/terrikon/components.cpp
+msgid "%1 needs %2, which is not installed."
+msgstr "%1: нужен %2, он не установлен."
+
+#: modules/gui/qt/terrikon/components.cpp
+msgid "Download it now? It is free software; it goes in the Terrikon folder of your user, and can be updated or removed from Tools > Components."
+msgstr "Скачать сейчас? Это свободная программа; она будет лежать в папке Terrikon вашего пользователя, обновить её можно в «Инструменты → Компоненты»."
+
+#: modules/gui/qt/terrikon/components.cpp
+msgid "Components"
+msgstr "Компоненты"
+
+#: modules/gui/qt/terrikon/components.cpp
+msgid "Co&mponents..."
+msgstr "&Компоненты…"
+
+#: modules/gui/qt/terrikon/components.cpp
+msgid "Programs Terrikon uses for some of its features. They are free software, kept in %1."
+msgstr "Программы, которые Terrikon использует для части функций. Это свободные программы, они лежат в %1."
+
+#: modules/gui/qt/terrikon/components.cpp
+msgid "Downloading…"
+msgstr "Скачивается…"
+
+#: modules/gui/qt/terrikon/components.cpp
+msgid "Not installed"
+msgstr "Не установлен"
+
+#: modules/gui/qt/terrikon/components.cpp
+msgid "Failed: %1"
+msgstr "Не вышло: %1"
+
+#: modules/gui/qt/terrikon/components.cpp
+msgid "Making a clip"
+msgstr "Для клипа"
+
+#: modules/gui/qt/terrikon/components.cpp
+msgid "Opening links to video sites"
+msgstr "Для ссылок на видеосайты"
+
+#: modules/gui/qt/terrikon/components.cpp
+msgid "Programs Terrikon uses for some of its features. They are free software, downloaded from their authors."
+msgstr "Программы, которые Terrikon использует для части функций. Это свободные программы, они скачиваются у их авторов."
+
+#: modules/gui/qt/terrikon/components.cpp
+msgid "Keep it up to date by itself (sites change, old versions stop working)"
+msgstr "Обновлять самостоятельно (сайты меняются, и старые версии перестают работать)"
+
+#: modules/gui/qt/terrikon/components.cpp
+msgid "Downloading… %1"
+msgstr "Скачивается… %1"
+
+#: modules/gui/qt/terrikon/components.cpp
+msgid "Downloading"
+msgstr "Скачивается"
+
+#: modules/gui/qt/terrikon/components.cpp
+msgid "downloaded by Terrikon"
+msgstr "скачан Terrikon"
+
+#: modules/gui/qt/terrikon/components.cpp
+msgid "Version %1, %2"
+msgstr "Версия %1, %2"
+
+#: modules/gui/qt/terrikon/components.cpp
+msgid "Download a copy"
+msgstr "Скачать свою копию"
+
+#: modules/gui/qt/terrikon/components.cpp
+msgid "Could not download: %1"
+msgstr "Не удалось скачать: %1"
+
+#: modules/gui/qt/terrikon/components.cpp
+msgid "Open the folder"
+msgstr "Открыть папку"
+
+#: modules/gui/qt/terrikon/components.cpp
+msgid "%1 of %2"
+msgstr "%1 из %2"
+
+#: modules/gui/qt/terrikon/components.cpp
+msgid " MB"
+msgstr " МБ"

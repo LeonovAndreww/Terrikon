@@ -53,6 +53,7 @@
 #include "util/color_scheme_model.hpp"
 #include "util/colorizedsvgicon.hpp"
 #include "medialibrary/medialib.hpp"
+#include "terrikon/components.hpp"
 #include "medialibrary/mlrecentmediamodel.hpp"
 #include "medialibrary/mlbookmarkmodel.hpp"
 
@@ -268,6 +269,9 @@ void VLCMenuBar::ToolsMenu( qt_intf_t *p_intf, QMenu *menu )
 
     addDPStaticEntry( menu, qtr( "Plu&gins and extensions" ),
         "", &DialogsProvider::pluginDialog );
+    /* Terrikon: ffmpeg, yt-dlp */
+    if( terrikon::Components *components = terrikon::Components::instance() )
+        menu->addAction( qtr( "Co&mponents..." ), components, &terrikon::Components::showDialog );
     menu->addSeparator();
 
     if( !p_intf->b_isDialogProvider )
