@@ -256,6 +256,9 @@ class ThumbnailStrip : public QObject
     Q_OBJECT
     Q_PROPERTY(bool ready READ ready NOTIFY readyChanged FINAL)
     Q_PROPERTY(int count READ count NOTIFY readyChanged FINAL)
+    /* Only the quick set from key frames, never the dense one (a preview
+     * on hovering a video in the library) */
+    Q_PROPERTY(bool keyFramesOnly MEMBER m_keyFramesOnly FINAL)
 
 public:
     static constexpr int cellWidth = 160;
@@ -276,6 +279,8 @@ public:
     /* { source (file URL of the sheet), x, y, width, height, time } of the
      * thumbnail closest before "seconds", empty map if none */
     Q_INVOKABLE QVariantMap frameAt(double seconds) const;
+    /* The frame number "index" (wrapping around), same map as frameAt() */
+    Q_INVOKABLE QVariantMap frameNumber(int index) const;
 
     bool ready() const { return m_ready; }
     int count() const { return m_times.size(); }
@@ -293,6 +298,7 @@ private:
     QString m_path;
     QString m_cacheDir;
     quint64 m_loads = 0;
+    bool m_keyFramesOnly = false;
     QString m_sheetDir; /* where the sheets in use are */
     bool m_densePass = false;
     QVector<double> m_times;

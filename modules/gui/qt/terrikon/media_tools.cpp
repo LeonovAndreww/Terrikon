@@ -1329,7 +1329,8 @@ void ThumbnailStrip::loadFrom(const QString &dir)
     {
         m_ready = true;
         emit readyChanged();
-        startPass(true);
+        if (!m_keyFramesOnly)
+            startPass(true);
         return;
     }
     startPass(false);
@@ -1427,8 +1428,16 @@ void ThumbnailStrip::onFinished(int exitCode, QProcess::ExitStatus status)
         m_ready = true;
         emit readyChanged();
     }
-    if (!dense)
+    if (!dense && !m_keyFramesOnly)
         startPass(true);
+}
+
+QVariantMap ThumbnailStrip::frameNumber(int index) const
+{
+    if (!m_ready || m_times.isEmpty())
+        return {};
+    const qsizetype count = m_times.size();
+    return frameAt(m_times[((index % count) + count) % count]);
 }
 
 QVariantMap ThumbnailStrip::frameAt(double seconds) const

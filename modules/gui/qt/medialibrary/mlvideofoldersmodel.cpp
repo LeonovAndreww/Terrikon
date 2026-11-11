@@ -516,6 +516,7 @@ QHash<int, QByteArray> MLVideoFoldersModel::roleNames() const /* override */
         { FOLDER_CAN_EXPAND, QByteArrayLiteral("canExpand") },
         { FOLDER_CAN_COLLAPSE, QByteArrayLiteral("canCollapse") },
         { FOLDER_CAN_COLLAPSE_ALL, QByteArrayLiteral("canCollapseAll") },
+        { FOLDER_GROUP, QByteArrayLiteral("group") },
     });
     return hash;
 }
@@ -541,6 +542,8 @@ QVariant MLVideoFoldersModel::itemRoleData(const MLItem * item, const int role) 
             return p && !p->collapseKey.isEmpty();
         case FOLDER_CAN_COLLAPSE_ALL:
             return p && !p->collapseAllKey.isEmpty();
+        case FOLDER_GROUP:
+            return p ? p->collapseKey : QString();
         default:
             break;
     }

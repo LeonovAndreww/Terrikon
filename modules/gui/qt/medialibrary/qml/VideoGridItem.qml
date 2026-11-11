@@ -36,6 +36,25 @@ Widgets.GridItem {
     property var treeModel: null
     property int treeRow: -1
 
+    // Terrikon: a hue from a folder key, the same each time
+    function _groupHue(key) {
+        let h = 0
+        for (let i = 0; i < key.length; ++i)
+            h = (h * 31 + key.charCodeAt(i)) % 360
+        return h / 360
+    }
+
+    // Terrikon: brought in by expanding a folder: comes in gently
+    Component.onCompleted: {
+        if ((model.group ?? "") !== "")
+            appear.start()
+    }
+    ParallelAnimation {
+        id: appear
+        NumberAnimation { target: root; property: "opacity"; from: 0; to: 1; duration: 220; easing.type: Easing.OutCubic }
+        NumberAnimation { target: root; property: "scale"; from: 0.94; to: 1; duration: 220; easing.type: Easing.OutCubic }
+    }
+
     function play() {
         if ( model.id !== undefined ) {
             // Terrikon: a video plays with the rest of its folder after it
@@ -131,6 +150,70 @@ Widgets.GridItem {
     pictureOverlay: Item {
         implicitWidth: root.pictureWidth
         implicitHeight: root.pictureHeight
+
+        // Terrikon: what an expanded folder brought in is marked with a colour
+        // of its own (the folder's), along the top of the picture
+        Rectangle {
+            readonly property string group: model.group ?? ""
+            visible: group !== ""
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            height: VLCStyle.dp(4, VLCStyle.scale)
+            radius: height / 2
+            color: Qt.hsla(root._groupHue(group), 0.65, 0.55, 1)
+        }
+
+        // Terrikon: resting the pointer on a video flips through its frames
+        // (key frames, as in the seek bar), as video sites preview theirs
+        Timer {
+            id: previewDelay
+            property bool armed: false
+            readonly property bool wanted: root.hovered && model.isVideo !== false && !!model.mrl
+            onWantedChanged: if (!wanted) armed = false
+            // repeats so that firing does not end the binding of running
+            interval: 700
+            repeat: true
+            running: wanted && !armed
+            onTriggered: armed = true
+        }
+
+        Loader {
+            anchors.fill: parent
+            active: previewDelay.armed
+            sourceComponent: Item {
+                id: preview
+
+                property int step: 0
+                readonly property var frame: strip.ready ? strip.frameNumber(step) : ({})
+
+                ThumbnailStrip {
+                    id: strip
+                    keyFramesOnly: true
+                    Component.onCompleted: loadUrl(model.mrl)
+                }
+
+                Timer {
+                    interval: 650
+                    repeat: true
+                    running: strip.ready && strip.count > 1
+                    // a little into the video first: the very start is often black
+                    onTriggered: preview.step = Math.max(1, preview.step + Math.max(1, Math.floor(strip.count / 12)))
+                }
+
+                Image {
+                    anchors.fill: parent
+                    visible: status === Image.Ready
+                    source: preview.frame.source ?? ""
+                    sourceClipRect: preview.frame.source ? Qt.rect(preview.frame.x, preview.frame.y,
+                                                                   preview.frame.width, preview.frame.height)
+                                                         : undefined
+                    fillMode: Image.PreserveAspectCrop
+                    asynchronous: true
+                    cache: true
+                }
+            }
+        }
 
         Widgets.ScaledImage {
             id: image

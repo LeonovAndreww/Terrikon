@@ -45,6 +45,7 @@ public:
         FOLDER_CAN_EXPAND,
         FOLDER_CAN_COLLAPSE,
         FOLDER_CAN_COLLAPSE_ALL,
+        FOLDER_GROUP, /* the expanded folder an item comes from, empty if none */
     };
 
 public:
