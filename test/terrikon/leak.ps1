@@ -12,7 +12,7 @@ function OpenMusic { Send-Tk 'clear', "add $music" | Out-Null; Start-Sleep 2; In
 
 $results = foreach ($test in $Tests) {
     Stop-Tk | Out-Null; Start-Tk -ExtraArgs $Extra; & E:\VLC-fork\scripts\win.ps1 -Maximize | Out-Null; Start-Sleep 3
-    switch ($test) { { $_ -in 'projectm', 'goom', 'spectrum', 'own' } { OpenMusic } }
+    switch ($test) { { $_ -in 'projectm', 'goom', 'spectrum', 'own' } { OpenMusic } 'pipsame' { Send-Tk 'clear', "add $video", 'repeat on' | Out-Null; Start-Sleep 3 } }
     # one round first: what is made once and kept is not a leak
     $round = {
         switch ($test) {
@@ -23,6 +23,7 @@ $results = foreach ($test in $Tests) {
             'spectrum' { Vis 'VLC: Спектр'; Vis 'VLC: отключить' }
             'own'      { Vis 'Волна'; Vis 'Кольцо вокруг обложки' }
             'pip'      { Send-Tk 'clear', "add $video" | Out-Null; Start-Sleep 2; & E:\VLC-fork\scripts\win.ps1 -Minimize | Out-Null; Start-Sleep 2; & E:\VLC-fork\scripts\win.ps1 -Maximize | Out-Null; Start-Sleep 1 }
+            'pipsame'  { & E:\VLC-fork\scripts\win.ps1 -Minimize | Out-Null; Start-Sleep 2; & E:\VLC-fork\scripts\win.ps1 -Maximize | Out-Null; Start-Sleep 2 }
             'mini'     { Send-Tk 'clear', "add $music" | Out-Null; Start-Sleep 2; & E:\VLC-fork\scripts\win.ps1 -Minimize | Out-Null; Start-Sleep 2; & E:\VLC-fork\scripts\win.ps1 -Maximize | Out-Null; Start-Sleep 1 }
         }
     }

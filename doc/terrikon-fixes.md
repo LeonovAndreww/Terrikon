@@ -62,11 +62,10 @@ bug is upstream's; when unsure, the original build is run.
 | Clip export could take another audio track than the one ticked when the player lists them in another order than the file | the track's place among the file's audio streams |
 | The Videos folder tree was built again for the count, each page and each lookup | built once, again after a library change |
 | A folder dropped (or picked) that is already in the library, inside one of its folders, did nothing visible | Videos opens on it |
+| Picture in picture lost 5 to 15 MB each time in and out | it was the Direct3D11 staging leak (the window changes size, the output format resources are made again); now under 1 MB per round, as noise (`leak.ps1 -Tests pipsame,pip`) |
 
 ## Known upstream issues, not fixed yet
 
 - `ListViewExt.qml`: the footer's height depends on its own position ("Binding loop detected for property implicitHeight"). Harmless.
 - `BrowseDeviceView.qml`: "Unable to assign [undefined] to QQmlComponent*" for sections without a header. Harmless.
 - Changing the audio filters and the VLC visualization at the same moment can stall the audio output (playing, but the time stands still). Terrikon switches them one after the other.
-- Ours, partly: picture in picture in and out leaves 5 MB (OpenGL output) to 15 MB
-  (Direct3D11) each time; not looked into further yet.

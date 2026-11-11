@@ -15,7 +15,17 @@ public static class TkUia {
 }
 '@ -ErrorAction SilentlyContinue
 
-$script:Exe = 'E:\VLC-fork\terrikon\terrikon.exe'
+# Tests run a copy of the installed build with a "portable" folder next to
+# it: VLC then keeps its settings, media library and history there, apart
+# from the user's (an APPDATA override does not work: VLC asks Windows for
+# the folder). Sync-TkCopy refreshes the copy after an install.
+$script:Installed = 'E:\VLC-fork\terrikon'
+$script:TestDir = 'E:\VLC-fork\terrikon-test'
+$script:Exe = "$script:TestDir\terrikon.exe"
+function Sync-TkCopy {
+    robocopy $script:Installed $script:TestDir /MIR /XD portable /NFL /NDL /NJH /NJS /NP | Out-Null
+    New-Item -ItemType Directory -Force "$script:TestDir\portable" | Out-Null
+}
 $script:Log = 'E:\VLC-fork\pipeline-test\ui-log.txt'
 
 function Get-TkProcess { Get-Process terrikon -ErrorAction SilentlyContinue | Where-Object { -not $_.HasExited } | Sort-Object StartTime | Select-Object -Last 1 }
@@ -24,12 +34,10 @@ function Start-Tk([string]$File, [switch]$RealProfile, [string[]]$ExtraArgs = @(
     Remove-Item $script:Log -ErrorAction SilentlyContinue
     # A profile of its own (settings, media library, history), so tests leave
     # the user's alone
-    $saved = $env:APPDATA
-    if (-not $RealProfile) { New-Item -ItemType Directory -Force 'E:\VLC-fork\test-profile' | Out-Null; $env:APPDATA = 'E:\VLC-fork\test-profile' }
-    Start-Process $script:Exe -WorkingDirectory (Split-Path $script:Exe) -ArgumentList (@(
+    $exe = if ($RealProfile) { "$script:Installed\terrikon.exe" } else { if (-not (Test-Path $script:Exe)) { Sync-TkCopy }; $script:Exe }
+    Start-Process $exe -WorkingDirectory (Split-Path $exe) -ArgumentList (@(
         '--no-qt-video-autoresize', '--extraintf=rc', '--rc-host=127.0.0.1:4212', '--rc-quiet',
         '--file-logging', '--log-verbose=1', "--logfile=$script:Log") + $ExtraArgs) | Out-Null
-    $env:APPDATA = $saved
     for ($i = 0; $i -lt 40; $i++) { Start-Sleep -Milliseconds 500; if (Test-TkRc) { break } }
     if ($File) { Send-Tk "add $File" | Out-Null }
 }
@@ -143,4 +151,42 @@ function Stop-Tk([int]$WaitSec = 20) {
     [pscustomobject]@{ ExitSeconds = [math]::Round(((Get-Date) - $t0).TotalSeconds, 1); LeftOver = ($left | ForEach-Object { "$($_.ProcessName):$($_.Id)" }) -join ',' }
 }
 
-Export-ModuleMember -Function *-Tk*, Get-TkProcess, Test-TkRc
+
+# Mouse clicks sent as window messages to the window under the point (input
+# injection with SendInput is dropped on this machine); the cursor itself is
+# moved for real, for what reads its position (autoscroll, hover).
+if (-not ('TkMsg' -as [type])) {
+Add-Type @"
+using System; using System.Runtime.InteropServices;
+public static class TkMsg {
+  [StructLayout(LayoutKind.Sequential)] public struct POINT { public int X, Y; }
+  [DllImport("user32.dll")] public static extern bool SetCursorPos(int x, int y);
+  [DllImport("user32.dll")] static extern IntPtr WindowFromPoint(POINT p);
+  [DllImport("user32.dll")] static extern bool ScreenToClient(IntPtr h, ref POINT p);
+  [DllImport("user32.dll")] static extern bool PostMessage(IntPtr h, uint m, IntPtr w, IntPtr l);
+  [DllImport("user32.dll")] static extern bool GetCursorPos(out POINT p);
+  public static void Send(uint msg, uint keys) {
+    POINT s; GetCursorPos(out s); IntPtr h = WindowFromPoint(s); POINT c = s; ScreenToClient(h, ref c);
+    PostMessage(h, msg, (IntPtr)keys, (IntPtr)((c.Y << 16) | (c.X & 0xffff)));
+  }
+}
+"@
+}
+function Send-TkMouse([int]$X = -1, [int]$Y = -1, [ValidateSet('move', 'left', 'right', 'middle', 'leftdown', 'leftup', 'middledown', 'middleup')][string]$Action = 'move') {
+    if ($X -ge 0) { [TkMsg]::SetCursorPos($X, $Y) | Out-Null; Start-Sleep -Milliseconds 60; [TkMsg]::Send(0x0200, 0) }
+    # message, key state while down
+    $m = @{ leftdown = @(0x0201, 1); leftup = @(0x0202, 0); rightdown = @(0x0204, 2); rightup = @(0x0205, 0); middledown = @(0x0207, 0x10); middleup = @(0x0208, 0) }
+    switch ($Action) {
+        'move' { }
+        { $_ -in 'left', 'right', 'middle' } { $d = $m["${_}down"]; $u = $m["${_}up"]; [TkMsg]::Send($d[0], $d[1]); Start-Sleep -Milliseconds 60; [TkMsg]::Send($u[0], $u[1]) }
+        default { [TkMsg]::Send($m[$Action][0], $m[$Action][1]) }
+    }
+}
+# A screenshot of the screen, scaled down (cheap to look at)
+function Save-TkShot([string]$Path, [double]$Scale = 0.25, [int[]]$Rect) {
+    Add-Type -AssemblyName System.Drawing
+    $b = New-Object Drawing.Bitmap 1920, 1080; $g = [Drawing.Graphics]::FromImage($b); $g.CopyFromScreen(0, 0, 0, 0, $b.Size)
+    if ($Rect) { $b = $b.Clone([Drawing.Rectangle]::new($Rect[0], $Rect[1], $Rect[2], $Rect[3]), $b.PixelFormat) }
+    (New-Object Drawing.Bitmap $b, ([int]($b.Width * $Scale)), ([int]($b.Height * $Scale))).Save($Path)
+}
+Export-ModuleMember -Function *-Tk*, Get-TkProcess, Test-TkRc, Send-TkMouse, Save-TkShot
