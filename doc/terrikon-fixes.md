@@ -51,3 +51,12 @@ bug is upstream's; when unsure, the original build is run.
 - `ListViewExt.qml`: the footer's height depends on its own position ("Binding loop detected for property implicitHeight"). Harmless.
 - `BrowseDeviceView.qml`: "Unable to assign [undefined] to QQmlComponent*" for sections without a header. Harmless.
 - Changing the audio filters and the VLC visualization at the same moment can stall the audio output (playing, but the time stands still). Terrikon switches them one after the other.
+- Each time a Direct3D11 video output closes, about 12 MB and 14 handles stay
+  behind: switching a VLC visualization on and off, or every track played
+  with one (the visualization gets an output of its own each time). The same
+  in a VLC 4 build from before the Terrikon changes; none with `--vout=gl`
+  or the dummy output, and none when creating and releasing a D3D11 device
+  alone (`test/terrikon/d3dleak.cpp`). Terrikon's own visualizations are not
+  concerned. Measured with `test/terrikon/leak-compare.ps1`.
+- Ours, partly: picture in picture in and out leaves 5 MB (OpenGL output) to 15 MB
+  (Direct3D11) each time; not looked into further yet.
