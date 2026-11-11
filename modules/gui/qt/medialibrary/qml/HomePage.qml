@@ -214,8 +214,10 @@ Widgets.PageExt {
             }
 
             function addFolder(url) {
+                // one already in the library (or inside one of its folders) is
+                // opened instead, see MainInterface
                 if (url.toString() !== "")
-                    mlFolders.add(url)
+                    MediaLib.lookUpFolder(url)
             }
 
             Component.onCompleted: refresh()

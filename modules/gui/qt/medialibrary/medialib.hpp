@@ -58,6 +58,9 @@ public:
      * it, in the order of the file manager, so next and previous go through
      * the folder. Falls back to the video alone when not a local file. */
     Q_INVOKABLE void playWithFolder(const MLItemId &itemId);
+    /* Terrikon: whether a folder is in the media library, as a folder of
+     * its own or inside one; answers with folderLookedUp() */
+    Q_INVOKABLE void lookUpFolder(const QUrl &url);
     Q_INVOKABLE void addAndPlay(const QString& mrl, const QStringList &options = {});
     Q_INVOKABLE void addAndPlay(const QUrl& mrl, const QStringList &options = {});
     Q_INVOKABLE void addAndPlay(const QVariantList&itemIdList, const QStringList &options = {});
@@ -176,6 +179,8 @@ signals:
     void discoveryEntryPointChanged( QString entryPoint );
     void discoveryPendingChanged( bool state );
     void idleChanged();
+    /* found: id and title of the folder in the library */
+    void folderLookedUp(const QUrl &url, bool found, const MLItemId &id, const QString &title);
 
 private:
     static void onMediaLibraryEvent( void* data, const vlc_ml_event_t* event );

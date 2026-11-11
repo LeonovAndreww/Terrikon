@@ -298,7 +298,9 @@ Item {
                         Qt.callLater(() => {
                             const action = MediaFolders.askDropAction()
                             if (action === 1)
-                                folders.forEach(u => dropFolders.item.add(u))
+                                // a folder already in the library (or inside one
+                                // of its folders) is opened, the others added
+                                folders.forEach(u => MainCtx.mediaLibrary.lookUpFolder(u))
                             if (action === 0 || (action === 1 && folders.length < urls.length))
                                 MainPlaylistController.append(action === 0 ? urls
                                     : urls.filter(u => !MediaFolders.isFolder(u)), true)
@@ -308,6 +310,16 @@ Item {
 
                     MainPlaylistController.append(urls, true)
                     drop.accept()
+                }
+            }
+
+            Connections {
+                target: MainCtx.mediaLibraryAvailable ? MainCtx.mediaLibrary : null
+                function onFolderLookedUp(url, found, id, title) {
+                    if (found)
+                        History.push(["video", "all", "folder"], { parentId: id, title: title })
+                    else if (dropFolders.item)
+                        dropFolders.item.add(url)
                 }
             }
 

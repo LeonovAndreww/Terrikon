@@ -67,6 +67,9 @@ static void convertMLItemToPlaylistMedias(vlc_medialibrary_t* ml, const MLItemId
     {
         // Terrikon: a folder plays with its subfolders
         terrikon::forEachFolderMedia(ml, itemId.id, [&](const vlc_ml_media_t &m) {
+            // folders are shown in Videos: their audio files are not meant
+            if (m.i_type == VLC_ML_MEDIA_TYPE_AUDIO)
+                return true;
             SharedInputItem item(vlc_ml_get_input_item( ml, m.i_id ), false);
             if (item)
                 medias.push_back(vlc::playlist::Media(item.get(), options));
@@ -201,6 +204,47 @@ void MediaLib::addAndPlay(const MLItemId & itemId, const QStringList &options )
     });
 
 
+}
+
+void MediaLib::lookUpFolder(const QUrl &url)
+{
+    struct Context {
+        bool found = false;
+        int64_t id = 0;
+        QString title;
+    };
+    /* compared decoded: the library and Qt encode differently (%27...) */
+    const auto norm = [](const char *mrl) { return QUrl::fromPercentEncoding(terrikon::folderKey(mrl).toUtf8()).toLower(); };
+    const QString key = norm(url.toString(QUrl::FullyEncoded).toUtf8().constData());
+    runOnMLThread<Context>(this,
+    //ML thread
+    [key, norm](vlc_medialibrary_t* ml, Context& ctx)
+    {
+        const auto look = [&](vlc_ml_folder_list_t *list) {
+            ml_unique_ptr<vlc_ml_folder_list_t> owner(list);
+            if (!list)
+                return;
+            for (const vlc_ml_folder_t &f : ml_range_iterate<vlc_ml_folder_t>(owner))
+            {
+                if (ctx.found || f.b_banned || !f.psz_mrl
+                    || norm(f.psz_mrl) != key)
+                    continue;
+                ctx.found = true;
+                ctx.id = f.i_id;
+                ctx.title = qfu(f.psz_name);
+            }
+        };
+        look(vlc_ml_list_entry_points(ml, nullptr));
+        if (!ctx.found)
+            look(vlc_ml_list_folders(ml, nullptr));
+    },
+    //UI thread
+    [this, url](quint64, Context& ctx) {
+        QString title = ctx.title;
+        if (title.isEmpty())
+            title = QUrl::fromPercentEncoding(url.toString(QUrl::FullyEncoded).section(QLatin1Char('/'), -1, -1, QString::SectionSkipEmpty).toUtf8());
+        emit folderLookedUp(url, ctx.found, MLItemId(ctx.id, VLC_ML_PARENT_FOLDER), title);
+    });
 }
 
 void MediaLib::playWithFolder(const MLItemId &itemId)
@@ -376,6 +420,8 @@ void MediaLib::mlInputItem(const QVector<MLItemId>& itemIdVector, QJSValue callb
             else if (mlId.type == VLC_ML_PARENT_FOLDER)
             {
                 terrikon::forEachFolderMedia(ml, mlId.id, [&](const vlc_ml_media_t &media) {
+                    if (media.i_type == VLC_ML_MEDIA_TYPE_AUDIO)
+                        return true;
                     ctx.items.emplace_back(vlc_ml_get_input_item(ml, media.i_id), false);
                     return true;
                 });
