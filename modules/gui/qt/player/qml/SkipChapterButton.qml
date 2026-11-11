@@ -95,7 +95,12 @@ T.Button {
         target: Player
         function onPositionChanged() { root._update() }
         function onInputChanged() {
+            // a new episode: its opening counts down again, even when it is
+            // the same chapter number as in the last one
             root._dismissedIndex = -1
+            root._countdownFor = -1
+            countdown.stop()
+            resumeTimer.stop()
             root._update()
         }
     }

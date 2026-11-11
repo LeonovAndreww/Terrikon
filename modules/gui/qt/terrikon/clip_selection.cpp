@@ -51,8 +51,14 @@ void ClipSelection::setMediaLength(double length)
     if (qFuzzyCompare(m_length + 1., length + 1.))
         return;
     m_length = length;
+    m_end = clampTime(m_end);
     m_start = clampTime(m_start);
-    m_end = std::max(clampTime(m_end), m_start);
+    /* a shorter media can squeeze the range under minLength (90-95 s of 100,
+     * then 80 s long): it keeps its length by starting earlier */
+    if (m_end - m_start < minLength)
+        m_start = clampTime(m_end - minLength);
+    if (m_end < m_start)
+        m_end = m_start;
     emit rangeChanged();
 }
 
