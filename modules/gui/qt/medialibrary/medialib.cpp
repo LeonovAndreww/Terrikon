@@ -23,6 +23,12 @@
 #include "terrikon/folder_tree.hpp"
 
 #include <utility>
+#include <QCollator>
+#include <QDir>
+#include <QFileInfo>
+#include <QUrl>
+#include <vlc_interface.h>
+#include <algorithm>
 
 #include <QQmlEngine>
 
@@ -195,6 +201,62 @@ void MediaLib::addAndPlay(const MLItemId & itemId, const QStringList &options )
     });
 
 
+}
+
+void MediaLib::playWithFolder(const MLItemId &itemId)
+{
+    struct Context {
+        QVector<vlc::playlist::Media> medias;
+        int start = 0;
+    };
+    runOnMLThread<Context>(this,
+    //ML thread: the folder may be on a slow network drive
+    [itemId]
+    (vlc_medialibrary_t* ml, Context& ctx)
+    {
+        SharedInputItem clicked(vlc_ml_get_input_item(ml, itemId.id), false);
+        if (!clicked)
+            return;
+        const QUrl url(QString::fromUtf8(clicked->psz_uri));
+        if (!url.isLocalFile())
+        {
+            ctx.medias.push_back(vlc::playlist::Media(clicked.get(), {}));
+            return;
+        }
+        const QFileInfo file(url.toLocalFile());
+        const QStringList patterns = QString::fromLatin1(EXTENSIONS_VIDEO).split(QLatin1Char(';'),
+                                                                               Qt::SkipEmptyParts);
+        QFileInfoList siblings = file.dir().entryInfoList(patterns, QDir::Files | QDir::Readable);
+        QCollator collator;
+        collator.setNumericMode(true);
+        collator.setCaseSensitivity(Qt::CaseInsensitive);
+        std::sort(siblings.begin(), siblings.end(), [&](const QFileInfo &a, const QFileInfo &b) {
+            return collator.compare(a.fileName(), b.fileName()) < 0;
+        });
+        for (const QFileInfo &sibling : siblings)
+        {
+            if (sibling.absoluteFilePath() == file.absoluteFilePath())
+            {
+                ctx.start = ctx.medias.size();
+                ctx.medias.push_back(vlc::playlist::Media(clicked.get(), {}));
+            }
+            else
+            {
+                const QString mrl = QUrl::fromLocalFile(sibling.absoluteFilePath()).toString(QUrl::FullyEncoded);
+                ctx.medias.push_back(vlc::playlist::Media(mrl, sibling.completeBaseName(), {}));
+            }
+        }
+        if (ctx.medias.isEmpty())
+            ctx.medias.push_back(vlc::playlist::Media(clicked.get(), {}));
+    },
+    //UI thread
+    [this](quint64, Context& ctx){
+        if (ctx.medias.empty())
+            return;
+        m_playlistController->clear();
+        m_playlistController->append(ctx.medias, false);
+        m_playlistController->goTo(ctx.start, true);
+    });
 }
 
 void MediaLib::addAndPlay(const QString& mrl, const QStringList &options)

@@ -38,7 +38,11 @@ Widgets.GridItem {
 
     function play() {
         if ( model.id !== undefined ) {
-            MediaLib.addAndPlay( model.id )
+            // Terrikon: a video plays with the rest of its folder after it
+            if ( model.isVideo === false )
+                MediaLib.addAndPlay( model.id )
+            else
+                MediaLib.playWithFolder( model.id )
             MainCtx.playerView = true
         }
     }

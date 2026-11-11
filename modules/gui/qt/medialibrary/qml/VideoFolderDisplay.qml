@@ -91,7 +91,8 @@ Widgets.PageExt {
 
         function onDoubleClick(object) {
             if (object.isVideo) {
-                MediaLib.addAndPlay(object.id)
+                // Terrikon: the rest of its folder comes after it
+                MediaLib.playWithFolder(object.id)
                 MainCtx.playerView = true
                 return
             }

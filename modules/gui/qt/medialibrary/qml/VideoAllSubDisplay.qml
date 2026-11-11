@@ -149,7 +149,7 @@ Widgets.PageExt {
                 }
 
                 function onDoubleClick(object) {
-                    MediaLib.addAndPlay(object.id)
+                    MediaLib.playWithFolder(object.id) // Terrikon: with the rest of its folder
                     MainCtx.playerView = true
                 }
 
@@ -202,7 +202,7 @@ Widgets.PageExt {
 
                 function onDoubleClick(object) {
                     if (object.isVideo) {
-                        MediaLib.addAndPlay(object.id)
+                        MediaLib.playWithFolder(object.id) // Terrikon: with the rest of its folder
                         MainCtx.playerView = true
                         return
                     }
@@ -269,7 +269,7 @@ Widgets.PageExt {
 
                 function onDoubleClick(object) {
                     if (object.isVideo) {
-                        MediaLib.addAndPlay(object.id)
+                        MediaLib.playWithFolder(object.id) // Terrikon: with the rest of its folder
                         MainCtx.playerView = true
                         return
                     }

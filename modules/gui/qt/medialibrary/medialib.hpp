@@ -54,6 +54,10 @@ public:
     Q_INVOKABLE void addToPlaylist(const QVariantList& itemIdList, const QStringList &options = {});
 
     Q_INVOKABLE void addAndPlay(const MLItemId &itemId, const QStringList &options = {});
+    /* Terrikon: plays a video with the others of its folder queued around
+     * it, in the order of the file manager, so next and previous go through
+     * the folder. Falls back to the video alone when not a local file. */
+    Q_INVOKABLE void playWithFolder(const MLItemId &itemId);
     Q_INVOKABLE void addAndPlay(const QString& mrl, const QStringList &options = {});
     Q_INVOKABLE void addAndPlay(const QUrl& mrl, const QStringList &options = {});
     Q_INVOKABLE void addAndPlay(const QVariantList&itemIdList, const QStringList &options = {});
