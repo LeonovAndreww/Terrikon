@@ -70,8 +70,11 @@ vlc_player_input_RestoreMlStates(struct vlc_player_input* input, bool force_pos)
              media->f_progress > .0f)
     {
         input->ml.delay_restore = true;
-        input->ml.pos = media->f_progress;
     }
+    /* Terrikon: where the last playback stopped, kept for the interface
+     * (and for restoring a position within a title, which reads it) */
+    if (media->f_progress > .0f)
+        input->ml.pos = media->f_progress;
 
     vlc_ml_release(media);
 
@@ -290,6 +293,13 @@ vlc_player_UpdateMLStates(vlc_player_t *player, struct vlc_player_input* input)
 
     vlc_ml_release(&input->ml.states);
     vlc_ml_release(media);
+}
+
+float
+vlc_player_GetLastPosition(vlc_player_t *player)
+{
+    vlc_player_assert_locked(player);
+    return player->input ? player->input->ml.pos : -1.f;
 }
 
 void

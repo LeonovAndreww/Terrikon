@@ -979,6 +979,15 @@ VLC_API void
 vlc_player_RestorePlaybackPos(vlc_player_t *player);
 
 /**
+ * Where the last playback of the current media stopped, from the media
+ * library (0..1), or -1 if not known
+ *
+ * @param player locked player instance
+ */
+VLC_API float
+vlc_player_GetLastPosition(vlc_player_t *player);
+
+/**
  * Get the V4L2 object used to do controls
  *
  * @param player locked player instance
