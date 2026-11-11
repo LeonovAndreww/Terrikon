@@ -40,6 +40,7 @@
 #include <QRegularExpression>
 #include <QStandardPaths>
 #include <QTemporaryDir>
+#include <QElapsedTimer>
 #include <QTextStream>
 #include <QUrl>
 
@@ -69,6 +70,50 @@ QString findTool(const QString &name)
     return QStandardPaths::findExecutable(name);
 }
 
+/* The video encoders of the ffmpeg found, asked once: builds differ (the
+ * "essentials" one has libaom-av1, not libsvtav1) */
+static const QStringList &ffmpegEncoders()
+{
+    static QStringList encoders;
+    static bool asked = false;
+    if (asked)
+        return encoders;
+    asked = true;
+    const QString ffmpeg = findTool(QStringLiteral("ffmpeg"));
+    if (ffmpeg.isEmpty())
+        return encoders;
+    QProcess process;
+    process.start(ffmpeg, { QStringLiteral("-hide_banner"), QStringLiteral("-encoders") });
+    if (!process.waitForFinished(5000))
+    {
+        process.kill();
+        process.waitForFinished(1000);
+        return encoders;
+    }
+    static const QRegularExpression line(QStringLiteral("^\\s*V\\S*\\s+(\\S+)"));
+    for (const QString &text : QString::fromUtf8(process.readAllStandardOutput()).split(QLatin1Char('\n')))
+        if (const auto match = line.match(text); match.hasMatch())
+            encoders << match.captured(1);
+    return encoders;
+}
+
+/* The software encoder used for a codec, empty when the ffmpeg found has
+ * none. Hardware ones are left out: whether they work depends on the
+ * graphics card, not on the build. */
+static QString videoEncoder(const QString &codec)
+{
+    const QStringList &encoders = ffmpegEncoders();
+    const QStringList wanted = codec == QLatin1String("av1")
+        ? QStringList{ QStringLiteral("libsvtav1"), QStringLiteral("libaom-av1") }
+        : codec == QLatin1String("hevc") ? QStringList{ QStringLiteral("libx265") }
+                                         : QStringList{ QStringLiteral("libx264") };
+    for (const QString &name : wanted)
+        if (encoders.contains(name))
+            return name;
+    /* Asking failed: try the usual one rather than nothing */
+    return encoders.isEmpty() ? wanted.first() : QString();
+}
+
 QString cacheDirFor(const QString &mediaPath, const QString &kind)
 {
     const QFileInfo info(mediaPath);
@@ -90,15 +135,6 @@ QString cacheDirFor(const QString &mediaPath, const QString &kind)
 static QString seconds(double value)
 {
     return QString::number(value, 'f', 3);
-}
-
-static const char *nullOutput()
-{
-#ifdef _WIN32
-    return "NUL";
-#else
-    return "/dev/null";
-#endif
 }
 
 // ClipExporter
@@ -204,17 +240,27 @@ ClipExporter::Plan ClipExporter::plan(const QVariantMap &params, const QString &
     }
     p.output = output;
 
+    const QString encoder = copyVideo ? QString() : videoEncoder(codec);
+    if (!copyVideo && encoder.isEmpty())
+    {
+        p.error = QStringLiteral("This ffmpeg has no encoder for this codec.");
+        return p;
+    }
+
     int audioKbps = 160;
     int videoKbps = 0;
     if (sizeLimited)
     {
-        /* Aim a little below the limit: the container and the encoder's
-         * rate control both add some */
+        /* Aim a little below the limit: the container adds some. The rate
+         * is held under videoKbps over any second, so a second's worth of
+         * buffer is the most the whole clip can go over */
         const double target = params.value(QStringLiteral("targetBytes"),
                                            20. * 1024 * 1024).toDouble() * 0.95;
-        const int totalKbps = int(target * 8. / length / 1000.);
         audioKbps = 128;
-        videoKbps = totalKbps - audioKbps * std::max(outputTracks, 0) - 30;
+        const double otherKbps = audioKbps * std::max(outputTracks, 0) + 30;
+        videoKbps = int((target * 8. / 1000. - otherKbps * length) / (length + 1.));
+        /* A second try after the first came out too big */
+        videoKbps = int(videoKbps * std::clamp(params.value(QStringLiteral("rateScale"), 1.).toDouble(), .3, 1.));
         if (videoKbps < 150)
         {
             p.error = QStringLiteral("The clip is too long for this file size.");
@@ -262,27 +308,45 @@ ClipExporter::Plan ClipExporter::plan(const QVariantMap &params, const QString &
     else
     {
         /* Similar visual quality at each codec's own scale */
-        if (av1)
-            video << QStringLiteral("-c:v") << QStringLiteral("libsvtav1")
-                  << QStringLiteral("-preset") << QStringLiteral("8");
-        else if (hevc)
-            video << QStringLiteral("-c:v") << QStringLiteral("libx265")
-                  << QStringLiteral("-preset") << (sizeLimited ? QStringLiteral("medium")
-                                                               : QStringLiteral("fast"))
-                  /* players on Apple systems want this tag in MP4 */
-                  << QStringLiteral("-tag:v") << QStringLiteral("hvc1");
+        const QString crf = av1 ? QStringLiteral("32") : hevc ? QStringLiteral("24")
+                                                              : QStringLiteral("20");
+        const bool aom = encoder == QLatin1String("libaom-av1");
+        video << QStringLiteral("-c:v") << encoder;
+        if (encoder == QLatin1String("libsvtav1"))
+            video << QStringLiteral("-preset") << QStringLiteral("8");
+        else if (aom)
+            video << QStringLiteral("-cpu-used") << QStringLiteral("6")
+                  << QStringLiteral("-row-mt") << QStringLiteral("1");
         else
-            video << QStringLiteral("-c:v") << QStringLiteral("libx264")
-                  << QStringLiteral("-preset") << (sizeLimited ? QStringLiteral("medium")
-                                                               : QStringLiteral("veryfast"));
-        if (sizeLimited)
+            video << QStringLiteral("-preset") << (hevc ? QStringLiteral("fast")
+                                                        : QStringLiteral("veryfast"));
+        /* players on Apple systems want this tag in MP4 */
+        if (hevc)
+            video << QStringLiteral("-tag:v") << QStringLiteral("hvc1");
+
+        /* With a size limit: a clip that fits at full quality keeps it,
+         * held under the rate the limit allows, and is not blown up to the
+         * limit; one that does not fit (measured beforehand) gets the whole
+         * rate the limit allows, which a quality ceiling would leave half
+         * unused */
+        const double bestBytes = params.value(QStringLiteral("bestBytes")).toDouble();
+        const double targetBytes = params.value(QStringLiteral("targetBytes"), 20. * 1024 * 1024).toDouble();
+        const bool squeeze = sizeLimited && bestBytes > targetBytes * 0.75;
+        if (squeeze)
             video << QStringLiteral("-b:v") << QStringLiteral("%1k").arg(videoKbps)
-                  << QStringLiteral("-maxrate") << QStringLiteral("%1k").arg(videoKbps * 3 / 2)
+                  << QStringLiteral("-maxrate") << QStringLiteral("%1k").arg(videoKbps * 4 / 3)
                   << QStringLiteral("-bufsize") << QStringLiteral("%1k").arg(videoKbps * 2);
         else
-            video << QStringLiteral("-crf") << (av1 ? QStringLiteral("32")
-                                              : hevc ? QStringLiteral("24")
-                                                     : QStringLiteral("20"));
+        {
+            video << QStringLiteral("-crf") << crf;
+            if (aom)
+                /* libaom: the rate is a ceiling under -crf, 0 for none */
+                video << QStringLiteral("-b:v") << (sizeLimited ? QStringLiteral("%1k").arg(videoKbps)
+                                                                : QStringLiteral("0"));
+            else if (sizeLimited)
+                video << QStringLiteral("-maxrate") << QStringLiteral("%1k").arg(videoKbps)
+                      << QStringLiteral("-bufsize") << QStringLiteral("%1k").arg(videoKbps);
+        }
         video << QStringLiteral("-pix_fmt") << QStringLiteral("yuv420p");
     }
 
@@ -330,30 +394,16 @@ ClipExporter::Plan ClipExporter::plan(const QVariantMap &params, const QString &
     if (extension == QLatin1String("mp4"))
         tail << QStringLiteral("-movflags") << QStringLiteral("+faststart");
 
-    /* ffmpeg's -pass drives x264 only; the others get one pass at the
-     * target rate, kept in check by maxrate */
-    if (sizeLimited && !hevc && !av1)
-    {
-        /* Two passes: the first one only measures the video */
-        QStringList first = head;
-        first << video << QStringLiteral("-pass") << QStringLiteral("1")
-              << QStringLiteral("-passlogfile") << passLogPrefix
-              << QStringLiteral("-an") << QStringLiteral("-f") << QStringLiteral("null")
-              << QString::fromLatin1(nullOutput());
-        p.passes << first;
-
-        QStringList second = head;
-        second << video << audio << QStringLiteral("-pass") << QStringLiteral("2")
-               << QStringLiteral("-passlogfile") << passLogPrefix << tail << output;
-        p.passes << second;
-    }
-    else
-    {
-        QStringList single = head;
-        single << video << audio << tail << output;
-        p.passes << single;
-    }
+    (void) passLogPrefix;
+    QStringList single = head;
+    single << video << audio << tail << output;
+    p.passes << single;
     return p;
+}
+
+bool ClipExporter::canEncode(const QString &codec) const
+{
+    return !videoEncoder(codec).isEmpty();
 }
 
 bool ClipExporter::start(const QVariantMap &params)
@@ -368,7 +418,12 @@ bool ClipExporter::start(const QVariantMap &params)
     }
 
     m_tmp = std::make_unique<QTemporaryDir>();
-    m_plan = plan(params, m_tmp->filePath(QStringLiteral("x264")));
+    QVariantMap planned = params;
+    if (!planned.contains(QStringLiteral("bestBytes")) && m_bestBytes > 0.)
+        planned.insert(QStringLiteral("bestBytes"), m_bestBytes);
+    m_plan = plan(planned, m_tmp->filePath(QStringLiteral("x264")));
+    m_params = planned;
+    m_retried = false;
     if (!m_plan.error.isEmpty())
     {
         m_tmp.reset();
@@ -378,6 +433,8 @@ bool ClipExporter::start(const QVariantMap &params)
 
     m_length = params.value(QStringLiteral("end")).toDouble()
              - params.value(QStringLiteral("start")).toDouble();
+    m_targetBytes = params.value(QStringLiteral("preset")).toString() == QLatin1String("size")
+                  ? params.value(QStringLiteral("targetBytes")).toDouble() : 0.;
     m_copyToClipboard = params.value(QStringLiteral("copyToClipboard")).toBool();
     m_pass = 0;
     m_errors.clear();
@@ -400,21 +457,23 @@ double ClipExporter::estimateBytes(const QVariantMap &params) const
         return 0.;
 
     const QString preset = params.value(QStringLiteral("preset"), QStringLiteral("copy")).toString();
-    if (preset == QLatin1String("size"))
-        return params.value(QStringLiteral("targetBytes")).toDouble() * 0.95;
 
     /* The source's average rate; copying keeps it */
     const double sourceRate = double(source.size()) / mediaLength;
     if (preset == QLatin1String("copy") && !params.value(QStringLiteral("vertical")).toBool())
         return sourceRate * length;
 
-    /* Re-encoding at the quality setting lands around 8 Mbit/s for busy
-     * 1080p game footage with H.264, never above what the source had;
-     * H.265 and AV1 need about 60% and 50% of that */
+    /* A rough guess only, until a few pieces are encoded: re-encoding
+     * at the quality setting lands near the rate of the source (a phone or
+     * a game recorder already spends what the picture needs), H.265 and
+     * AV1 needing about 60% and 50% of what H.264 does */
     const QString codec = params.value(QStringLiteral("codec"), QStringLiteral("h264")).toString();
     const double codecFactor = codec == QLatin1String("av1") ? 0.5
                              : codec == QLatin1String("hevc") ? 0.6 : 1.;
-    return std::min(sourceRate, 8e6 / 8. * codecFactor) * length;
+    const double guess = sourceRate * codecFactor * length;
+    if (preset == QLatin1String("size"))
+        return std::min(guess, params.value(QStringLiteral("targetBytes")).toDouble() * 0.95);
+    return guess;
 }
 
 void ClipExporter::stopMeasuring()
@@ -444,6 +503,7 @@ void ClipExporter::measure(const QVariantMap &params)
 {
     stopMeasuring();
     m_measuredBytes = 0.;
+    m_bestBytes = 0.;
     m_measureParams = params;
 
     QString input = params.value(QStringLiteral("input")).toString();
@@ -455,14 +515,6 @@ void ClipExporter::measure(const QVariantMap &params)
     const QString preset = params.value(QStringLiteral("preset"), QStringLiteral("copy")).toString();
     if (length <= 0. || !QFileInfo::exists(input))
     {
-        emit measuredChanged();
-        return;
-    }
-
-    /* A size limit is met by the encoder: nothing to measure */
-    if (preset == QLatin1String("size"))
-    {
-        m_measuredBytes = estimateBytes(params);
         emit measuredChanged();
         return;
     }
@@ -542,6 +594,14 @@ void ClipExporter::measureNextSample()
         const double length = m_measureParams.value(QStringLiteral("end")).toDouble()
                             - m_measureParams.value(QStringLiteral("start")).toDouble();
         m_measuredBytes = m_sampledSeconds > 0. ? m_sampledBytes / m_sampledSeconds * length : 0.;
+        /* The pieces are encoded at full quality: what the clip would weigh
+         * without a limit */
+        m_bestBytes = m_measuredBytes;
+        /* The pieces are too short for the limit to bite: it caps the
+         * size of the whole, and only lowers it */
+        if (m_measureParams.value(QStringLiteral("preset")).toString() == QLatin1String("size"))
+            m_measuredBytes = std::min(m_measuredBytes,
+                                       m_measureParams.value(QStringLiteral("targetBytes")).toDouble() * 0.95);
         if (m_meter)
             m_meter->deleteLater();
         m_meter = nullptr;
@@ -694,14 +754,29 @@ void ClipExporter::runPass()
             m_errors = m_errors.right(4096);
     });
     connect(m_process, &QProcess::finished, this, &ClipExporter::onFinished);
+    connect(m_process, &QProcess::errorOccurred, this, [this](QProcess::ProcessError error) {
+        /* Not started: no finished() will come */
+        if (error != QProcess::FailedToStart || !m_process)
+            return;
+        m_process->deleteLater();
+        m_process = nullptr;
+        finish(false, QStringLiteral("ffmpeg could not be started."));
+    });
+    m_elapsed.start();
     m_process->start();
 }
 
 void ClipExporter::onOutput()
 {
-    /* -progress writes key=value lines; out_time_us is the position reached */
-    static const QRegularExpression outTime(QStringLiteral("out_time_(?:us|ms)=(\\d+)"));
-    const QString text = QString::fromUtf8(m_process->readAllStandardOutput());
+    /* -progress writes key=value lines; out_time_us is the position
+     * reached. A read can end in the middle of a line: keep that part. */
+    static const QRegularExpression outTime(QStringLiteral("out_time_(?:us|ms)=(\\d+)\\n"));
+    m_progressLine += m_process->readAllStandardOutput();
+    const int end = m_progressLine.lastIndexOf('\n');
+    if (end < 0)
+        return;
+    const QString text = QString::fromUtf8(m_progressLine.left(end + 1));
+    m_progressLine.remove(0, end + 1);
     double reached = -1.;
     for (auto it = outTime.globalMatch(text); it.hasNext(); )
         reached = it.next().captured(1).toDouble() / 1e6;
@@ -710,6 +785,16 @@ void ClipExporter::onOutput()
 
     const double passes = m_plan.passes.size();
     setProgress((m_pass + std::clamp(reached / m_length, 0., 1.)) / passes);
+
+    /* Time left at the pace so far, once there is a pace to go by */
+    const double elapsed = m_elapsed.elapsed() / 1000.;
+    const double left = m_progress > 0.02 && elapsed > 1.
+                      ? elapsed * (1. - m_progress) / m_progress : -1.;
+    if (left != m_secondsLeft)
+    {
+        m_secondsLeft = left;
+        emit secondsLeftChanged();
+    }
 }
 
 void ClipExporter::onFinished(int exitCode, QProcess::ExitStatus status)
@@ -729,11 +814,39 @@ void ClipExporter::onFinished(int exitCode, QProcess::ExitStatus status)
         runPass();
         return;
     }
+    /* The limit is aimed under, not promised by every encoder (libaom
+     * goes over by some 15%): once, the clip is made again at a rate lowered
+     * by as much as it went over. The file is the one this export has just
+     * made (-n refuses an existing one), nothing else is removed. */
+    const qint64 size = QFileInfo(m_plan.output).size();
+    if (m_targetBytes > 0. && size > m_targetBytes && !m_retried && QFile::remove(m_plan.output))
+    {
+        m_retried = true;
+        QVariantMap again = m_params;
+        again.insert(QStringLiteral("bestBytes"), 1e18);
+        again.insert(QStringLiteral("rateScale"), m_targetBytes / double(size) * 0.93);
+        const Plan retry = plan(again, m_tmp->filePath(QStringLiteral("x264")));
+        if (retry.error.isEmpty())
+        {
+            m_plan = retry;
+            m_pass = 0;
+            setProgress(0.);
+            runPass();
+            return;
+        }
+    }
+    if (m_targetBytes > 0. && size > m_targetBytes)
+        m_overLimitBytes = size;
+    else
+        m_overLimitBytes = 0;
     finish(true, {});
 }
 
 void ClipExporter::finish(bool ok, const QString &error)
 {
+    m_progressLine.clear();
+    m_secondsLeft = -1.;
+    emit secondsLeftChanged();
     if (ok)
     {
         setProgress(1.);

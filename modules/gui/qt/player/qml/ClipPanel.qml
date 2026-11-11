@@ -359,9 +359,12 @@ FocusScope {
 
                 Choice {
                     required property var modelData
+                    // The ffmpeg found may lack an encoder (AV1 in some builds)
+                    readonly property bool available: exporter.canEncode(modelData.key)
                     text: modelData.name
                     current: root.codec === modelData.key
-                    enabled: !root._running
+                    enabled: !root._running && available
+                    opacity: available ? 1 : 0.4
                     onClicked: root.codec = modelData.key
                 }
             }
@@ -431,6 +434,21 @@ FocusScope {
                 to: 1
                 value: exporter.progress
             }
+            // How far, and how long still at the pace so far
+            Text {
+                visible: root._running
+                text: {
+                    const percent = qsTr("%1%").arg(Math.floor(exporter.progress * 100))
+                    const left = exporter.secondsLeft
+                    if (left < 0)
+                        return percent
+                    const s = Math.ceil(left)
+                    const time = Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0")
+                    return qsTr("%1, %2 left").arg(percent).arg(time)
+                }
+                color: theme.fg.secondary
+                font.pixelSize: VLCStyle.fontSize_normal
+            }
             Widgets.ButtonExt {
                 visible: root._running
                 text: qsTr("Cancel")
@@ -443,11 +461,14 @@ FocusScope {
             Layout.alignment: Qt.AlignRight
             visible: !root._running && text !== ""
             text: {
-                // The measured size once known, a quick guess meanwhile
+                // The measured size once known; while a few pieces are
+                // encoded to find it out, a guess that can be far off
+                if (exporter.measuring && exporter.measuredBytes <= 0)
+                    return qsTr("Working out the size…")
                 const bytes = exporter.measuredBytes > 0 ? exporter.measuredBytes
                                                          : exporter.estimateBytes(root._params({}))
                 const size = root._formatSize(bytes)
-                return size === "" ? "" : (root._preset === "size" ? "≤ " : "≈ ") + size
+                return size === "" ? "" : "≈ " + size
             }
             color: theme.fg.secondary
             font.pixelSize: VLCStyle.fontSize_normal
@@ -465,6 +486,9 @@ FocusScope {
                 text: {
                     if (root._error !== "")
                         return root._error
+                    if (exporter.overLimitBytes > 0)
+                        return qsTr("Came out at %1, over the limit; the file is kept.")
+                                   .arg(root._formatSize(exporter.overLimitBytes))
                     if (root._resultCopied)
                         return qsTr("Copied. Paste it into a chat or a folder.")
                     return qsTr("Saved to %1").arg(root._resultPath)

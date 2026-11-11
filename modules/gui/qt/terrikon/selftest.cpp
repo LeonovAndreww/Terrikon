@@ -113,18 +113,38 @@ private:
         m_timer.start();
 
         auto exporter = std::make_shared<ClipExporter>();
+        auto estimate = std::make_shared<double>(0.);
         connect(exporter.get(), &ClipExporter::finished, this,
-                [this, i, exporter](bool ok, const QString &output, const QString &error) {
+                [this, i, exporter, estimate](bool ok, const QString &output, const QString &error) {
             m_clips.append(QJsonObject{
                 { QStringLiteral("ok"), ok },
                 { QStringLiteral("output"), output },
                 { QStringLiteral("error"), error },
                 { QStringLiteral("bytes"), ok ? QFileInfo(output).size() : 0 },
+                { QStringLiteral("estimate"), *estimate },
+                { QStringLiteral("overLimit"), exporter->overLimitBytes() },
                 { QStringLiteral("ms"), qint64(m_timer.elapsed()) },
             });
             QTimer::singleShot(0, this, [this, i, exporter] { testClip(i + 1); });
         });
-        exporter->start(params);
+
+        /* The size shown before making the clip, measured as the panel does,
+         * then the clip itself */
+        auto started = std::make_shared<bool>(false);
+        auto go = [this, exporter, params, estimate, started] {
+            if (*started || exporter->measuring())
+                return;
+            *started = true;
+            *estimate = exporter->measuredBytes() > 0 ? exporter->measuredBytes()
+                                                      : exporter->estimateBytes(params);
+            m_timer.start();
+            exporter->start(params);
+        };
+        connect(exporter.get(), &ClipExporter::measuredChanged, this, go);
+        QVariantMap measured = params;
+        measured.remove(QStringLiteral("output"));
+        exporter->measure(measured);
+        QTimer::singleShot(0, this, go);
     }
 
     void writeReport()

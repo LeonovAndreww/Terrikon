@@ -20,6 +20,7 @@
 #ifndef TERRIKON_MEDIA_TOOLS_HPP
 #define TERRIKON_MEDIA_TOOLS_HPP
 
+#include <QElapsedTimer>
 #include <QObject>
 #include <QProcess>
 #include <QString>
@@ -53,6 +54,11 @@ class ClipExporter : public QObject
      * unknown */
     Q_PROPERTY(double measuredBytes READ measuredBytes NOTIFY measuredChanged FINAL)
     Q_PROPERTY(bool measuring READ measuring NOTIFY measuredChanged FINAL)
+    /* Seconds the clip being made still needs at the pace so far; -1 while
+     * unknown */
+    Q_PROPERTY(double secondsLeft READ secondsLeft NOTIFY secondsLeftChanged FINAL)
+    /* Size of the last clip made when it came out over its size limit, else 0 */
+    Q_PROPERTY(double overLimitBytes READ overLimitBytes NOTIFY finished FINAL)
 
 public:
     explicit ClipExporter(QObject *parent = nullptr);
@@ -87,11 +93,15 @@ public:
     Q_INVOKABLE QString askSavePath(const QString &suggested) const;
     /* Shows a file in the system file manager, selected where possible */
     Q_INVOKABLE void reveal(const QString &path) const;
+    /* Whether the ffmpeg found can encode "h264", "hevc" or "av1" */
+    Q_INVOKABLE bool canEncode(const QString &codec) const;
 
     bool running() const { return m_process != nullptr; }
     double progress() const { return m_progress; }
     double measuredBytes() const { return m_measuredBytes; }
     bool measuring() const { return m_meter != nullptr; }
+    double secondsLeft() const { return m_secondsLeft; }
+    double overLimitBytes() const { return double(m_overLimitBytes); }
 
     struct Plan
     {
@@ -105,6 +115,7 @@ signals:
     void runningChanged();
     void progressChanged();
     void measuredChanged();
+    void secondsLeftChanged();
     void finished(bool ok, const QString &output, const QString &error);
 
 private:
@@ -124,10 +135,18 @@ private:
     double m_progress = 0.;
     bool m_copyToClipboard = false;
     QByteArray m_errors;
+    QByteArray m_progressLine;
+    QElapsedTimer m_elapsed;
+    double m_secondsLeft = -1.;
+    double m_targetBytes = 0.;
+    qint64 m_overLimitBytes = 0;
     std::unique_ptr<QTemporaryDir> m_tmp;
 
     QProcess *m_meter = nullptr;
     double m_measuredBytes = 0.;
+    double m_bestBytes = 0.; /* full quality, measured, for the size limit */
+    QVariantMap m_params;     /* of the clip being made */
+    bool m_retried = false;
     QVariantMap m_measureParams;
     QList<QPair<double, double>> m_samples; /* start, length still to encode */
     double m_sampledSeconds = 0.;
