@@ -107,9 +107,11 @@ public:
     {
         QList<QStringList> passes; /* ffmpeg arguments of each pass */
         QString output;
+        QString part;   /* what ffmpeg writes, renamed to output when done */
         QString error;
     };
     static Plan plan(const QVariantMap &params, const QString &passLogPrefix);
+    QString publish();
 
 signals:
     void runningChanged();

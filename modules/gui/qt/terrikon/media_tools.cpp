@@ -30,6 +30,7 @@
 #include <QCoreApplication>
 #include <QCryptographicHash>
 #include <QDateTime>
+#include <QSaveFile>
 #include <QDesktopServices>
 #include <QDir>
 #include <QFile>
@@ -97,6 +98,61 @@ static const QStringList &ffmpegEncoders()
     return encoders;
 }
 
+/* A process that cannot start sends errorOccurred(FailedToStart) and never
+ * finished(): the finished handlers, which all take a crash as a failure,
+ * are run anyway, so nothing waits for it forever */
+static QProcess *watched(QProcess *process)
+{
+    QObject::connect(process, &QProcess::errorOccurred, process, [process](QProcess::ProcessError error) {
+        if (error == QProcess::FailedToStart)
+            emit process->finished(-1, QProcess::CrashExit);
+    });
+    return process;
+}
+
+/* Whether MP4 can take every stream a copy would keep, as ffprobe sees
+ * them; true when it cannot tell (MP4 then, as before) */
+static bool fitsMp4(const QString &input, bool audioCopied)
+{
+    const QString ffprobe = findTool(QStringLiteral("ffprobe"));
+    if (ffprobe.isEmpty())
+        return true;
+    QProcess process;
+    process.start(ffprobe, { QStringLiteral("-v"), QStringLiteral("error"),
+                             QStringLiteral("-show_entries"), QStringLiteral("stream=codec_type,codec_name:stream_disposition=attached_pic"),
+                             QStringLiteral("-of"), QStringLiteral("csv=p=0"), input });
+    if (!process.waitForFinished(4000))
+    {
+        process.kill();
+        process.waitForFinished(1000);
+        return true;
+    }
+    static const QStringList videoOk = { QStringLiteral("h264"), QStringLiteral("hevc"), QStringLiteral("av1"),
+                                         QStringLiteral("mpeg4"), QStringLiteral("vp9") };
+    static const QStringList audioOk = { QStringLiteral("aac"), QStringLiteral("mp3"), QStringLiteral("opus"),
+                                         QStringLiteral("flac"), QStringLiteral("ac3"), QStringLiteral("eac3"),
+                                         QStringLiteral("alac") };
+    bool videoSeen = false;
+    for (const QString &line : QString::fromUtf8(process.readAllStandardOutput()).split(QLatin1Char('\n')))
+    {
+        const QStringList f = line.trimmed().split(QLatin1Char(','));
+        if (f.size() < 2)
+            continue;
+        /* codec_name,codec_type[,attached_pic] */
+        const QString &codec = f[0], &type = f[1];
+        const bool cover = f.size() > 2 && f[2] == QLatin1String("1");
+        if (type == QLatin1String("video") && !cover && !videoSeen)
+        {
+            videoSeen = true;
+            if (!videoOk.contains(codec))
+                return false;
+        }
+        else if (type == QLatin1String("audio") && audioCopied && !audioOk.contains(codec))
+            return false;
+    }
+    return true;
+}
+
 /* The software encoder used for a codec, empty when the ffmpeg found has
  * none. Hardware ones are left out: whether they work depends on the
  * graphics card, not on the build. */
@@ -152,6 +208,8 @@ ClipExporter::~ClipExporter()
         m_process->disconnect(this);
         m_process->kill();
         m_process->waitForFinished(2000);
+        if (!m_plan.part.isEmpty())
+            QFile::remove(m_plan.part);
     }
 }
 
@@ -214,8 +272,12 @@ ClipExporter::Plan ClipExporter::plan(const QVariantMap &params, const QString &
     const int outputTracks = allAudio ? 2 : (merge && tracks.size() > 1) ? 1 : tracks.size();
 
     /* Several audio tracks need Matroska; one fits MP4, which chat apps
-     * play inline */
-    const QString extension = outputTracks > 1 ? QStringLiteral("mkv") : QStringLiteral("mp4");
+     * play inline, unless copied streams are ones MP4 does not take (VP8,
+     * Vorbis, PCM...) */
+    const bool audioCopied = !audioChanged && preset != QLatin1String("size");
+    const QString extension = outputTracks > 1 ? QStringLiteral("mkv")
+        : (copyVideo && !fitsMp4(input, audioCopied)) ? QStringLiteral("mkv")
+        : QStringLiteral("mp4");
 
     QString output = params.value(QStringLiteral("output")).toString();
     if (output.isEmpty())
@@ -239,6 +301,32 @@ ClipExporter::Plan ClipExporter::plan(const QVariantMap &params, const QString &
             output = base + QStringLiteral("_%1.").arg(i) + extension;
     }
     p.output = output;
+
+    /* Making the clip over its own source would destroy it */
+    {
+        const QString a = QFileInfo(input).canonicalFilePath();
+        const QString b = QFileInfo(output).canonicalFilePath();
+#ifdef _WIN32
+        const Qt::CaseSensitivity cs = Qt::CaseInsensitive;
+#else
+        const Qt::CaseSensitivity cs = Qt::CaseSensitive;
+#endif
+        if (!b.isEmpty() && a.compare(b, cs) == 0)
+        {
+            p.error = QStringLiteral("The clip cannot replace the video it is made from.");
+            return p;
+        }
+    }
+    /* ffmpeg writes a file of its own next to the output (same disk, so
+     * the rename at the end is a rename); the output only appears, or is
+     * replaced, once the clip is complete */
+    {
+        const QFileInfo out(output);
+        const QString tag = QString::number(QDateTime::currentMSecsSinceEpoch(), 36)
+                          + QString::number(QCoreApplication::applicationPid(), 36);
+        p.part = out.dir().filePath(out.completeBaseName() + QStringLiteral(".part-") + tag
+                                    + QLatin1Char('.') + out.suffix());
+    }
 
     const QString encoder = copyVideo ? QString() : videoEncoder(codec);
     if (!copyVideo && encoder.isEmpty())
@@ -274,11 +362,14 @@ ClipExporter::Plan ClipExporter::plan(const QVariantMap &params, const QString &
         const double cropX = std::clamp(params.value(QStringLiteral("cropX"), 0.5).toDouble(), 0., 1.);
         const double cropY = std::clamp(params.value(QStringLiteral("cropY"), 0.5).toDouble(), 0., 1.);
         const double zoom = std::clamp(params.value(QStringLiteral("cropZoom"), 1.).toDouble(), 1., 4.);
-        /* A 9:16 window, full height at zoom 1, smaller when zoomed in,
-         * placed by cropX/cropY within what is left around it */
-        const QString w = QStringLiteral("ih*9/16/%1").arg(zoom, 0, 'f', 3);
-        const QString h = QStringLiteral("ih/%1").arg(zoom, 0, 'f', 3);
-        videoFilters << QStringLiteral("crop=%1:%2:(iw-%1)*%3:(ih-%2)*%4")
+        /* A 9:16 window, as large as fits at zoom 1 (full height, or full
+         * width of a source narrower than 9:16), smaller when zoomed in,
+         * placed by cropX/cropY within what is left around it. Anamorphic
+         * sources are made square-pixel first, so 9:16 is what is seen. */
+        const QString w = QStringLiteral("min(iw\\,ih*9/16)/%1").arg(zoom, 0, 'f', 3);
+        const QString h = QStringLiteral("min(iw\\,ih*9/16)*16/9/%1").arg(zoom, 0, 'f', 3);
+        videoFilters << QStringLiteral("scale=trunc(iw*sar/2)*2:ih,setsar=1")
+                     << QStringLiteral("crop=%1:%2:(iw-%1)*%3:(ih-%2)*%4")
                             .arg(w, h).arg(cropX, 0, 'f', 3).arg(cropY, 0, 'f', 3)
                      << ((sizeLimited && videoKbps < 2500) ? QStringLiteral("scale=720:1280")
                                                           : QStringLiteral("scale=1080:1920"));
@@ -299,7 +390,7 @@ ClipExporter::Plan ClipExporter::plan(const QVariantMap &params, const QString &
         QStringLiteral("-t"), seconds(length),
     };
 
-    QStringList video = { QStringLiteral("-map"), QStringLiteral("0:v:0?") };
+    QStringList video = { QStringLiteral("-map"), QStringLiteral("0:V:0?") };
     if (!videoFilters.isEmpty())
         video << QStringLiteral("-vf") << videoFilters.join(QLatin1Char(','));
     if (copyVideo)
@@ -396,7 +487,7 @@ ClipExporter::Plan ClipExporter::plan(const QVariantMap &params, const QString &
 
     (void) passLogPrefix;
     QStringList single = head;
-    single << video << audio << tail << output;
+    single << video << audio << tail << p.part;
     p.passes << single;
     return p;
 }
@@ -556,7 +647,7 @@ void ClipExporter::measure(const QVariantMap &params)
         }
 
         /* Reading from the keyframe before the start, as the copy does */
-        m_meter = new QProcess(this);
+        m_meter = watched(new QProcess(this));
         m_meter->setProgram(findTool(QStringLiteral("ffprobe")));
         m_meter->setArguments({
             QStringLiteral("-v"), QStringLiteral("error"),
@@ -631,7 +722,7 @@ void ClipExporter::measureNextSample()
 
     if (m_meter)
         m_meter->deleteLater();
-    m_meter = new QProcess(this);
+    m_meter = watched(new QProcess(this));
     m_meter->setProgram(findTool(QStringLiteral("ffmpeg")));
     m_meter->setArguments(args);
     lowPriority(m_meter);
@@ -818,8 +909,13 @@ void ClipExporter::onFinished(int exitCode, QProcess::ExitStatus status)
      * goes over by some 15%): once, the clip is made again at a rate lowered
      * by as much as it went over. The file is the one this export has just
      * made (-n refuses an existing one), nothing else is removed. */
-    const qint64 size = QFileInfo(m_plan.output).size();
-    if (m_targetBytes > 0. && size > m_targetBytes && !m_retried && QFile::remove(m_plan.output))
+    const qint64 size = QFileInfo(m_plan.part).size();
+    if (size <= 0)
+    {
+        finish(false, QStringLiteral("ffmpeg made an empty file."));
+        return;
+    }
+    if (m_targetBytes > 0. && size > m_targetBytes && !m_retried && QFile::remove(m_plan.part))
     {
         m_retried = true;
         QVariantMap again = m_params;
@@ -839,11 +935,35 @@ void ClipExporter::onFinished(int exitCode, QProcess::ExitStatus status)
         m_overLimitBytes = size;
     else
         m_overLimitBytes = 0;
-    finish(true, {});
+    const QString error = publish();
+    finish(error.isEmpty(), error);
+}
+
+/* Moves the finished part to the output. A file already there (Save As,
+ * replacing confirmed) is set aside first and put back if the move fails. */
+QString ClipExporter::publish()
+{
+    const QString &part = m_plan.part, &output = m_plan.output;
+    if (!QFileInfo::exists(output))
+        return QFile::rename(part, output) ? QString()
+             : QStringLiteral("The clip could not be saved as %1.").arg(QDir::toNativeSeparators(output));
+    const QString old = part + QStringLiteral(".old");
+    if (!QFile::rename(output, old))
+        return QStringLiteral("%1 could not be replaced (is it open somewhere?).").arg(QDir::toNativeSeparators(output));
+    if (!QFile::rename(part, output))
+    {
+        QFile::rename(old, output);
+        return QStringLiteral("The clip could not be saved as %1.").arg(QDir::toNativeSeparators(output));
+    }
+    QFile::remove(old);
+    return {};
 }
 
 void ClipExporter::finish(bool ok, const QString &error)
 {
+    /* whatever this export made and did not publish; nothing else */
+    if (!m_plan.part.isEmpty() && QFileInfo::exists(m_plan.part))
+        QFile::remove(m_plan.part);
     m_progressLine.clear();
     m_secondsLeft = -1.;
     emit secondsLeftChanged();
@@ -919,7 +1039,7 @@ void WaveformLoader::load(const QString &path)
 
 void WaveformLoader::probe()
 {
-    m_process = new QProcess(this);
+    m_process = watched(new QProcess(this));
     m_process->setProgram(findTool(QStringLiteral("ffprobe")));
     m_process->setArguments({ QStringLiteral("-v"), QStringLiteral("error"),
                               QStringLiteral("-select_streams"), QStringLiteral("a"),
@@ -985,7 +1105,7 @@ void WaveformLoader::decodeNext()
     m_tracks[m_current].clear();
 
     /* Mono, low rate 16-bit PCM is plenty for peaks and fast to decode */
-    m_process = new QProcess(this);
+    m_process = watched(new QProcess(this));
     m_process->setProgram(findTool(QStringLiteral("ffmpeg")));
     m_process->setArguments({ QStringLiteral("-hide_banner"), QStringLiteral("-nostdin"),
                               QStringLiteral("-loglevel"), QStringLiteral("error"),
@@ -1035,10 +1155,13 @@ void WaveformLoader::onDecodeFinished(int exitCode, QProcess::ExitStatus status)
     m_loaded[track] = true;
     if (status == QProcess::NormalExit && exitCode == 0)
     {
-        QFile cache(cacheFile(track));
+        QSaveFile cache(cacheFile(track));
         if (cache.open(QIODevice::WriteOnly))
+        {
             cache.write(reinterpret_cast<const char *>(m_tracks[track].constData()),
                         m_tracks[track].size() * sizeof(float));
+            cache.commit();
+        }
     }
     emit trackLoaded(track);
     decodeNext();
@@ -1172,7 +1295,7 @@ void ThumbnailStrip::startPass(bool dense)
          << QDir(dir).filePath(QStringLiteral("sheet-%03d.jpg"));
 
     m_densePass = dense;
-    m_process = new QProcess(this);
+    m_process = watched(new QProcess(this));
     m_process->setProgram(ffmpeg);
     m_process->setArguments(args);
 #ifdef _WIN32
