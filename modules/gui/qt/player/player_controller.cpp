@@ -1990,6 +1990,15 @@ void PlayerController::updateTimeFromTimer()
         updateTime(system_now, false);
 }
 
+float PlayerController::lastPosition()
+{
+    Q_D(PlayerController);
+    vlc_player_locker lock{ d->m_player };
+    if (!d->isCurrentItemSynced())
+        return -1.f;
+    return vlc_player_GetLastPosition(d->m_player);
+}
+
 void PlayerController::restorePlaybackPos()
 {
     Q_D(PlayerController);

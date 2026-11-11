@@ -332,6 +332,8 @@ public slots:
     void updateTimeFromTimer();
     bool canRestorePlayback() const;
     void restorePlaybackPos();
+    /* Terrikon: where the last playback of this media stopped, 0..1, or -1 */
+    float lastPosition();
     void openVLsub();
     void acknowledgeRestoreCallback();
     QUrl getUrl() const;

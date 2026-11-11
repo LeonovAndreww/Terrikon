@@ -180,6 +180,36 @@ T.ProgressBar {
         transform: Scale { origin.y: VLCStyle.dp(8, VLCStyle.scale); yScale: -1 }
     }
 
+    // Terrikon: where the last playback stopped, a small blue tick under the
+    // bar (as long as this media plays); click to go back there
+    MouseArea {
+        readonly property real _last: {
+            void Player.playingState
+            void Player.url
+            void Player.canRestorePlayback
+            return Player.lastPosition()
+        }
+        visible: _last > 0.005 && _last < 0.98
+        x: _last * control.width - width / 2
+        y: control.barHeight / 2
+        z: 1
+        width: VLCStyle.dp(10, VLCStyle.scale)
+        height: control.barHeight * 2.5
+        cursorShape: Qt.PointingHandCursor
+        onClicked: Player.position = _last
+
+        Rectangle {
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.top: parent.top
+            width: VLCStyle.dp(3, VLCStyle.scale)
+            height: control.barHeight * 2
+            radius: width / 2
+            color: "#4FC3F7"
+            border.color: Qt.rgba(0, 0, 0, 0.6)
+            border.width: 1
+        }
+    }
+
     // Marked moments: a tick above the bar each; click to go there,
     // right click to remove
     Repeater {
