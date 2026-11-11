@@ -401,6 +401,11 @@ static int SetViewpoint(vout_display_t *vd, const vlc_viewpoint_t *viewpoint)
 static int UpdateStaging(vout_display_t *vd, const video_format_t *fmt)
 {
     vout_display_sys_t *sys = static_cast<vout_display_sys_t *>(vd->sys);
+    /* the format resources can be created again (display or format change):
+     * the previous staging textures and views would hold the device forever */
+    ReleaseD3D11PictureSys(&sys->stagingSys);
+    sys->stagingSys = {};
+
     if (!sys->use_staging_texture)
         return VLC_SUCCESS;
 
@@ -1769,6 +1774,7 @@ static void Direct3D11DestroyResources(vout_display_t *vd)
     sys->regionQuad.Reset();
 
     ReleaseD3D11PictureSys(&sys->stagingSys);
+    sys->stagingSys = {};
 
     D3D11_ReleaseVertexShader(&sys->flatVShader);
     D3D11_ReleaseVertexShader(&sys->projectionVShader);
