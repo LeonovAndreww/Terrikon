@@ -248,7 +248,10 @@ FocusScope{
         anchors.top: root.top
         anchors.leftMargin:  root._sideMargin
 
-        implicitWidth: resumeVisible ? resumeDialog.implicitWidth
+        // Terrikon: the question to resume goes beside the back button,
+        // not in its place
+        implicitWidth: resumeVisible ? logoGroup.implicitWidth + VLCStyle.margin_small
+                                       + resumeDialog.implicitWidth
                                      : logoGroup.implicitWidth
 
         implicitHeight: {
@@ -270,9 +273,12 @@ FocusScope{
         Item {
             id: logoGroup
 
-            anchors.fill: parent
+            anchors.left: parent.left
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            width: implicitWidth
 
-            visible: (root._showTopBar && root.resumeVisible === false)
+            visible: root._showTopBar || root.resumeVisible
 
             implicitHeight: VLCStyle.icon_banner + VLCStyle.margin_xxsmall * 2
             implicitWidth: backBtn.implicitWidth + logo.implicitWidth + VLCStyle.margin_xxsmall
@@ -313,13 +319,16 @@ FocusScope{
         ResumeDialog {
             id: resumeDialog
 
-            anchors.fill: parent
-            //add aditional margin so it align with menubar text when visible (see MenuBar.qml)
-            anchors.leftMargin: VLCStyle.margin_xsmall
+            anchors.left: logoGroup.right
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            anchors.right: parent.right
+            anchors.leftMargin: VLCStyle.margin_small
 
             maxWidth: ((root.showCSD && !root.pinControls) ? csdDecorations : playlistGroup).x
                 - VLCStyle.applicationHorizontalMargin
                 - VLCStyle.margin_large
+                - logoGroup.implicitWidth - VLCStyle.margin_small
 
             colorContext.palette: theme.palette
 

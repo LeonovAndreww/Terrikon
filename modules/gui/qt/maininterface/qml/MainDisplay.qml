@@ -995,14 +995,18 @@ FocusScope {
             width: VLCStyle.dp(320, VLCStyle.scale)
             height: VLCStyle.dp(180, VLCStyle.scale)
             z: 4
-            visible: g_mainDisplay._showMiniPlayer && MainCtx.hasEmbededVideo
-            enabled: g_mainDisplay._showMiniPlayer && MainCtx.hasEmbededVideo
+            // Terrikon: not while the video stopped on leaving the player is
+            // still closing, which showed it for a moment
+            readonly property bool _videoGoesOn: Player.playingState !== Player.PLAYING_STATE_STOPPING
+                                                 && Player.playingState !== Player.PLAYING_STATE_STOPPED
+            visible: g_mainDisplay._showMiniPlayer && MainCtx.hasEmbededVideo && _videoGoesOn
+            enabled: g_mainDisplay._showMiniPlayer && MainCtx.hasEmbededVideo && _videoGoesOn
 
             Binding on visible {
                 id: visibleBinding
                 when: false
                 delayed: true
-                value: g_mainDisplay._showMiniPlayer && MainCtx.hasEmbededVideo
+                value: g_mainDisplay._showMiniPlayer && MainCtx.hasEmbededVideo && playerPip._videoGoesOn
             }
 
             Component.onCompleted: {

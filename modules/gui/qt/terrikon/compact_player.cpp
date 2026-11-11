@@ -125,6 +125,18 @@ void CompactPlayer::enter()
     window->requestActivate();
 
     m_active = true;
+    m_entered.start();
+    /* Maximized from the task bar or with Win+Up: the big window is wanted,
+     * not the small one stretched over the screen */
+    m_stateWatch = connect(window, &QWindow::visibilityChanged, this, [this](QWindow::Visibility visibility) {
+        if (!m_active || (visibility != QWindow::Maximized && visibility != QWindow::FullScreen))
+            return;
+        /* Entering goes through the state of before (maximized say) */
+        if (m_entered.isValid() && m_entered.elapsed() < 700)
+            return;
+        m_visibility = visibility;
+        QMetaObject::invokeMethod(this, &CompactPlayer::leave, Qt::QueuedConnection);
+    });
     emit activeChanged();
 }
 
@@ -133,6 +145,7 @@ void CompactPlayer::leave()
     QWindow *window = m_ctx->intfMainWindow();
     if (!m_active || !window)
         return;
+    disconnect(m_stateWatch);
 
     m_ctx->setInterfaceAlwaysOnTop(m_onTop);
     m_ctx->setMinimalView(m_minimalView);

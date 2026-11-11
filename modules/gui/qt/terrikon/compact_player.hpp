@@ -20,6 +20,7 @@
 #ifndef TERRIKON_COMPACT_PLAYER_HPP
 #define TERRIKON_COMPACT_PLAYER_HPP
 
+#include <QElapsedTimer>
 #include <QObject>
 #include <QRect>
 #include <QSize>
@@ -64,6 +65,8 @@ private:
     static CompactPlayer *s_instance;
     MainCtx *m_ctx;
     bool m_active = false;
+    QMetaObject::Connection m_stateWatch;
+    QElapsedTimer m_entered;
 
     /* What leave() puts back */
     QRect m_geometry;
