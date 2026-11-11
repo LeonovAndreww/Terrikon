@@ -1265,6 +1265,9 @@ PlayerControllerPrivate::PlayerControllerPrivate(PlayerController *playercontrol
     m_fullscreen = vlc_player_vout_IsFullscreen( m_player );
 
     m_volume = vlc_player_aout_GetVolume( m_player );
+
+    /* Terrikon: the tracks of game recordings stay as chosen */
+    m_audioTracks.remember( p_intf->mainSettings, QStringLiteral("Terrikon/audio-tracks") );
 }
 
 void PlayerControllerPrivate::addSMPTETimer()

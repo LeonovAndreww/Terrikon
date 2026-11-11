@@ -16,6 +16,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 #include "input_models.hpp"
+#include <QSettings>
 
 #include "player/player_controller.hpp"
 
@@ -67,9 +68,60 @@ void TrackListModel::addSilentTracks()
     });
     if (!playing)
         return;
-    vlc_player_locker lock{ m_player };
-    for (int i = 0; i < getCount(); i++)
-        selectMuted(i);
+    {
+        vlc_player_locker lock{ m_player };
+        for (int i = 0; i < getCount(); i++)
+            selectMuted(i);
+    }
+    /* Once the player has said which tracks it now plays */
+    if (m_settings && !m_applied)
+        QTimer::singleShot(400, this, &TrackListModel::applyRemembered);
+}
+
+void TrackListModel::remember(QSettings *settings, const QString &key)
+{
+    m_settings = settings;
+    m_settingsKey = key;
+    if (m_settings)
+        setMultiSelect(m_settings->value(m_settingsKey + QStringLiteral("-several"), false).toBool());
+}
+
+void TrackListModel::saveEnabled() const
+{
+    if (!m_settings || !m_multiSelect)
+        return;
+    QStringList titles;
+    for (const Data &track : m_data)
+        if (track.m_selected && !track.m_muted)
+            titles << track.m_title;
+    if (!titles.isEmpty())
+        m_settings->setValue(m_settingsKey + QStringLiteral("-on"), titles);
+}
+
+/* Switches on the tracks named as the ones on last time, off the others,
+ * when at least one name matches: the recordings of one game have the same
+ * tracks ("Game", "Mic"), other media are left as the player chose */
+void TrackListModel::applyRemembered()
+{
+    if (!m_settings || !m_multiSelect || m_applied || m_data.isEmpty())
+        return;
+    const QStringList titles = m_settings->value(m_settingsKey + QStringLiteral("-on")).toStringList();
+    const bool matches = std::any_of(m_data.cbegin(), m_data.cend(), [&](const Data &track) {
+        return titles.contains(track.m_title);
+    });
+    m_applied = true;
+    if (!matches)
+        return;
+    QSettings *settings = m_settings;
+    m_settings = nullptr; /* not saved back while applying */
+    for (int i = 0; i < m_data.size(); ++i)
+    {
+        const bool want = titles.contains(m_data[i].m_title);
+        const bool on = m_data[i].m_selected && !m_data[i].m_muted;
+        if (want != on && m_data[i].m_selected)
+            setData(index(i), want, Qt::CheckStateRole);
+    }
+    m_settings = settings;
 }
 
 void TrackListModel::selectMuted(int row)
@@ -139,6 +191,7 @@ bool TrackListModel::setData(const QModelIndex &index, const QVariant &value, in
         track.m_muted = !select;
         vlc_player_SetEsIdVolume(m_player, track.m_id.get(), select ? track.m_volume : 0.f);
         emit dataChanged(index, index, { Qt::CheckStateRole });
+        saveEnabled();
         return true;
     }
 
@@ -182,6 +235,9 @@ void TrackListModel::updateTracks(vlc_player_list_action action, const vlc_playe
         beginRemoveRows({}, pos, pos);
         m_data.erase(it);
         endRemoveRows();
+        /* All gone: the next media gets the remembered tracks again */
+        if (m_data.isEmpty())
+            m_applied = false;
         emit countChanged();
         break;
     }
@@ -232,6 +288,7 @@ void TrackListModel::updateTrackSelection(vlc_es_id_t *trackid, bool selected)
 
 void TrackListModel::clear()
 {
+    m_applied = false;
     beginRemoveRows({}, 0, m_data.size() - 1);
     m_data.clear();
     endRemoveRows();
@@ -290,6 +347,8 @@ void TrackListModel::setMultiSelect(bool multiSelect)
         if ( firstSelectedIndex != -1 )
             setData( index(firstSelectedIndex), true, Qt::CheckStateRole );
     }
+    if (m_settings)
+        m_settings->setValue(m_settingsKey + QStringLiteral("-several"), m_multiSelect);
     emit multiSelectChanged(m_multiSelect);
 }
 

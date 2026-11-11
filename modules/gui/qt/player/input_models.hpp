@@ -41,6 +41,8 @@
  *
  * this class expects to be updated by the input manager
  */
+class QSettings;
+
 class TrackListModel : public QAbstractListModel
 {
     Q_OBJECT
@@ -83,6 +85,11 @@ public:
     /* [{ index, title, enabled, volume }] of every track, in order */
     Q_INVOKABLE QVariantList trackStates() const;
 
+    /* Terrikon, audio: keeps the "several tracks" mode and the names of
+     * the tracks switched on in "settings" under "key", and switches the
+     * tracks of the same names on in the next media */
+    void remember(QSettings *settings, const QString &key);
+
 public slots:
     void setMultiSelect(bool multiSelect);
 
@@ -113,6 +120,14 @@ private:
     };
     QList<Data> m_data;
     bool m_multiSelect = false; // subtitles and audio
+
+    void saveEnabled() const;
+    void applyRemembered();
+    QSettings *m_settings = nullptr;
+    QString m_settingsKey;
+    /* The remembered tracks are applied once per media, not over the
+     * user's own choice */
+    bool m_applied = false;
 };
 
 /**
