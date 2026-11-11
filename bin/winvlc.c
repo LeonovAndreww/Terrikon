@@ -40,6 +40,7 @@
 #include <fcntl.h>
 #include <io.h>
 #include <shlobj.h>
+#include <knownfolders.h>
 
 #include "../lib/libvlc_internal.h"
 
@@ -84,6 +85,56 @@ static void vlc_kill(void *data)
     ReleaseSemaphore(*semp, 1, NULL);
 }
 
+/* Terrikon: a crash leaves a minidump in %LOCALAPPDATA%\terrikon\crashes,
+ * so it can be looked into (the stack of every thread at that moment). */
+typedef BOOL (WINAPI *MiniDumpWriteDumpFn)(HANDLE, DWORD, HANDLE, int, const void *,
+                                           const void *, const void *);
+typedef struct {
+    DWORD ThreadId;
+    EXCEPTION_POINTERS *ExceptionPointers;
+    BOOL ClientPointers;
+} TerrikonExceptionInfo;
+
+static LONG WINAPI terrikon_crash(EXCEPTION_POINTERS *ep)
+{
+    static volatile LONG once;
+    if (InterlockedExchange(&once, 1))
+        return EXCEPTION_CONTINUE_SEARCH;
+
+    HMODULE dbghelp = LoadLibraryExW(L"dbghelp.dll", NULL, LOAD_LIBRARY_SEARCH_SYSTEM32);
+    MiniDumpWriteDumpFn write = dbghelp
+        ? (MiniDumpWriteDumpFn)(void *)GetProcAddress(dbghelp, "MiniDumpWriteDump") : NULL;
+    PWSTR local;
+    if (write == NULL || FAILED(SHGetKnownFolderPath(&FOLDERID_LocalAppData, 0, NULL, &local)))
+        return EXCEPTION_CONTINUE_SEARCH;
+
+    wchar_t path[MAX_PATH];
+    _snwprintf(path, MAX_PATH, L"%ls\\terrikon", local);
+    CreateDirectoryW(path, NULL);
+    _snwprintf(path, MAX_PATH, L"%ls\\terrikon\\crashes", local);
+    CreateDirectoryW(path, NULL);
+    SYSTEMTIME t;
+    GetLocalTime(&t);
+    _snwprintf(path, MAX_PATH, L"%ls\\terrikon\\crashes\\terrikon-%04u%02u%02u-%02u%02u%02u-%lu.dmp",
+               local, t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond,
+               GetCurrentProcessId());
+    CoTaskMemFree(local);
+
+    HANDLE file = CreateFileW(path, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,
+                              FILE_ATTRIBUTE_NORMAL, NULL);
+    if (file != INVALID_HANDLE_VALUE)
+    {
+        TerrikonExceptionInfo info = { GetCurrentThreadId(), ep, FALSE };
+        /* MiniDumpWithDataSegs | MiniDumpWithIndirectlyReferencedMemory |
+         * MiniDumpWithThreadInfo: stacks and what they point to, not the
+         * whole memory */
+        write(GetCurrentProcess(), GetCurrentProcessId(), file,
+              0x1 | 0x40 | 0x1000, &info, NULL, NULL);
+        CloseHandle(file);
+    }
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+
 int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
                     LPSTR lpCmdLine,
                     int nCmdShow )
@@ -97,6 +148,11 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
      * on Windows 2000/XP/2003 an hard-coded language ID list is used. This
      * putenv() call may become redundant with later versions of gettext. */
     putenv("GETTEXT_MUI=1");
+    /* Terrikon: Qt keeps a PCRE2 JIT stack per thread in a thread_local whose
+     * destructor, run when a thread ends, crashes with MinGW's emulated TLS
+     * (a pool thread expiring after 30 s idle was enough). Regular
+     * expressions without JIT are plenty fast here and need no such stack. */
+    putenv("QT_ENABLE_REGEXP_JIT=0");
 #ifdef TOP_BUILDDIR
     putenv("VLC_PLUGIN_PATH=Z:"TOP_BUILDDIR"/modules");
     putenv("VLC_DATA_PATH=Z:"TOP_SRCDIR"/share");
@@ -109,6 +165,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 #endif
 
     HeapSetInformation(NULL, HeapEnableTerminationOnCorruption, NULL, 0);
+    SetUnhandledExceptionFilter(terrikon_crash);
 
     /* Enable DEP */
     SetProcessDEPPolicy(PROCESS_DEP_ENABLE);
