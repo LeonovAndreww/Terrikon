@@ -246,7 +246,7 @@ ClipExporter::Plan ClipExporter::plan(const QVariantMap &params, const QString &
     }
 
     const QStringList head = {
-        QStringLiteral("-hide_banner"), QStringLiteral("-nostdin"), QStringLiteral("-y"),
+        QStringLiteral("-hide_banner"), QStringLiteral("-nostdin"), QStringLiteral("-n"),
         QStringLiteral("-loglevel"), QStringLiteral("error"),
         QStringLiteral("-progress"), QStringLiteral("pipe:1"), QStringLiteral("-nostats"),
         QStringLiteral("-ss"), seconds(start), QStringLiteral("-i"), input,
@@ -719,7 +719,6 @@ void ClipExporter::onFinished(int exitCode, QProcess::ExitStatus status)
 
     if (status != QProcess::NormalExit || exitCode != 0)
     {
-        QFile::remove(m_plan.output);
         const QString error = QString::fromUtf8(m_errors).trimmed();
         finish(false, error.isEmpty() ? QStringLiteral("ffmpeg failed.") : error);
         return;
