@@ -443,6 +443,8 @@ qt_plugin_sources = files(
     'terrikon/window_theme.cpp',
     'terrikon/autoscroll.cpp',
     'terrikon/autoscroll.hpp',
+    'terrikon/link_resolver.cpp',
+    'terrikon/link_resolver.hpp',
     'terrikon/window_theme.hpp',
     'terrikon/moment_marks.hpp',
     'terrikon/selftest.cpp',

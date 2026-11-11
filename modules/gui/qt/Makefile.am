@@ -290,6 +290,7 @@ libqt_plugin_la_SOURCES = \
 	terrikon/audio_visualizer.cpp terrikon/audio_visualizer.hpp \
 	terrikon/autoplay.cpp terrikon/autoplay.hpp \
 	terrikon/autoscroll.cpp terrikon/autoscroll.hpp \
+	terrikon/link_resolver.cpp terrikon/link_resolver.hpp \
 	terrikon/clip_selection.cpp terrikon/clip_selection.hpp \
 	terrikon/compact_player.cpp terrikon/compact_player.hpp \
 	terrikon/media_folders.cpp terrikon/media_folders.hpp \

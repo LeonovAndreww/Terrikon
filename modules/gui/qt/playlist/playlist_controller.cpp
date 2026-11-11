@@ -21,6 +21,7 @@
 #endif
 
 #include "playlist_controller.hpp"
+#include "terrikon/link_resolver.hpp"
 #include "playlist_controller_p.hpp"
 #include <vlc_player.h>
 #include <vlc_url.h>
@@ -444,6 +445,44 @@ void PlaylistController::insert(unsigned index, const QVariantList& sourceList, 
 
 void
 PlaylistController::append(const QVector<Media> &media, bool startPlaying)
+{
+    /* Terrikon: web pages (YouTube, TikTok, Bilibili...) are first asked to
+     * yt-dlp for their streams; what it cannot do goes to VLC as it is.
+     * Their place in the queue is where they were asked for: the others
+     * are added at once, the pages when known. */
+    QVector<Media> direct;
+    QVector<Media> pages;
+    for (const Media &m : media)
+    {
+        input_item_t *item = m.raw();
+        if (item && item->psz_uri && terrikon::isWebPage(QUrl(QString::fromUtf8(item->psz_uri))))
+            pages << m;
+        else
+            direct << m;
+    }
+    if (!direct.isEmpty())
+        appendNow(direct, startPlaying);
+
+    bool play = startPlaying && direct.isEmpty();
+    for (const Media &page : pages)
+    {
+        const QUrl url(QString::fromUtf8(page.raw()->psz_uri));
+        terrikon::resolveLink(this, url, [this, page, url, play](const terrikon::ResolvedLink &link) {
+            if (!link.error.isEmpty())
+            {
+                qWarning("Terrikon: %s: %s", qUtf8Printable(url.toString()), qUtf8Printable(link.error));
+                appendNow(QVector<Media>{ page }, play);
+                return;
+            }
+            const QString name = link.title.isEmpty() ? url.toString() : link.title;
+            appendNow(QVector<Media>{ Media(link.mrl, name, link.options) }, play);
+        });
+        play = false; /* the first one plays, the others are queued */
+    }
+}
+
+void
+PlaylistController::appendNow(const QVector<Media> &media, bool startPlaying)
 {
     Q_D(PlaylistController);
 
