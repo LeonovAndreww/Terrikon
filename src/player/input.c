@@ -1022,6 +1022,7 @@ input_thread_Events(input_thread_t *input_thread,
                 break;
             if (player->play_and_pause)
             {
+                input->paused_at_eof = true;
                 vlc_player_Pause(player);
                 handled = true;
             }
@@ -1263,6 +1264,7 @@ vlc_player_input_New(vlc_player_t *player, input_item_t *item)
     input->pause_date = VLC_TICK_INVALID;
     input->position = 0.f;
 
+    input->paused_at_eof = false;
     input->recording = false;
 
     input->cache = 0.f;

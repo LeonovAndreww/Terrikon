@@ -1358,6 +1358,26 @@ vlc_player_Pause(vlc_player_t *player)
 void
 vlc_player_Resume(vlc_player_t *player)
 {
+    struct vlc_player_input *input = vlc_player_get_input_locked(player);
+
+    /* Paused at the end: there is nothing left to play from there */
+    if (input != NULL && input->paused_at_eof)
+    {
+        input->paused_at_eof = false;
+        vlc_player_input_SeekByPos(input, 0, VLC_PLAYER_SEEK_PRECISE,
+                                   VLC_PLAYER_WHENCE_ABSOLUTE);
+    }
+    vlc_player_SetPause(player, false);
+}
+
+/* A seek away from the end where play-and-pause stopped plays on */
+static void
+vlc_player_ResumeAfterEofSeek(vlc_player_t *player,
+                              struct vlc_player_input *input)
+{
+    if (!input->paused_at_eof)
+        return;
+    input->paused_at_eof = false;
     vlc_player_SetPause(player, false);
 }
 
@@ -1515,7 +1535,10 @@ vlc_player_SeekByPos(vlc_player_t *player, double position,
 {
     struct vlc_player_input *input = vlc_player_get_input_locked(player);
     if (input != NULL)
+    {
         vlc_player_input_SeekByPos(input, position, speed, whence);
+        vlc_player_ResumeAfterEofSeek(player, input);
+    }
 }
 
 void
@@ -1525,7 +1548,10 @@ vlc_player_SeekByTime(vlc_player_t *player, vlc_tick_t time,
 {
     struct vlc_player_input *input = vlc_player_get_input_locked(player);
     if (input != NULL)
+    {
         vlc_player_input_SeekByTime(input, time, speed, whence);
+        vlc_player_ResumeAfterEofSeek(player, input);
+    }
 }
 
 void

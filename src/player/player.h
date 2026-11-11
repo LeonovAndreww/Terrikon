@@ -77,6 +77,10 @@ struct vlc_player_input
 
     vlc_tick_t pause_date;
 
+    /* Paused by play-and-pause at the end of the media: playing again goes
+     * back to the start, a seek plays on from there */
+    bool paused_at_eof;
+
     bool recording;
 
     float signal_quality;
