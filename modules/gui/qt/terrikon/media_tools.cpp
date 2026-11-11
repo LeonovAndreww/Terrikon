@@ -497,6 +497,28 @@ bool ClipExporter::canEncode(const QString &codec) const
     return !videoEncoder(codec).isEmpty();
 }
 
+qint64 ClipExporter::sourceSize(const QString &path) const
+{
+    if (path.isEmpty())
+        return 0;
+    const auto it = m_sourceSizes.constFind(path);
+    if (it != m_sourceSizes.constEnd())
+        return *it;
+    m_sourceSizes.insert(path, -1);
+    auto self = const_cast<ClipExporter *>(this);
+    offThread(self, [path] {
+        const QFileInfo info(path);
+        return info.exists() ? info.size() : qint64(0);
+    }, [self, path](qint64 size) {
+        self->m_sourceSizes.insert(path, size);
+        ++self->m_sourceRevision;
+        emit self->sourceChanged();
+        if (self->m_measureWaiting)
+            self->measure(self->m_measureParams);
+    });
+    return -1;
+}
+
 bool ClipExporter::start(const QVariantMap &params)
 {
     if (m_process)
@@ -508,19 +530,42 @@ bool ClipExporter::start(const QVariantMap &params)
         return false;
     }
 
+    if (m_starting)
+        return false;
+
     m_tmp = std::make_unique<QTemporaryDir>();
     QVariantMap planned = params;
     if (!planned.contains(QStringLiteral("bestBytes")) && m_bestBytes > 0.)
         planned.insert(QStringLiteral("bestBytes"), m_bestBytes);
-    m_plan = plan(planned, m_tmp->filePath(QStringLiteral("x264")));
     m_params = planned;
     m_retried = false;
+    m_starting = true;
+    emit runningChanged();
+    /* making the plan looks at the files and may run ffprobe: not on the
+     * interface thread */
+    const quint64 start = ++m_starts;
+    const QString prefix = m_tmp->filePath(QStringLiteral("x264"));
+    offThread(this, [planned, prefix] { return plan(planned, prefix); },
+              [this, start](const Plan &p) {
+        if (start != m_starts)
+            return;
+        m_starting = false;
+        started(p);
+    });
+    return true;
+}
+
+void ClipExporter::started(const Plan &plan)
+{
+    m_plan = plan;
     if (!m_plan.error.isEmpty())
     {
         m_tmp.reset();
+        emit runningChanged();
         emit finished(false, {}, m_plan.error);
-        return false;
+        return;
     }
+    const QVariantMap &params = m_params;
 
     m_length = params.value(QStringLiteral("end")).toDouble()
              - params.value(QStringLiteral("start")).toDouble();
@@ -532,7 +577,6 @@ bool ClipExporter::start(const QVariantMap &params)
     setProgress(0.);
     runPass();
     emit runningChanged();
-    return true;
 }
 
 double ClipExporter::estimateBytes(const QVariantMap &params) const
@@ -543,14 +587,14 @@ double ClipExporter::estimateBytes(const QVariantMap &params) const
     const double length = params.value(QStringLiteral("end")).toDouble()
                         - params.value(QStringLiteral("start")).toDouble();
     const double mediaLength = params.value(QStringLiteral("mediaLength")).toDouble();
-    const QFileInfo source(input);
-    if (length <= 0. || mediaLength <= 0. || !source.exists())
+    const qint64 sourceBytes = sourceSize(input);
+    if (length <= 0. || mediaLength <= 0. || sourceBytes <= 0)
         return 0.;
 
     const QString preset = params.value(QStringLiteral("preset"), QStringLiteral("copy")).toString();
 
     /* The source's average rate; copying keeps it */
-    const double sourceRate = double(source.size()) / mediaLength;
+    const double sourceRate = double(sourceBytes) / mediaLength;
     if (preset == QLatin1String("copy") && !params.value(QStringLiteral("vertical")).toBool())
         return sourceRate * length;
 
@@ -604,7 +648,9 @@ void ClipExporter::measure(const QVariantMap &params)
     const double end = params.value(QStringLiteral("end")).toDouble();
     const double length = end - start;
     const QString preset = params.value(QStringLiteral("preset"), QStringLiteral("copy")).toString();
-    if (length <= 0. || !QFileInfo::exists(input))
+    const qint64 sourceBytes = length > 0. ? sourceSize(input) : 0;
+    m_measureWaiting = sourceBytes < 0; /* measured again once known */
+    if (sourceBytes <= 0)
     {
         emit measuredChanged();
         return;
@@ -827,6 +873,15 @@ void ClipExporter::reveal(const QString &path) const
 
 void ClipExporter::cancel()
 {
+    if (m_starting)
+    {
+        ++m_starts; /* its plan will be dropped */
+        m_starting = false;
+        m_tmp.reset();
+        emit runningChanged();
+        emit finished(false, {}, QStringLiteral("Cancelled."));
+        return;
+    }
     if (!m_process)
         return;
     m_errors = "Cancelled.";

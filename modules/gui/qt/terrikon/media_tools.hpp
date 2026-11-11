@@ -35,6 +35,7 @@ class QTemporaryDir;
 
 #include <QCoreApplication>
 #include <QPointer>
+#include <QHash>
 #include <thread>
 
 namespace terrikon {
@@ -80,6 +81,9 @@ class ClipExporter : public QObject
     Q_PROPERTY(double secondsLeft READ secondsLeft NOTIFY secondsLeftChanged FINAL)
     /* Size of the last clip made when it came out over its size limit, else 0 */
     Q_PROPERTY(double overLimitBytes READ overLimitBytes NOTIFY finished FINAL)
+    /* Changes when the size of a source file becomes known: read it in
+     * bindings that call estimateBytes() so they are worked out again */
+    Q_PROPERTY(int sourceRevision READ sourceRevision NOTIFY sourceChanged FINAL)
 
 public:
     explicit ClipExporter(QObject *parent = nullptr);
@@ -117,10 +121,11 @@ public:
     /* Whether the ffmpeg found can encode "h264", "hevc" or "av1" */
     Q_INVOKABLE bool canEncode(const QString &codec) const;
 
-    bool running() const { return m_process != nullptr; }
+    bool running() const { return m_process != nullptr || m_starting; }
+    int sourceRevision() const { return m_sourceRevision; }
     double progress() const { return m_progress; }
     double measuredBytes() const { return m_measuredBytes; }
-    bool measuring() const { return m_meter != nullptr; }
+    bool measuring() const { return m_meter != nullptr || m_measureWaiting; }
     double secondsLeft() const { return m_secondsLeft; }
     double overLimitBytes() const { return double(m_overLimitBytes); }
 
@@ -140,8 +145,13 @@ signals:
     void measuredChanged();
     void secondsLeftChanged();
     void finished(bool ok, const QString &output, const QString &error);
+    void sourceChanged();
 
 private:
+    /* Size of a source file, 0 if it does not exist, -1 while it is being
+     * looked up away from the interface thread (sourceChanged follows) */
+    qint64 sourceSize(const QString &path) const;
+    void started(const Plan &plan);
     void runPass();
     void onOutput();
     void onFinished(int exitCode, QProcess::ExitStatus status);
@@ -152,6 +162,11 @@ private:
     void onProbed(int exitCode, QProcess::ExitStatus status);
 
     QProcess *m_process = nullptr;
+    bool m_starting = false;      /* the plan is being made */
+    quint64 m_starts = 0;
+    mutable QHash<QString, qint64> m_sourceSizes;
+    int m_sourceRevision = 0;
+    bool m_measureWaiting = false; /* measure() waits for the source size */
     Plan m_plan;
     int m_pass = 0;
     double m_length = 0.;

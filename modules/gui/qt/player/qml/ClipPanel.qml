@@ -143,6 +143,7 @@ FocusScope {
     // Size of the clip copied as it is: fitting into more makes no sense,
     // so the limit follows it down
     readonly property int _originalMB: {
+        void exporter.sourceRevision
         const bytes = exporter.estimateBytes(_params({ preset: "copy", vertical: false }))
         return bytes > 0 ? Math.max(1, Math.ceil(bytes / (1024 * 1024))) : 4000
     }
@@ -466,6 +467,7 @@ FocusScope {
                 // encoded to find it out, a guess that can be far off
                 if (exporter.measuring && exporter.measuredBytes <= 0)
                     return qsTr("Working out the size…")
+                void exporter.sourceRevision
                 const bytes = exporter.measuredBytes > 0 ? exporter.measuredBytes
                                                          : exporter.estimateBytes(root._params({}))
                 const size = root._formatSize(bytes)
