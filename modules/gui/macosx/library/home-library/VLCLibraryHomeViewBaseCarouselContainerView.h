@@ -45,10 +45,12 @@ NS_ASSUME_NONNULL_BEGIN
 @property (readonly) NSObject<VLCLibraryCollectionViewDataSource> *dataSource;
 @property (readonly, nullable) NSNotificationName displayedCollectionChangedNotification;
 @property (readwrite, nonatomic) CGFloat itemHeight;
+@property (readwrite, nonatomic) NSUInteger numberOfRows;
 
 - (void)setup;
 // Subclasses provide their data source and route the shared header button.
 - (void)setupDataSource;
+- (void)setupHeader;
 - (void)openLibrary:(id)sender;
 
 /**
@@ -57,6 +59,7 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (VLCLibraryCarouselView *)newCollectionView;
 - (void)reloadData;
+- (void)displayedCollectionChanged:(nullable NSNotification *)notification;
 
 @end
 

@@ -1,10 +1,12 @@
 /*****************************************************************************
- * Copyright (C) 2024 VLC authors and VideoLAN
+ * VLCLibraryHomeViewRecentlyAddedCarouselContainerView.h: MacOS X interface
+ *****************************************************************************
+ * Copyright (C) 2026 VLC authors and VideoLAN
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
- * ( at your option ) any later version.
+ * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -15,25 +17,17 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
-#ifndef DOUBLECLICKIGNORINGITEM_HPP
-#define DOUBLECLICKIGNORINGITEM_HPP
 
-#include <QQuickItem>
+#import "VLCLibraryHomeViewBaseCarouselContainerView.h"
+#import "library/VLCLibraryDataTypes.h"
 
-// TODO: Remove Qt >= 6.4
-//       413522: QQuickItem: ignore double-clicks by default; remove allowDoubleClick
-class DoubleClickIgnoringItem : public QQuickItem
-{
-    // Q_OBJECT
+NS_ASSUME_NONNULL_BEGIN
 
-public:
-    DoubleClickIgnoringItem(QQuickItem *parent = nullptr) : QQuickItem(parent) { }
+@interface VLCLibraryHomeViewRecentlyAddedCarouselContainerView : VLCLibraryHomeViewBaseCarouselContainerView
 
-protected:
-    void mouseDoubleClickEvent(QMouseEvent *ev) override
-    {
-        ev->ignore();
-    }
-};
+- (instancetype)initWithGroup:(VLCMediaLibraryParentGroupType)group;
+- (instancetype)init NS_UNAVAILABLE;
 
-#endif // DOUBLECLICKIGNORINGITEM_HPP
+@end
+
+NS_ASSUME_NONNULL_END

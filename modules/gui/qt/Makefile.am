@@ -394,8 +394,7 @@ libqt_plugin_la_SOURCES = \
 	widgets/native/qvlcframe.cpp \
 	widgets/native/qvlcframe.hpp \
 	widgets/native/searchlineedit.cpp widgets/native/searchlineedit.hpp \
-	widgets/native/viewblockingrectangle.cpp widgets/native/viewblockingrectangle.hpp \
-	widgets/native/doubleclickignoringitem.hpp
+	widgets/native/viewblockingrectangle.cpp widgets/native/viewblockingrectangle.hpp
 
 # Meta-object compilation
 
@@ -708,7 +707,6 @@ nodist_libqt_wayland_plugin_la_SOURCES = \
 	maininterface/xdg-shell-client-protocol.h \
 	maininterface/xdg-shell-protocol.c
 
-if HAVE_QT65
 libqt_wayland_plugin_la_CFLAGS += -DQT_HAS_WAYLAND_FRACTIONAL_SCALING
 nodist_libqt_wayland_plugin_la_SOURCES += \
 	maininterface/viewporter-client-protocol.h \
@@ -722,7 +720,6 @@ maininterface/viewporter-protocol.c: \
 		$(WAYLAND_PROTOCOLS)/stable/viewporter/viewporter.xml \
 		maininterface/viewporter-client-protocol.h
 	$(AM_V_GEN)$(WAYLAND_SCANNER) private-code $< $@
-endif
 
 BUILT_SOURCES += $(nodist_libqt_wayland_plugin_la_SOURCES)
 
@@ -1204,7 +1201,7 @@ libqml_module_player_a_QML = \
 	player/qml/LyricsFlickable.qml \
 	player/qml/MiniPlayer.qml \
 	player/qml/PIPPlayer.qml \
-	player/qml/Player.qml \
+	player/qml/PlayerView.qml \
 	player/qml/PlayerControlLayout.qml \
 	player/qml/PlayerPlaylistVisibilityFSM.qml \
 	player/qml/PlayerToolbarVisibilityFSM.qml \
@@ -1596,12 +1593,11 @@ endif
 # registered with the sources as prerequisites
 shaders/shaders.deps: Makefile
 	$(AM_V_at)$(MKDIR_P) $(@D)
-	$(AM_V_GEN){ \
+	$(AM_V_at){ \
 	  for s in $(libqt_plugin_la_SHADER_FRAG) $(libqt_plugin_la_SHADER_VERT); do \
 	    echo "$$s.qsb: $(srcdir)/$$s"; \
 	  done; \
-	} > $@.tmp && \
-	if cmp -s $@.tmp $@; then rm -f $@.tmp; else mv $@.tmp $@; fi
+	} > $@.tmp && mv $@.tmp $@
 
 BUILT_SOURCES += shaders/shaders.deps
 CLEANFILES    += shaders/shaders.deps
@@ -1621,7 +1617,7 @@ QML_RULES_DEPS = $(libqt_plugin_la_QML_MODULES:=/qml.deps)
 # to get the module name.
 $(QML_RULES_DEPS): Makefile
 	$(AM_V_at)$(MKDIR_P) $(@D)
-	$(AM_V_GEN){ \
+	$(AM_V_at){ \
 	  echo '$(@D)/qmldir.qrc: $(@D)/qmldir'; \
 	  echo '$(@D)/res.qrc $(@D)/qmldir: $(@D)/qml_modules.stamp'; \
 	  echo '$(@D)/qmlcachegen.rsp: $$(builddir)/$(@D)/res.qrc'; \
@@ -1629,8 +1625,7 @@ $(QML_RULES_DEPS): Makefile
 	  echo '$(@D)/qmlassets.cpp: $$(builddir)/$(@D)/qmldir.qrc $$(builddir)/$(@D)/res.qrc'; \
 	  echo '$(@D)/qmlassets.cpp: $$(libqml_module_$(@D)_a_QML) $$(libqml_module_$(@D)_a_Singleton_QML)'; \
 	  echo '$$(libqml_module_$(@D)_a_QML:.qml=.cpp) $$(libqml_module_$(@D)_a_Singleton_QML:.qml=.cpp): $$(builddir)/$(@D)/res.qrc'; \
-	} > $@.tmp && \
-	if cmp -s $@.tmp $@; then rm -f $@.tmp; else mv $@.tmp $@; fi
+	} > $@.tmp && mv $@.tmp $@
 
 BUILT_SOURCES += $(QML_RULES_DEPS)
 CLEANFILES += $(QML_RULES_DEPS)
@@ -1687,9 +1682,7 @@ cachegen_verbose_ = $(cachegen_verbose__$(AM_DEFAULT_VERBOSITY))
 cachegen_verbose_0 = @echo " CACHEGEN " $@;
 cachegen_verbose__0 = $(cachegen_verbose_0)
 
-if HAVE_QT67
 QML_CACHEGEN_EXTRA_ARGS=--validate-basic-blocks
-endif
 
 # Each .qml/.js/.mjs is compiled with its module's res.qrc as prerequisite. The
 # per-module qrc isn't derivable from the target path, so pick it out of $^.
@@ -1788,18 +1781,8 @@ endif
 endif
 endif
 
-base_model_test_SOURCES = tests/test_base_model.cpp \
-        util/base_model.cpp util/base_model.hpp util/base_model_p.hpp
-
-nodist_base_model_test_SOURCES = util/base_model.moc.cpp \
-        util/listcache.moc.cpp \
-        util/locallistcacheloader.moc.cpp
-
-base_model_test_CXXFLAGS = $(AM_CXXFLAGS) $(QT_CFLAGS) -fPIC $(CXXFLAGS_qt)
-base_model_test_LDADD = $(QT_LIBS) $(LIBS_qt)
-base_model_test_LDFLAGS = $(AM_LDFLAGS) $(QT_LDFLAGS)
-check_PROGRAMS = base_model_test
-TESTS = base_model_test
+check_PROGRAMS =
+TESTS =
 
 if HAVE_QT_QTEST
 
@@ -1808,6 +1791,25 @@ QT_QTEST_COMMON_cppflags = $(libqt_plugin_la_CPPFLAGS) -I$(builddir)/tests -DTOP
 QT_QTEST_COMMON_cxxflags = $(AM_CXXFLAGS) $(QT_CFLAGS) $(QT_QTEST_CFLAGS) -fPIC $(CXXFLAGS_qt)
 QT_QTEST_COMMON_ldadd = $(QT_LIBS) $(LIBS_qt) $(QT_QTEST_LIBS) $(LIBVLCCORE) $(LIBVLC)
 QT_QTEST_COMMON_ldflags = $(AM_LDFLAGS) $(QT_LDFLAGS) $(QT_QTEST_LDFLAGS)
+
+# base_model_test
+
+base_model_test_SOURCES = tests/test_base_model.cpp \
+        util/base_model.cpp util/base_model.hpp util/base_model_p.hpp
+
+nodist_base_model_test_SOURCES = tests/test_base_model.moc \
+        util/base_model.moc.cpp \
+        util/listcache.moc.cpp \
+        util/locallistcacheloader.moc.cpp
+
+BUILT_SOURCES += tests/test_base_model.moc
+CLEANFILES += tests/test_base_model.moc
+base_model_test_CPPFLAGS = $(QT_QTEST_COMMON_cppflags)
+base_model_test_CXXFLAGS = $(QT_QTEST_COMMON_cxxflags)
+base_model_test_LDADD = $(QT_QTEST_COMMON_ldadd)
+base_model_test_LDFLAGS = $(QT_QTEST_COMMON_ldflags)
+check_PROGRAMS += base_model_test
+TESTS += base_model_test
 
 
 # test_ml_model

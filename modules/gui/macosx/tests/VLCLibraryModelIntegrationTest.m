@@ -412,6 +412,38 @@
                    VLCLibraryDataTypesIntegrationSortingAudioAlphaMediaID());
 }
 
+- (void)testAudioMediaQuerySortsByRatingInBothDirectionsWithUnratedLast
+{
+    vlc_medialibrary_t * const library = VLCLibraryDataTypesIntegrationMediaLibrary();
+    const int64_t highestRatedID =
+        VLCLibraryDataTypesIntegrationSortingAudioAlphaMediaID();
+    const int64_t lowestRatedID =
+        VLCLibraryDataTypesIntegrationSortingAudioZuluMediaID();
+    const int64_t unratedID = VLCLibraryDataTypesIntegrationFactoryAudioMediaID();
+    XCTAssertEqual(vlc_ml_media_set_playback_state(library, highestRatedID,
+                                                   VLC_ML_PLAYBACK_STATE_RATING, "5"),
+                   VLC_SUCCESS);
+    XCTAssertEqual(vlc_ml_media_set_playback_state(library, lowestRatedID,
+                                                   VLC_ML_PLAYBACK_STATE_RATING, "1"),
+                   VLC_SUCCESS);
+
+    [self.model sortByCriteria:VLC_ML_SORTING_RATING andDescending:NO];
+    NSArray<VLCMediaLibraryMediaItem *> *media = [self audioMediaAfterFilter:@""];
+
+    XCTAssertEqual(media.count, (NSUInteger)3);
+    XCTAssertEqual(media[0].libraryID, lowestRatedID);
+    XCTAssertEqual(media[1].libraryID, highestRatedID);
+    XCTAssertEqual(media[2].libraryID, unratedID);
+
+    [self.model sortByCriteria:VLC_ML_SORTING_RATING andDescending:YES];
+    media = [self audioMediaAfterFilter:@""];
+
+    XCTAssertEqual(media.count, (NSUInteger)3);
+    XCTAssertEqual(media[0].libraryID, highestRatedID);
+    XCTAssertEqual(media[1].libraryID, lowestRatedID);
+    XCTAssertEqual(media[2].libraryID, unratedID);
+}
+
 - (void)testVideoMediaQuerySortsMatchingItemsInAscendingOrder
 {
     [self.model sortByCriteria:VLC_ML_SORTING_ALPHA andDescending:NO];
@@ -1236,7 +1268,6 @@
     XCTestExpectation * const loaded = [self expectationForNotification:VLCLibraryModelListOfMonitoredFoldersUpdated
                                                                  object:self.model
                                                                 handler:nil];
-    [self.model resetCachedListOfMonitoredFolders];
     [self waitForExpectations:@[ loaded ] timeout:5.];
     XCTAssertGreaterThan(self.model.cachedListOfMonitoredFolders.count, (NSUInteger)0);
     NSArray<VLCMediaLibraryFolderObserver *> * const previousObservers = self.model.folderObservers;
@@ -1682,7 +1713,6 @@
     XCTestExpectation * const loaded = [self expectationForNotification:VLCLibraryModelListOfMonitoredFoldersUpdated
                                                                  object:self.model
                                                                 handler:nil];
-    [self.model resetCachedListOfMonitoredFolders];
     [self waitForExpectations:@[ loaded ] timeout:5.];
     __weak VLCMediaLibraryFolderObserver *previousObserver = nil;
     NSSet<NSURL *> *previousURLs = nil;
@@ -1713,6 +1743,67 @@
     XCTAssertEqual(self.model.folderObservers.count,
                    URLs.count,
                    @"Each monitored URL must have exactly one active observer");
+}
+
+- (void)testMonitoredFolderRefreshSurvivesFilterChangeBeforeTokenRegistration
+{
+    // Pause a background refresh, change the filter, and start a replacement
+    // before letting the background refresh mark itself as the latest request.
+    // Before the fix, the paused refresh had already read the old cache version.
+    // Its result was rejected as outdated, and the replacement's result was
+    // rejected because it was no longer the latest request. Neither filled the
+    // cache or notified. Force that order and require the folders and notification.
+    XCTestExpectation * const loaded = [self expectationForNotification:VLCLibraryModelListOfMonitoredFoldersUpdated
+                                                                 object:self.model
+                                                                handler:nil];
+    [self waitForExpectations:@[ loaded ] timeout:5.];
+    VLCLibraryModelTestQueryGate * const model = self.model;
+    [self stopModelCallback];
+    XCTestExpectation * const settled = [self expectationWithDescription:@"Initial folder queries finished"];
+    [model finishPendingQueriesWithCompletion:^{ [settled fulfill]; }];
+    [self waitForExpectations:@[ settled ] timeout:5.];
+    NSSet<NSString *> * const expectedMRLs =
+        [NSSet setWithArray:[model.cachedListOfMonitoredFolders valueForKey:@"MRL"]];
+    XCTAssertGreaterThan(expectedMRLs.count, (NSUInteger)0);
+
+    XCTestExpectation * const paused = [self expectationWithDescription:@"Background folder refresh paused before token registration"];
+    XCTestExpectation * const registered = [self expectationWithDescription:@"Background folder refresh token registered"];
+    [model holdNextCacheUpdateForGetter:@selector(cachedListOfMonitoredFolders)
+                                handler:^{ [paused fulfill]; }
+                      completionHandler:^{ [registered fulfill]; }];
+    [self addTeardownBlock:^{ [model releaseCacheUpdate]; }];
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0),
+                   ^{
+        [model resetCachedListOfMonitoredFolders];
+    });
+    [self waitForExpectations:@[ paused ] timeout:5.];
+
+    XCTestExpectation * const dropped = [self expectationForNotification:VLCLibraryModelAllCachesDropped
+                                                                  object:model
+                                                                 handler:nil];
+    model.filterString = @"Folder refresh overlap";
+    [self waitForExpectations:@[ dropped ] timeout:5.];
+    // Keep the replacement from writing its result before the paused refresh resumes.
+    XCTestExpectation * const captured = [self expectationWithDescription:@"New folder result held"];
+    XCTestExpectation * const processed = [self expectationWithDescription:@"New folder write processed"];
+    [model holdNextQueryResultForGetter:@selector(cachedListOfMonitoredFolders)
+                                handler:^{ [captured fulfill]; }
+                      completionHandler:^{ [processed fulfill]; }];
+    [self addTeardownBlock:^{ [model releaseQuery]; }];
+    XCTestExpectation * const reloaded = [self expectationForNotification:VLCLibraryModelListOfMonitoredFoldersUpdated
+                                                                   object:model
+                                                                  handler:nil];
+    (void)model.listOfMonitoredFolders;
+    [self waitForExpectations:@[ captured ] timeout:5.];
+    XCTAssertNil(model.cachedListOfMonitoredFolders);
+
+    [model releaseCacheUpdate];
+    [self waitForExpectations:@[ registered ] timeout:5.];
+    [model releaseQuery];
+    [self waitForExpectations:@[ processed, reloaded ] timeout:5.];
+    NSSet<NSString *> * const reloadedMRLs =
+        [NSSet setWithArray:[model.cachedListOfMonitoredFolders valueForKey:@"MRL"]];
+    XCTAssertEqualObjects(reloadedMRLs, expectedMRLs);
 }
 
 - (void)testDroppingCachesRejectsAPendingMonitoredFolderResult

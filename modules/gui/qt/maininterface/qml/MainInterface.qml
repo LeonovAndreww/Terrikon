@@ -98,26 +98,17 @@ Item {
 
             yAxis.enabled: false
 
-            // Qt version check in disguise, only available starting with 6.5:
-            enabled: !!xAxis?.activeValueChanged
-
             property double accumulatedDelta: 0.0
 
             readonly property real threshold: 80.0
 
-            function onXAxisActiveValueChanged(delta) {
+            xAxis.onActiveValueChanged: (delta) => {
                 // We do not want to set enabled based on history condition, because the gesture should be captured
                 // regardless to prevent confusion:
                 if (History.previousEmpty && (MainCtx.effectiveMainInterfaceMode === MainCtx.MAININTERFACE_MODE_MAINDISPLAY))
                     return
 
                 historyDragHandler.accumulatedDelta = Math.min(threshold, historyDragHandler.accumulatedDelta + delta)
-            }
-
-            Component.onCompleted: {
-                if (historyDragHandler?.xAxis?.activeValueChanged) {
-                    xAxis.activeValueChanged.connect(historyDragHandler, onXAxisActiveValueChanged)
-                }
             }
 
             onActiveChanged: {
@@ -346,7 +337,7 @@ Item {
                 case MainCtx.MAININTERFACE_MODE_MINIMAL:
                     return "qrc:///qt/qml/VLC/Player/MinimalView.qml"
                 case  MainCtx.MAININTERFACE_MODE_PLAYER:
-                    return "qrc:///qt/qml/VLC/Player/Player.qml"
+                    return "qrc:///qt/qml/VLC/Player/PlayerView.qml"
                 default:
                     console.error("unexpected interface mode", MainCtx.effectiveMainInterfaceMode)
                 case MainCtx.MAININTERFACE_MODE_MAINDISPLAY:

@@ -1,9 +1,10 @@
 /*****************************************************************************
- * VLCLibraryVideoCollectionViewTableViewCellDataSource.h: MacOS X interface module
+ * VLCMediaLibraryFolderManagementController.h: Media Library folder settings
  *****************************************************************************
- * Copyright (C) 2022 VLC authors and VideoLAN
+ * Copyright (C) 2008-2019 VLC authors and VideoLAN
  *
- * Authors: Claudio Cambra <developer@claudiocambra.com>
+ * Authors: Felix Paul Kühne <fkuehne # videolan dot org>
+ *          David Fuhrmann <dfuhrmann # videolan dot org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,25 +23,20 @@
 
 #import <Cocoa/Cocoa.h>
 
-#import "library/VLCLibraryCollectionViewDataSource.h"
+@interface VLCMediaLibraryFolderManagementController : NSObject <NSTableViewDelegate, NSTableViewDataSource>
 
-@class VLCLibraryHomeViewVideoGridContainerView;
-@class VLCLibraryVideoCollectionViewGroupDescriptor;
+@property (readwrite, weak) NSTableView *libraryFolderTableView;
+@property (readwrite, weak) NSTableColumn *nameTableColumn;
+@property (readwrite, weak) NSTableColumn *pathTableColumn;
+@property (readwrite, weak) NSTableColumn *presentTableColumn;
+@property (readwrite, weak) NSTableColumn *bannedTableColumn;
+@property (readwrite, weak) NSButton *removeFolderButton;
+@property (readwrite, weak) NSButton *banFolderButton;
+@property (readwrite, weak) NSButton *reloadFolderButton;
 
-NS_ASSUME_NONNULL_BEGIN
-
-extern NSString * const VLCLibraryVideoCollectionViewDataSourceDisplayedCollectionChangedNotification;
-
-@interface VLCLibraryHomeViewVideoContainerViewDataSource : NSObject <VLCLibraryCollectionViewDataSource>
-
-@property (readwrite, weak) NSCollectionView *collectionView;
-@property (readwrite, copy) NSUserInterfaceItemIdentifier collectionViewItemIdentifier;
-@property (readwrite, assign, nonatomic) VLCLibraryVideoCollectionViewGroupDescriptor *groupDescriptor;
-@property (readwrite, assign) VLCLibraryHomeViewVideoGridContainerView *parentCell;
-
-- (void)setup;
-- (void)reloadData;
+- (IBAction)addFolder:(id)sender;
+- (IBAction)removeFolder:(id)sender;
+- (IBAction)banFolder:(id)sender;
+- (IBAction)reloadFolder:(id)sender;
 
 @end
-
-NS_ASSUME_NONNULL_END

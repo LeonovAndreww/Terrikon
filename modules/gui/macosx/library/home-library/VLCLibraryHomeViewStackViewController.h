@@ -26,10 +26,11 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class VLCLibraryHeroView;
 @class VLCLibraryHomeViewActionsView;
+@class VLCLibraryHeroView;
 @class VLCLibraryHomeViewAudioCarouselContainerView;
 @class VLCLibraryHomeViewBrowseCarouselContainerView;
+@class VLCLibraryHomeViewRecentlyAddedCarouselContainerView;
 @class VLCLibraryHomeViewVideoCarouselContainerView;
 @protocol VLCMediaLibraryItemProtocol;
 
@@ -46,6 +47,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (readonly) VLCLibraryHeroView *heroView;
 @property (readonly) VLCLibraryHomeViewVideoCarouselContainerView *recentsView;
 @property (readonly) VLCLibraryHomeViewAudioCarouselContainerView *audioRecentsView;
+@property (readonly) VLCLibraryHomeViewRecentlyAddedCarouselContainerView *recentlyAddedVideosView;
+@property (readonly) VLCLibraryHomeViewRecentlyAddedCarouselContainerView *recentlyAddedAudioView;
 @property (readonly) VLCLibraryHomeViewBrowseCarouselContainerView *browseView;
 
 - (void)reloadData;
