@@ -184,7 +184,11 @@ Widgets.PageExt {
             id: mlFolders
             ctx: MainCtx
 
-            onModelReset: foldersCard.refresh()
+            onModelReset: {
+                // the folders come asynchronously: until then, "none" is not known
+                foldersCard.loaded = true
+                foldersCard.refresh()
+            }
             onRowsInserted: foldersCard.refresh()
             onRowsRemoved: foldersCard.refresh()
         }
@@ -193,6 +197,7 @@ Widgets.PageExt {
             id: foldersCard
 
             property int folderCount: 0
+            property bool loaded: false
             property var suggestions: []
 
             function refresh() {
@@ -234,7 +239,7 @@ Widgets.PageExt {
             Rectangle {
                 id: card
 
-                visible: foldersCard.folderCount === 0
+                visible: foldersCard.loaded && foldersCard.folderCount === 0
                 width: parent.width
                 implicitHeight: cardColumn.implicitHeight + 2 * VLCStyle.margin_normal
                 radius: VLCStyle.dp(10, VLCStyle.scale)

@@ -31781,7 +31781,7 @@ msgstr "MC"
 
 #: modules/gui/qt/maininterface/navigationmodel.cpp:288
 msgid "Discover"
-msgstr "Обзор"
+msgstr "Интернет"
 
 #: modules/gui/qt/network/qml/ServicesManage.qml:30
 msgid "Install services"
