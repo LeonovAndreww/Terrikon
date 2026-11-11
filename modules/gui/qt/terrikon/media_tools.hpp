@@ -33,6 +33,10 @@
 
 class QTemporaryDir;
 
+#include <QCoreApplication>
+#include <QPointer>
+#include <thread>
+
 namespace terrikon {
 
 /* Path of the ffmpeg tool "name" ("ffmpeg", "ffprobe"): next to the
@@ -42,6 +46,23 @@ QString findTool(const QString &name);
 /* Cache folder for "kind" data of a media file, keyed by its path, size and
  * modification time so an edited file gets fresh data. Created on demand. */
 QString cacheDirFor(const QString &mediaPath, const QString &kind);
+
+/* Runs work() on a thread of its own, then done(result) back on the
+ * interface thread if context still exists. For anything that looks at a
+ * media file: on a network drive that does not answer, that takes as long
+ * as Windows waits for it, and the window would stop responding. */
+template<class Work, class Done>
+void offThread(QObject *context, Work work, Done done)
+{
+    QPointer<QObject> ctx(context);
+    std::thread([ctx, work, done] {
+        auto result = work();
+        QMetaObject::invokeMethod(qApp, [ctx, done, result] {
+            if (ctx)
+                done(result);
+        }, Qt::QueuedConnection);
+    }).detach();
+}
 
 /* Cuts a clip out of a local file, optionally re-mixing its audio tracks,
  * fitting it to a file size or cropping it to 9:16. */
@@ -201,6 +222,7 @@ private:
 
     QString m_path;
     QString m_cacheDir;
+    quint64 m_loads = 0;
     QVector<QVector<float>> m_tracks;
     QVector<bool> m_loaded;
     int m_current = -1;
@@ -247,6 +269,7 @@ signals:
     void readyChanged();
 
 private:
+    void loadFrom(const QString &dir);
     bool readIndex(const QString &dir);
     void startPass(bool dense);
     void onFinished(int exitCode, QProcess::ExitStatus status);
@@ -254,6 +277,7 @@ private:
 
     QString m_path;
     QString m_cacheDir;
+    quint64 m_loads = 0;
     QString m_sheetDir; /* where the sheets in use are */
     bool m_densePass = false;
     QVector<double> m_times;

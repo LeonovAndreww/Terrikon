@@ -1019,6 +1019,7 @@ void WaveformLoader::stop()
 
 void WaveformLoader::clear()
 {
+    ++m_loads;
     stop();
     m_path.clear();
     m_tracks.clear();
@@ -1033,8 +1034,14 @@ void WaveformLoader::load(const QString &path)
     if (path.isEmpty() || findTool(QStringLiteral("ffprobe")).isEmpty())
         return;
     m_path = path;
-    m_cacheDir = cacheDirFor(path, QStringLiteral("waveforms"));
-    probe();
+    const quint64 load = ++m_loads;
+    offThread(this, [path] { return cacheDirFor(path, QStringLiteral("waveforms")); },
+              [this, load](const QString &dir) {
+        if (load != m_loads)
+            return;
+        m_cacheDir = dir;
+        probe();
+    });
 }
 
 void WaveformLoader::probe()
@@ -1221,6 +1228,7 @@ void ThumbnailStrip::stop()
 
 void ThumbnailStrip::clear()
 {
+    ++m_loads;
     stop();
     m_times.clear();
     m_path.clear();
@@ -1245,7 +1253,17 @@ void ThumbnailStrip::load(const QString &path)
         return;
 
     m_path = path;
-    m_cacheDir = cacheDirFor(path, QStringLiteral("thumbnails"));
+    const quint64 load = ++m_loads;
+    offThread(this, [path] { return cacheDirFor(path, QStringLiteral("thumbnails")); },
+              [this, load](const QString &dir) {
+        if (load == m_loads)
+            loadFrom(dir);
+    });
+}
+
+void ThumbnailStrip::loadFrom(const QString &dir)
+{
+    m_cacheDir = dir;
     if (readIndex(denseDir(m_cacheDir)))
     {
         m_ready = true;

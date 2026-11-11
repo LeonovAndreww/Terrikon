@@ -68,8 +68,10 @@ signals:
 
 private:
     void save() const;
+    void loadFile(const QString &file);
 
     QString m_file; /* where the marks of the current media are stored */
+    QString m_wanted; /* the media asked for last */
     QVector<double> m_times; /* sorted */
 };
 

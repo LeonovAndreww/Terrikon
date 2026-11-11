@@ -22,6 +22,7 @@
 #endif
 
 #include "moment_marks.hpp"
+#include "media_tools.hpp"
 
 #include <vlc_common.h>
 #include <vlc_configuration.h>
@@ -58,7 +59,23 @@ static QString marksFileFor(const QString &mediaPath)
 
 void MomentMarks::loadUrl(const QUrl &url)
 {
-    const QString file = url.isLocalFile() ? marksFileFor(url.toLocalFile()) : QString();
+    /* the file name needs the media's size: looked up away from the
+     * interface thread (see offThread) */
+    const QString path = url.isLocalFile() ? url.toLocalFile() : QString();
+    m_wanted = path;
+    if (path.isEmpty())
+    {
+        loadFile({});
+        return;
+    }
+    offThread(this, [path] { return marksFileFor(path); }, [this, path](const QString &file) {
+        if (path == m_wanted)
+            loadFile(file);
+    });
+}
+
+void MomentMarks::loadFile(const QString &file)
+{
     if (file == m_file)
         return;
 

@@ -52,6 +52,7 @@ bug is upstream's; when unsure, the original build is run.
 | Vertical clip of a source narrower than 9:16 failed, anamorphic sources came out with the wrong shape | the 9:16 window fits in the frame; square pixels first |
 | Waveform, thumbnails and size measuring waited forever when ffmpeg could not start | a start failure ends them as a failure |
 | The player stopped responding at start (for a minute or more) when a media library folder was on a network drive that did not answer: the folder suggestions of the home page looked at every library folder on disk, on the interface thread | the suggestions are worked out on a thread of their own; library folders are compared by name |
+| The player stopped responding while the current media was on a network drive that did not answer: the seek bar's thumbnails and waveform and the moment marks looked up the file's size and date on the interface thread | looked up on a thread of their own (`offThread`); measured with a media on an unreachable `\\10.255.255.1` path: 21 of 25 s not responding before, none after |
 
 ## Known upstream issues, not fixed yet
 
