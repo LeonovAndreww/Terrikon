@@ -36,6 +36,7 @@
 #include <windows.h>
 #include <shellapi.h>
 
+#include <stdio.h>
 #include <fcntl.h>
 #include <io.h>
 #include <shlobj.h>
@@ -226,6 +227,16 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
         CloseHandle(sem);
 
         libvlc_release (vlc);
+
+        /* Everything is closed and saved by now. Leave at once: on the
+         * normal way out Windows ends the threads still around (a library's
+         * own, not VLC's) wherever they are, then runs the clean up of each
+         * DLL; one ended while holding the lock of the thread keys left the
+         * clean up of the C++ runtime waiting for it, and the process stayed
+         * there without a window, holding the files and the drive it had
+         * opened. */
+        fflush (NULL);
+        TerminateProcess (GetCurrentProcess (), 0);
     }
     else
         MessageBox (NULL, TEXT("VLC media player could not start.\n"
