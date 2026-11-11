@@ -91,6 +91,10 @@ public:
     }
     void setMiniWindow(bool on);
     QPoint miniPosition() const { return m_miniPosition; }
+    /* Where the mini window of this size goes: where it was left if that
+     * is still on a screen (any screen, left of the main one too), else at
+     * the bottom right of the main screen */
+    Q_INVOKABLE QPoint miniPlace(const QSize &size) const;
     void setMiniPosition(const QPoint &position);
 
     enum MiniShape { Card = 0, Round, Strip, Bare, MiniShapeCount };
@@ -141,6 +145,7 @@ private:
     bool m_listening = false;
     bool m_miniWindow = false;
     QPoint m_miniPosition;
+    bool m_hasMiniPosition = false;
     int m_miniShape = Card;
     int m_colorMode = White;
     bool m_miniDismissed = false;

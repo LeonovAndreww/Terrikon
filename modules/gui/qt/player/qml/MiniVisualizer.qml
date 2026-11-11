@@ -73,15 +73,9 @@ Window {
 
     Component.onCompleted: {
         _applySize()
-        const p = Visualizer.miniPosition
-        const screen = root.screen
-        if (p.x >= 0 && p.y >= 0) {
-            x = p.x
-            y = p.y
-        } else if (screen) {
-            x = screen.virtualX + screen.width - width - 40
-            y = screen.virtualY + screen.height - height - 80
-        }
+        const p = Visualizer.miniPlace(Qt.size(width, height))
+        x = p.x
+        y = p.y
     }
 
     // The size is kept a moment after resizing stops

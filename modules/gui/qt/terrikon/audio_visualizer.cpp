@@ -22,6 +22,8 @@
 #endif
 
 #include "audio_visualizer.hpp"
+#include <QGuiApplication>
+#include <QScreen>
 #include "player/player_controller.hpp"
 
 #include "../../../audio_filter/terrikon_tap.h"
@@ -72,6 +74,7 @@ Visualizer::Visualizer(qt_intf_t *intf, QObject *parent)
                           BackgroundCount - 1);
 
     m_miniWindow = m_intf->mainSettings->value(QString::fromLatin1(miniKey), false).toBool();
+    m_hasMiniPosition = m_intf->mainSettings->contains(QString::fromLatin1(miniPositionKey));
     m_miniPosition = m_intf->mainSettings->value(QString::fromLatin1(miniPositionKey), QPoint(-1, -1)).toPoint();
     m_miniShape = qBound(0, m_intf->mainSettings->value(QString::fromLatin1(miniShapeKey), int(Card)).toInt(),
                          MiniShapeCount - 1);
@@ -112,11 +115,32 @@ void Visualizer::setMiniWindow(bool on)
     emit miniWindowChanged();
 }
 
+QPoint Visualizer::miniPlace(const QSize &size) const
+{
+    if (m_hasMiniPosition)
+    {
+        /* enough of it on a screen to be grabbed */
+        const QRect window(m_miniPosition, size);
+        for (const QScreen *screen : QGuiApplication::screens())
+        {
+            const QRect seen = screen->availableGeometry().intersected(window);
+            if (seen.width() >= 60 && seen.height() >= 40)
+                return m_miniPosition;
+        }
+    }
+    const QScreen *screen = QGuiApplication::primaryScreen();
+    if (!screen)
+        return QPoint(0, 0);
+    const QRect area = screen->availableGeometry();
+    return QPoint(area.right() - size.width() - 40, area.bottom() - size.height() - 40);
+}
+
 void Visualizer::setMiniPosition(const QPoint &position)
 {
     if (position == m_miniPosition)
         return;
     m_miniPosition = position;
+    m_hasMiniPosition = true;
     m_intf->mainSettings->setValue(QString::fromLatin1(miniPositionKey), position);
     emit miniPositionChanged();
 }

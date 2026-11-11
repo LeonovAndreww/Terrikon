@@ -245,6 +245,10 @@ bool InterfaceWindowHandler::eventFilter(QObject*, QEvent* event)
                  * that leaving picture in picture returns to it */
                 const Qt::WindowStates before = oldState & ~Qt::WindowMinimized;
                 QMetaObject::invokeMethod(compact, [this, compact, before]() {
+                    // restored again meanwhile, or the video stopped: nothing to do
+                    if( !( m_window->windowStates() & Qt::WindowMinimized ) || compact->active() ||
+                        THEMIM->getPlayingState() != PlayerController::PLAYING_STATE_PLAYING )
+                        return;
                     m_window->setWindowStates(before);
                     m_window->show();
                     compact->enter();
