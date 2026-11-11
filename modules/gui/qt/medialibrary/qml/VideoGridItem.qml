@@ -67,6 +67,10 @@ Widgets.GridItem {
     }
 
     image: model.thumbnail || ""
+
+    // Terrikon: no big play button over a playing preview
+    property bool _previewShowing: false
+    playCoverShowPlay: implicitPlayCoverShowPlay && !_previewShowing
     fallbackImage: VLCStyle.noArtVideoCover
     fillMode: Image.Stretch
 
@@ -164,53 +168,202 @@ Widgets.GridItem {
             color: Qt.hsla(root._groupHue(group), 0.65, 0.55, 1)
         }
 
-        // Terrikon: resting the pointer on a video flips through its frames
-        // (key frames, as in the seek bar), as video sites preview theirs
+        // Terrikon: resting the pointer on a video plays it in the tile, as
+        // video sites preview theirs: muted unless asked, a seek bar with a
+        // frame over the pointer, the time left. Opening the video then
+        // starts where the preview was; it does not count as watching.
         Timer {
             id: previewDelay
             property bool armed: false
             readonly property bool wanted: root.hovered && model.isVideo !== false && !!model.mrl
             onWantedChanged: if (!wanted) armed = false
             // repeats so that firing does not end the binding of running
-            interval: 700
+            interval: 500
             repeat: true
             running: wanted && !armed
             onTriggered: armed = true
         }
 
         Loader {
+            id: previewLoader
             anchors.fill: parent
             active: previewDelay.armed
             sourceComponent: Item {
                 id: preview
 
-                property int step: 0
-                readonly property var frame: strip.ready ? strip.frameNumber(step) : ({})
+                readonly property bool showing: video.hasFrame
+                onShowingChanged: root._previewShowing = showing
+                Component.onDestruction: root._previewShowing = false
 
-                ThumbnailStrip {
-                    id: strip
-                    keyFramesOnly: true
-                    Component.onCompleted: loadUrl(model.mrl)
+                function _time(seconds) {
+                    const s = Math.max(0, Math.floor(seconds))
+                    const h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, r = s % 60
+                    const two = (n) => (n < 10 ? "0" : "") + n
+                    return h > 0 ? h + ":" + two(m) + ":" + two(r) : m + ":" + two(r)
                 }
 
-                Timer {
-                    interval: 650
-                    repeat: true
-                    running: strip.ready && strip.count > 1
-                    // a little into the video first: the very start is often black
-                    onTriggered: preview.step = Math.max(1, preview.step + Math.max(1, Math.floor(strip.count / 12)))
-                }
-
-                Image {
+                Rectangle {
                     anchors.fill: parent
-                    visible: status === Image.Ready
-                    source: preview.frame.source ?? ""
-                    sourceClipRect: preview.frame.source ? Qt.rect(preview.frame.x, preview.frame.y,
-                                                                   preview.frame.width, preview.frame.height)
-                                                         : undefined
-                    fillMode: Image.PreserveAspectCrop
-                    asynchronous: true
-                    cache: true
+                    color: "black"
+                    visible: video.hasFrame
+                    radius: root.pictureRadius
+                }
+
+                VideoPreview {
+                    id: video
+                    anchors.fill: parent
+                    source: model.mrl
+                }
+
+                // sound on / off, remembered for every preview
+                Rectangle {
+                    anchors.top: parent.top
+                    anchors.right: parent.right
+                    anchors.margins: VLCStyle.margin_xsmall
+                    width: VLCStyle.dp(30, VLCStyle.scale)
+                    height: width
+                    radius: width / 2
+                    visible: video.hasFrame
+                    color: muteArea.containsMouse ? Qt.rgba(0, 0, 0, 0.85) : Qt.rgba(0, 0, 0, 0.6)
+
+                    Widgets.IconLabel {
+                        anchors.centerIn: parent
+                        text: video.muted ? VLCIcons.volume_muted : VLCIcons.volume_high
+                        color: "white"
+                        font.pixelSize: VLCStyle.icon_small
+                    }
+
+                    MouseArea {
+                        id: muteArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: video.muted = !video.muted
+                    }
+                }
+
+                // time left
+                Rectangle {
+                    anchors.right: parent.right
+                    anchors.bottom: bar.top
+                    anchors.margins: VLCStyle.margin_xsmall
+                    visible: video.hasFrame && video.length > 0
+                    width: left.implicitWidth + VLCStyle.margin_xsmall * 2
+                    height: left.implicitHeight + VLCStyle.margin_xxxsmall * 2
+                    radius: VLCStyle.dp(3, VLCStyle.scale)
+                    color: Qt.rgba(0, 0, 0, 0.7)
+
+                    Text {
+                        id: left
+                        anchors.centerIn: parent
+                        color: "white"
+                        font.pixelSize: VLCStyle.fontSize_small
+                        font.bold: true
+                        text: preview._time(video.length - video.time)
+                    }
+                }
+
+                // seek bar: thin, thicker under the pointer, with the frame
+                // of the moment above it
+                Item {
+                    id: bar
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    anchors.leftMargin: VLCStyle.margin_xsmall
+                    anchors.rightMargin: VLCStyle.margin_xsmall
+                    height: VLCStyle.dp(22, VLCStyle.scale)
+                    visible: video.hasFrame
+
+                    readonly property real hoverFraction: barArea.containsMouse
+                        ? Math.max(0, Math.min(1, barArea.mouseX / width)) : -1
+
+                    Rectangle {
+                        id: track
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        height: barArea.containsMouse ? VLCStyle.dp(5, VLCStyle.scale) : VLCStyle.dp(3, VLCStyle.scale)
+                        radius: height / 2
+                        color: Qt.rgba(1, 1, 1, 0.35)
+
+                        Rectangle {
+                            width: parent.width * video.position
+                            height: parent.height
+                            radius: parent.radius
+                            color: "#FF2D2D"
+                        }
+                    }
+
+                    Rectangle {
+                        visible: barArea.containsMouse
+                        x: parent.width * video.position - width / 2
+                        anchors.verticalCenter: track.verticalCenter
+                        width: VLCStyle.dp(11, VLCStyle.scale)
+                        height: width
+                        radius: width / 2
+                        color: "#FF2D2D"
+                    }
+
+                    MouseArea {
+                        id: barArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onPressed: (mouse) => video.seek(mouse.x / width)
+                        onPositionChanged: (mouse) => { if (pressed) video.seek(mouse.x / width) }
+                    }
+
+                    ThumbnailStrip {
+                        id: strip
+                        keyFramesOnly: true
+                        Component.onCompleted: loadUrl(model.mrl)
+                    }
+
+                    // the frame over the pointer, with its time
+                    Column {
+                        visible: bar.hoverFraction >= 0 && video.length > 0
+                        readonly property real at: bar.hoverFraction * video.length
+                        readonly property var frame: strip.ready ? strip.frameAt(at) : ({})
+                        x: Math.max(0, Math.min(bar.width - width, bar.hoverFraction * bar.width - width / 2))
+                        anchors.bottom: track.top
+                        anchors.bottomMargin: VLCStyle.margin_xsmall
+                        spacing: VLCStyle.margin_xxxsmall
+
+                        Rectangle {
+                            visible: !!parent.frame.source
+                            width: VLCStyle.dp(128, VLCStyle.scale)
+                            height: width * 9 / 16
+                            radius: VLCStyle.dp(6, VLCStyle.scale)
+                            color: "black"
+                            border.color: "white"
+                            border.width: VLCStyle.dp(2, VLCStyle.scale)
+                            clip: true
+
+                            Image {
+                                anchors.fill: parent
+                                anchors.margins: parent.border.width
+                                source: parent.parent.frame.source ?? ""
+                                sourceClipRect: parent.parent.frame.source
+                                    ? Qt.rect(parent.parent.frame.x, parent.parent.frame.y,
+                                              parent.parent.frame.width, parent.parent.frame.height)
+                                    : undefined
+                                fillMode: Image.PreserveAspectFit
+                                asynchronous: true
+                                cache: true
+                            }
+                        }
+
+                        Text {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            color: "white"
+                            style: Text.Outline
+                            styleColor: Qt.rgba(0, 0, 0, 0.8)
+                            font.pixelSize: VLCStyle.fontSize_normal
+                            font.bold: true
+                            text: preview._time(parent.at)
+                        }
+                    }
                 }
             }
         }

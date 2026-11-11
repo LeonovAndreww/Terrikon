@@ -21,6 +21,7 @@
 #include "playlist/playlist_controller.hpp"
 #include "util/shared_input_item.hpp"
 #include "terrikon/folder_tree.hpp"
+#include "terrikon/video_preview.hpp"
 
 #include <utility>
 #include <QCollator>
@@ -261,10 +262,15 @@ void MediaLib::playWithFolder(const MLItemId &itemId)
         SharedInputItem clicked(vlc_ml_get_input_item(ml, itemId.id), false);
         if (!clicked)
             return;
+        /* watched a while in its preview: it opens there */
+        QStringList clickedOptions;
+        if (const double at = terrikon::VideoPreview::resumeTime(
+                QUrl::fromPercentEncoding(QByteArray(clicked->psz_uri)), true); at > 0.)
+            clickedOptions << QStringLiteral(":start-time=%1").arg(at, 0, 'f', 2);
         const QUrl url(QString::fromUtf8(clicked->psz_uri));
         if (!url.isLocalFile())
         {
-            ctx.medias.push_back(vlc::playlist::Media(clicked.get(), {}));
+            ctx.medias.push_back(vlc::playlist::Media(clicked.get(), clickedOptions));
             return;
         }
         const QFileInfo file(url.toLocalFile());
@@ -282,7 +288,7 @@ void MediaLib::playWithFolder(const MLItemId &itemId)
             if (sibling.absoluteFilePath() == file.absoluteFilePath())
             {
                 ctx.start = ctx.medias.size();
-                ctx.medias.push_back(vlc::playlist::Media(clicked.get(), {}));
+                ctx.medias.push_back(vlc::playlist::Media(clicked.get(), clickedOptions));
             }
             else
             {
@@ -291,7 +297,7 @@ void MediaLib::playWithFolder(const MLItemId &itemId)
             }
         }
         if (ctx.medias.isEmpty())
-            ctx.medias.push_back(vlc::playlist::Media(clicked.get(), {}));
+            ctx.medias.push_back(vlc::playlist::Media(clicked.get(), clickedOptions));
     },
     //UI thread
     [this](quint64, Context& ctx){

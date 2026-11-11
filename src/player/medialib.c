@@ -32,9 +32,18 @@ vlc_player_input_RestoreMlStates(struct vlc_player_input* input, bool force_pos)
     vlc_player_t* player = input->player;
     vlc_player_assert_locked(player);
 
+    /* Terrikon: a secondary player (a preview) neither saves nor restores
+     * anything, as for saving below */
+    if (player->obj.priv->parent != (vlc_object_t*)vlc_object_instance(player))
+        return;
+
     int restore_pos;
     if (force_pos)
         restore_pos = VLC_PLAYER_RESTORE_PLAYBACK_POS_ALWAYS;
+    else if (var_InheritFloat(input->thread, "start-time") > 0.f)
+        /* Terrikon: opened at a chosen moment (from a preview): that one,
+         * no question about the last one */
+        restore_pos = VLC_PLAYER_RESTORE_PLAYBACK_POS_NEVER;
     else
         restore_pos = var_InheritInteger(input->thread, "restore-playback-pos");
 

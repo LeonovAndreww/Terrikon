@@ -121,6 +121,8 @@ moc_headers = files(
     'terrikon/audio_visualizer.hpp',
     'terrikon/autoplay.hpp',
     'terrikon/autoscroll.hpp',
+    'terrikon/components.hpp',
+    'terrikon/video_preview.hpp',
     'terrikon/clip_selection.hpp',
     'terrikon/compact_player.hpp',
     'terrikon/media_folders.hpp',
