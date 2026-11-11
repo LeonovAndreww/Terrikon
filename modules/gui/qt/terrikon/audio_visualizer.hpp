@@ -25,6 +25,7 @@
 #include <QColor>
 #include <QElapsedTimer>
 #include <QObject>
+#include <QPointer>
 #include <QPoint>
 #include <QSize>
 #include <QQuickItem>
@@ -70,6 +71,7 @@ public:
     Q_ENUM(Background)
 
     explicit Visualizer(qt_intf_t *intf, QObject *parent = nullptr);
+    ~Visualizer() override { if (s_instance == this) s_instance = nullptr; }
 
     static Visualizer *instance() { return s_instance; }
 
@@ -194,7 +196,7 @@ private:
     int m_style = 0;
     QColor m_color = QColor(255, 136, 0);
     QColor m_color2 = QColor(255, 220, 160);
-    QQuickItem *m_cover = nullptr;
+    QPointer<QQuickItem> m_cover;
     QRectF m_coverRect;
     qreal m_level = 0;
     bool m_fill = false;

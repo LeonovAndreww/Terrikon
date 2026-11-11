@@ -105,7 +105,8 @@ FocusScope {
         _resultPath = ""
         _error = ""
         _resultCopied = !!params.copyToClipboard && !!params.temporary
-        if (!exporter.start(params))
+        // a refusal reports its reason through finished(), keep that one
+        if (!exporter.start(params) && _error === "")
             _error = qsTr("Could not start making the clip.")
     }
 

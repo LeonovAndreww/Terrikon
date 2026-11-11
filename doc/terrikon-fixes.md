@@ -28,6 +28,7 @@ bug is upstream's; when unsure, the original build is run.
 | Player | With "play and pause" (pause at the end), playing again stays at the end, and a seek leaves it paused | playing again starts over; a seek plays on |
 | Player | The question to resume a video takes the place of the back button and the logo | shown beside them |
 | Player | Leaving a stopped video showed the small in-window player at the bottom left for a moment | not shown while the video is closing |
+| Video output | Each close of a Direct3D11 output with a software decoded video or a visualization lost the whole D3D11 device, some 12 MB and 14 handles: the staging textures were overwritten, not released, when the format resources were made again | `direct3d11.cpp`: the old staging textures are released first (found with the D3D11 debug layer) |
 
 ## Our own bugs (introduced by Terrikon, fixed)
 
@@ -45,18 +46,16 @@ bug is upstream's; when unsure, the original build is run.
 | The mini window of the music came back on minimizing after being closed | closing only turned off the setting, not the automatic showing |
 | Maximizing the picture in picture window (task bar, Win+Up) left the small player stretched over the screen, with no way back to the player | picture in picture did not follow the window state; maximizing now leaves it |
 | "Fit in N MB" with AV1 came out some 15% over the limit | libaom misses the rate; an over-limit clip is now made once more at a lower rate |
+| Clip export wrote straight into the output: a failed or cancelled export left a broken or empty file under the final name; "Save as" over an existing file, or over the video itself, reported success and wrote nothing | ffmpeg writes a part file next to the output, renamed only when complete (an existing file is set aside and put back on failure); the source itself is refused |
+| A copied clip of VP8/Vorbis and other streams MP4 does not take failed | ffprobe tells the codecs; Matroska then |
+| The clip could take a cover picture for the video | the first real video stream (`0:V:0`) |
+| Vertical clip of a source narrower than 9:16 failed, anamorphic sources came out with the wrong shape | the 9:16 window fits in the frame; square pixels first |
+| Waveform, thumbnails and size measuring waited forever when ffmpeg could not start | a start failure ends them as a failure |
 
 ## Known upstream issues, not fixed yet
 
 - `ListViewExt.qml`: the footer's height depends on its own position ("Binding loop detected for property implicitHeight"). Harmless.
 - `BrowseDeviceView.qml`: "Unable to assign [undefined] to QQmlComponent*" for sections without a header. Harmless.
 - Changing the audio filters and the VLC visualization at the same moment can stall the audio output (playing, but the time stands still). Terrikon switches them one after the other.
-- Each time a Direct3D11 video output closes, about 12 MB and 14 handles stay
-  behind: switching a VLC visualization on and off, or every track played
-  with one (the visualization gets an output of its own each time). The same
-  in a VLC 4 build from before the Terrikon changes; none with `--vout=gl`
-  or the dummy output, and none when creating and releasing a D3D11 device
-  alone (`test/terrikon/d3dleak.cpp`). Terrikon's own visualizations are not
-  concerned. Measured with `test/terrikon/leak-compare.ps1`.
 - Ours, partly: picture in picture in and out leaves 5 MB (OpenGL output) to 15 MB
   (Direct3D11) each time; not looked into further yet.
