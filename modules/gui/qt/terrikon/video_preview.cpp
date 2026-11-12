@@ -191,8 +191,14 @@ void VideoPreview::start()
     var_SetAddress(owner, "vmem-display", (void *)displayFrame);
     var_Create(owner, "vmem-data", VLC_VAR_ADDRESS);
     var_SetAddress(owner, "vmem-data", m_frames.get());
+    /* No window: VLC makes one for any video output, even one drawing into
+     * memory, and the preview's took the player's own (the video then
+     * opened in a window of its own) or flashed white windows */
+    var_Create(owner, "window", VLC_VAR_STRING);
+    var_SetString(owner, "window", "wdummy");
+    /* subtitles shown, as video sites show them in their previews */
     var_Create(owner, "spu", VLC_VAR_BOOL);
-    var_SetBool(owner, "spu", false);
+    var_SetBool(owner, "spu", true);
     var_Create(owner, "dec-dev", VLC_VAR_STRING);
     var_SetString(owner, "dec-dev", "none");
     /* the main player's video filters and visualizations are not for it */
@@ -234,6 +240,8 @@ void VideoPreview::start()
     }
     /* no window, no fullscreen: only this item shows it */
     input_item_AddOption(item, ":no-video-title-show", VLC_INPUT_OPTION_TRUSTED);
+    /* the first subtitles, if any */
+    input_item_AddOption(item, ":sub-track=0", VLC_INPUT_OPTION_TRUSTED);
     /* over and over, as long as it is pointed at */
     input_item_AddOption(item, ":input-repeat=65535", VLC_INPUT_OPTION_TRUSTED);
 
