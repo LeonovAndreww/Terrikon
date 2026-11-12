@@ -40,12 +40,16 @@ vlc_player_input_RestoreMlStates(struct vlc_player_input* input, bool force_pos)
     int restore_pos;
     if (force_pos)
         restore_pos = VLC_PLAYER_RESTORE_PLAYBACK_POS_ALWAYS;
-    else if (var_InheritFloat(input->thread, "start-time") > 0.f)
-        /* Terrikon: opened at a chosen moment (from a preview): that one,
-         * no question about the last one */
-        restore_pos = VLC_PLAYER_RESTORE_PLAYBACK_POS_NEVER;
     else
+    {
         restore_pos = var_InheritInteger(input->thread, "restore-playback-pos");
+        /* Terrikon: opened at a chosen moment (from a preview), it starts
+         * there; going back to where real watching stopped is asked, not
+         * done */
+        if (restore_pos == VLC_PLAYER_RESTORE_PLAYBACK_POS_ALWAYS
+         && var_InheritFloat(input->thread, "start-time") > 0.f)
+            restore_pos = VLC_PLAYER_RESTORE_PLAYBACK_POS_ASK;
+    }
 
     const bool restore_states = var_InheritBool(input->thread, "restore-playback-states");
 
