@@ -55,6 +55,17 @@ Widgets.GridItem {
 
     fillMode: Image.PreserveAspectCrop
 
+    // Terrikon: a folder with a picture of its own (a country's flag, a
+    // square image with clear bands above and below it) sits on a soft card,
+    // not on the near black of an empty cover
+    Binding {
+        target: root.mediaCover
+        property: "color"
+        when: (model.type === NetworkMediaModel.TYPE_NODE || model.type === NetworkMediaModel.TYPE_DIRECTORY)
+              && !!model.artwork && model.artwork.toString() !== ""
+        value: Qt.alpha(root.colorContext.fg.primary, 0.08)
+    }
+
     // Terrikon: a stream (a radio station) can be kept among the favourites,
     // shown on the home page
     readonly property bool _stream: {
