@@ -34,16 +34,15 @@ Widgets.IconToolButton {
     description: qsTr("Repeat")
 
     // Terrikon: on and off told apart whatever the accent (white by default,
-    // the colour of the icons): dim when off, a dot under it when on
+    // the colour of the icons): off is dim and struck through
     opacity: checked ? 1.0 : 0.55
     Rectangle {
-        visible: parent.checked
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: -VLCStyle.dp(1, VLCStyle.scale)
-        width: VLCStyle.dp(4, VLCStyle.scale)
-        height: width
-        radius: width / 2
+        visible: !parent.checked
+        anchors.centerIn: parent
+        width: parent.width * 0.62
+        height: VLCStyle.dp(1.5, VLCStyle.scale)
+        radius: height / 2
+        rotation: -45
         color: parent.color
     }
 

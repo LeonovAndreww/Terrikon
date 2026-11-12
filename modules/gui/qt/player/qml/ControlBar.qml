@@ -55,6 +55,10 @@ T.Pane {
     property bool showRemainingTime: true
 
     // Terrikon: a live stream (a radio): nothing to seek, no end
+    // On air instead of the bar: a live stream one cannot seek in, or a radio
+    // (a sound only stream: a server of radio says it can seek, it cannot); a
+    // live video of Twitch or YouTube, which can go back, keeps its bar
+    readonly property bool _liveFixed: _live && (!Player.seekable || Player.videoTracks.count === 0)
     readonly property bool _live: (Player.playingState === Player.PLAYING_STATE_PLAYING
                                    || Player.playingState === Player.PLAYING_STATE_PAUSED)
                                   && (!Player.seekable || !Player.length.valid() || Player.length.toSeconds() <= 0)
@@ -232,7 +236,9 @@ T.Pane {
             },
             // Terrikon: on air, instead of a bar to seek in
             Row {
-                visible: root._live
+                id: onAirRow
+
+                visible: root._liveFixed
                 Layout.fillWidth: true
                 spacing: VLCStyle.margin_xsmall
 
@@ -262,7 +268,7 @@ T.Pane {
             SliderBar {
                 id: trackPositionSlider
 
-                visible: !root._live
+                visible: !root._liveFixed
                 barHeight: root.sliderHeight
 
                 Accessible.role: Accessible.Slider
@@ -358,9 +364,9 @@ T.Pane {
                 switch (textPosition) {
                 case ControlBar.TimeTextPosition.Hide:
                 case ControlBar.TimeTextPosition.AboveSlider:
-                    return [trackPositionSlider]
+                    return [trackPositionSlider, onAirRow]
                 case ControlBar.TimeTextPosition.LeftRightSlider:
-                    return [mediaTime, trackPositionSlider, mediaRemainingTime]
+                    return [mediaTime, trackPositionSlider, onAirRow, mediaRemainingTime]
                 default:
                     return []
                 }

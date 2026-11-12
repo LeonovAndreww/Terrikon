@@ -1181,6 +1181,8 @@ FocusScope {
 
                             Widgets.IconToolButton {
                                 text: VLCIcons.skip_back
+                                // Terrikon: not on a live stream (a radio): no time to step in
+                                visible: Player.seekable && Player.length.valid() && Player.length.toSeconds() > 0
                                 font.pixelSize: VLCStyle.icon_audioPlayerButton
                                 onClicked: Player.jumpBwd()
                                 description: qsTr("Step back")
@@ -1207,6 +1209,8 @@ FocusScope {
 
                             Widgets.IconToolButton{
                                 text: VLCIcons.skip_for
+                                // Terrikon: not on a live stream (a radio): no time to step in
+                                visible: Player.seekable && Player.length.valid() && Player.length.toSeconds() > 0
                                 font.pixelSize: VLCStyle.icon_audioPlayerButton
                                 onClicked: Player.jumpFwd()
                                 description: qsTr("Step forward")

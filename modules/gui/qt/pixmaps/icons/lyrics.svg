@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
   <!-- colors values have a purpose, changing them may break the associated component -->
-  <!-- A microphone, the sign of lyrics in music players; strokes on the
-       icon font weight -->
-  <rect x="9" y="3" width="6" height="11" rx="3" fill="none" stroke="#ff00ff" stroke-width="1.2"/>
-  <path d="M6 11.5a6 6 0 0 0 12 0" fill="none" stroke="#ff00ff" stroke-width="1.2" stroke-linecap="round"/>
-  <path d="M12 17.5v3.5M9.5 21h5" fill="none" stroke="#ff00ff" stroke-width="1.2" stroke-linecap="round"/>
+  <!-- A hand microphone held at an angle, as karaoke and lyrics are shown
+       in music players: "microphone-2" of Tabler Icons (MIT licence,
+       Copyright (c) 2020-2024 Paweł Kuna), its stroke thinned to the
+       weight of the other icons -->
+  <g fill="none" stroke="#ff00ff" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M15 12.9a5 5 0 1 0 -3.902 -3.9"/>
+    <path d="M15 12.9l-3.902 -3.899l-7.513 8.584a2 2 0 1 0 2.827 2.83l8.588 -7.515z"/>
+  </g>
 </svg>
