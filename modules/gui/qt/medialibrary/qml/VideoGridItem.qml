@@ -145,6 +145,13 @@ Widgets.GridItem {
     pictureWidth: VLCStyle.gridCover_video_width
     pictureHeight: VLCStyle.gridCover_video_height
 
+    // Terrikon: the watched part, the accent (white by default)
+    readonly property ColorContext _watchedTheme: ColorContext { colorSet: ColorContext.Slider }
+    readonly property color _watchedColor: {
+        const c = _watchedTheme.fg.primary
+        return (0.299 * c.r + 0.587 * c.g + 0.114 * c.b) < 0.35 ? "white" : c
+    }
+
     // Bottom rounding is provided by the progress bar if it is visible:
     mediaCover.radiusBottomLeft: progressBar.visible ? 0.0 : mediaCover.radius
     mediaCover.radiusBottomRight: progressBar.visible ? 0.0 : mediaCover.radius
@@ -179,7 +186,8 @@ Widgets.GridItem {
             right: parent.right
         }
 
-        visible: (model.progress > 0)
+        // Terrikon: drawn over the picture instead (see above)
+        visible: false
 
         radius: root.pictureRadius
         value: Helpers.clamp(model.progress !== undefined ? model.progress : 0, 0, 1)
@@ -205,13 +213,19 @@ Widgets.GridItem {
             onTriggered: armed = true
         }
 
+        // the preview still seen (fading out): a flag of its own, as the
+        // loader's item depends on the loader being active
+        property bool _previewVisible: false
+
         Loader {
             id: previewLoader
             anchors.fill: parent
             // kept while fading out
-            active: previewDelay.armed || (item !== null && item.opacity > 0)
+            active: previewDelay.armed || parent._previewVisible
             sourceComponent: Item {
                 id: preview
+
+                onOpacityChanged: previewLoader.parent._previewVisible = opacity > 0
 
                 readonly property bool showing: video.hasFrame && previewDelay.armed
                 opacity: showing ? 1 : 0
@@ -229,7 +243,10 @@ Widgets.GridItem {
                     return (0.299 * c.r + 0.587 * c.g + 0.114 * c.b) < 0.35 ? "white" : c
                 }
                 onShowingChanged: root._previewShowing = showing
-                Component.onDestruction: root._previewShowing = false
+                Component.onDestruction: {
+                    root._previewShowing = false
+                    previewLoader.parent._previewVisible = false
+                }
 
                 function _time(seconds) {
                     const s = Math.max(0, Math.floor(seconds))
@@ -419,24 +436,20 @@ Widgets.GridItem {
             }
         }
 
-        // Terrikon: not watched yet, said in words (it was a grey corner)
+        // Terrikon: how much was watched, along the bottom edge of the
+        // picture, as video sites show it (the bar under the picture went)
         Rectangle {
-            visible: root.showNewIndicator && !root._previewShowing
+            visible: (model.progress ?? 0) > 0 && !root._previewShowing
+            anchors.left: parent.left
             anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.margins: VLCStyle.margin_xsmall
-            width: newLabel.implicitWidth + VLCStyle.margin_xsmall * 2
-            height: newLabel.implicitHeight + VLCStyle.dp(2, VLCStyle.scale) * 2
-            radius: height / 2
-            color: Qt.rgba(0, 0, 0, 0.6)
+            anchors.bottom: parent.bottom
+            height: VLCStyle.dp(4, VLCStyle.scale)
+            color: Qt.rgba(0, 0, 0, 0.45)
 
-            Text {
-                id: newLabel
-                anchors.centerIn: parent
-                text: qsTr("New")
-                color: "white"
-                font.pixelSize: VLCStyle.fontSize_small
-                font.weight: Font.DemiBold
+            Rectangle {
+                width: parent.width * Helpers.clamp(model.progress ?? 0, 0, 1)
+                height: parent.height
+                color: root._watchedColor
             }
         }
 
@@ -448,6 +461,7 @@ Widgets.GridItem {
             anchors.right: parent.right
             anchors.bottom: parent.bottom
             anchors.margins: VLCStyle.margin_xsmall
+            anchors.bottomMargin: VLCStyle.margin_xsmall + ((model.progress ?? 0) > 0 ? VLCStyle.dp(4, VLCStyle.scale) : 0)
             width: lengthText.implicitWidth + VLCStyle.margin_xsmall * 2
             height: lengthText.implicitHeight + VLCStyle.dp(2, VLCStyle.scale) * 2
             radius: VLCStyle.dp(4, VLCStyle.scale)
