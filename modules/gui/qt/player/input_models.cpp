@@ -227,6 +227,10 @@ void TrackListModel::updateTracks(vlc_player_list_action action, const vlc_playe
         m_data.append(Data{ track_info });
         endInsertRows();
         emit countChanged();
+        emit selectionChanged();
+        if (vlc_es_id_GetCat(track_info->es_id) == SPU_ES && !m_autoDone)
+            /* once the player has picked its own (or none) */
+            QTimer::singleShot(300, this, &TrackListModel::showByDefault);
         if (m_multiSelect)
             /* Once the player has picked the track it plays */
             QTimer::singleShot(500, this, &TrackListModel::addSilentTracks);
@@ -246,8 +250,13 @@ void TrackListModel::updateTracks(vlc_player_list_action action, const vlc_playe
         endRemoveRows();
         /* All gone: the next media gets the remembered tracks again */
         if (m_data.isEmpty())
+        {
             m_applied = false;
+            m_autoDone = false;
+            m_lastShown = 0;
+        }
         emit countChanged();
+        emit selectionChanged();
         break;
     }
     case VLC_PLAYER_LIST_UPDATED:
@@ -291,8 +300,50 @@ void TrackListModel::updateTrackSelection(vlc_es_id_t *trackid, bool selected)
         vlc_player_locker lock{ m_player };
         vlc_player_SetEsIdVolume(m_player, trackid, it->m_volume);
     }
+    if (selected)
+        m_lastShown = int(pos);
     QModelIndex dataIndex = index(pos);
     emit dataChanged(dataIndex, dataIndex, {  Qt::CheckStateRole });
+    emit selectionChanged();
+}
+
+static QSettings &subtitleSettings()
+{
+    static QSettings settings(QSettings::IniFormat, QSettings::UserScope,
+                              QStringLiteral("terrikon"), QStringLiteral("player"));
+    return settings;
+}
+
+bool TrackListModel::anySelected() const
+{
+    return std::any_of(m_data.cbegin(), m_data.cend(), [](const Data &d) { return d.m_selected; });
+}
+
+void TrackListModel::showByDefault()
+{
+    if (m_autoDone || m_data.isEmpty())
+        return;
+    m_autoDone = true;
+    if (anySelected() || !subtitleSettings().value(QStringLiteral("Subtitles/shown"), true).toBool())
+        return;
+    vlc_player_locker lock{ m_player };
+    vlc_player_SelectEsId(m_player, m_data[0].m_id.get(), VLC_PLAYER_SELECT_EXCLUSIVE);
+}
+
+void TrackListModel::toggleShown()
+{
+    if (m_data.isEmpty())
+        return;
+    const bool show = !anySelected();
+    subtitleSettings().setValue(QStringLiteral("Subtitles/shown"), show);
+    vlc_player_locker lock{ m_player };
+    if (!show)
+    {
+        vlc_player_UnselectTrackCategory(m_player, vlc_es_id_GetCat(m_data[0].m_id.get()));
+        return;
+    }
+    const int row = (m_lastShown >= 0 && m_lastShown < m_data.size()) ? m_lastShown : 0;
+    vlc_player_SelectEsId(m_player, m_data[row].m_id.get(), VLC_PLAYER_SELECT_EXCLUSIVE);
 }
 
 void TrackListModel::clear()

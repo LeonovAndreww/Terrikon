@@ -84,7 +84,7 @@ public:
         NAVIGATION_BOX,
         COMPACT_PLAYER_BUTTON,
         TIME_WIDGET, /* "0:42 / 2:35", for bars laid out like web players */
-        RESERVED_0X2D,
+        SUBTITLE_BUTTON, /* subtitles on / off */
         RESERVED_0X2E,
         RESERVED_0X2F,
         RESERVED_0X30,

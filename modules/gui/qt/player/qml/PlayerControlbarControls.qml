@@ -41,6 +41,7 @@ QtObject {
         { id: ControlListModel.EXTENDED_BUTTON, file: "ExtendedSettingsButton.qml", label: VLCIcons.effect_filter, text: qsTr("Extended panel") },
         { id: ControlListModel.PLAYLIST_BUTTON, file: "PlaylistButton.qml", label: VLCIcons.playlist, text: qsTr("Play Queue") },
         { id: ControlListModel.SNAPSHOT_BUTTON, file: "SnapshotButton.qml", label: VLCIcons.snapshot, text: qsTr("Snapshot") },
+        { id: ControlListModel.SUBTITLE_BUTTON, file: "SubtitleButton.qml", label: VLCIcons.audiosub, text: qsTr("Subtitles on / off") },
         { id: ControlListModel.CLIP_BUTTON, file: "ClipButton.qml", label: VLCIcons.atob, text: qsTr("Clip") },
         { id: ControlListModel.COMPACT_PLAYER_BUTTON, file: "CompactPlayerButton.qml", label: VLCIcons.defullscreen, text: qsTr("Picture in picture") },
         { id: ControlListModel.RECORD_BUTTON, file: "RecordButton.qml", label: VLCIcons.record, text: qsTr("Record") },

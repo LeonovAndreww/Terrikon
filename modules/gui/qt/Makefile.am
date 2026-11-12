@@ -1291,6 +1291,7 @@ libqml_module_playercontrols_a_QML = \
 	player/qml/controlbarcontrols/SlowerButton.qml \
 	player/qml/controlbarcontrols/SnapshotButton.qml \
 	player/qml/controlbarcontrols/ClipButton.qml \
+	player/qml/controlbarcontrols/SubtitleButton.qml \
 	player/qml/controlbarcontrols/CompactPlayerButton.qml \
 	player/qml/controlbarcontrols/SpacerWidget.qml \
 	player/qml/controlbarcontrols/StopButton.qml \

@@ -48,6 +48,8 @@ class TrackListModel : public QAbstractListModel
     Q_OBJECT
     Q_PROPERTY(int count READ getCount NOTIFY countChanged FINAL)
     Q_PROPERTY(bool multiSelect READ getMultiSelect WRITE setMultiSelect NOTIFY multiSelectChanged FINAL)
+    /* Terrikon: one track or more playing (subtitles shown) */
+    Q_PROPERTY(bool anySelected READ anySelected NOTIFY selectionChanged FINAL)
 
 public:
     enum TrackListRoles {
@@ -85,6 +87,12 @@ public:
     /* [{ index, title, enabled, volume }] of every track, in order */
     Q_INVOKABLE QVariantList trackStates() const;
 
+    bool anySelected() const;
+    /* Terrikon, subtitles: off, or back on (the track last shown), as the
+     * button of video sites; the choice holds for the next media too:
+     * subtitles come on by themselves while it is "on" */
+    Q_INVOKABLE void toggleShown();
+
     /* Terrikon, audio: keeps the "several tracks" mode and the names of
      * the tracks switched on in "settings" under "key", and switches the
      * tracks of the same names on in the next media */
@@ -96,6 +104,7 @@ public slots:
 signals:
     void countChanged();
     void multiSelectChanged(bool multiSelect);
+    void selectionChanged();
 
 private:
     vlc_player_t* m_player;
@@ -128,6 +137,10 @@ private:
     /* The remembered tracks are applied once per media, not over the
      * user's own choice */
     bool m_applied = false;
+    /* subtitles: the row last shown, and the media's first track done */
+    int m_lastShown = 0;
+    bool m_autoDone = false;
+    void showByDefault();
 };
 
 /**

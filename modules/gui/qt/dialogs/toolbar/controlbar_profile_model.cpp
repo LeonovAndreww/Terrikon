@@ -104,6 +104,7 @@ decltype (ControlbarProfileModel::m_defaults)
                         {
                             {
                                 {
+                                    ControlListModel::SUBTITLE_BUTTON,
                                     ControlListModel::LANG_BUTTON,
                                     ControlListModel::BOOKMARK_BUTTON,
                                     ControlListModel::CLIP_BUTTON,
@@ -128,6 +129,7 @@ decltype (ControlbarProfileModel::m_defaults)
                         {
                             {
                                 {
+                                    ControlListModel::SUBTITLE_BUTTON,
                                     ControlListModel::LANG_BUTTON,
                                     ControlListModel::BOOKMARK_BUTTON,
                                     ControlListModel::EXTENDED_BUTTON
@@ -476,6 +478,7 @@ decltype (ControlbarProfileModel::m_defaults)
 
                                 },
                                 {
+                                    ControlListModel::SUBTITLE_BUTTON,
                                     ControlListModel::LANG_BUTTON,
                                     ControlListModel::BOOKMARK_BUTTON,
                                     ControlListModel::CLIP_BUTTON,
@@ -502,6 +505,7 @@ decltype (ControlbarProfileModel::m_defaults)
 
                                 },
                                 {
+                                    ControlListModel::SUBTITLE_BUTTON,
                                     ControlListModel::LANG_BUTTON,
                                     ControlListModel::BOOKMARK_BUTTON,
                                     ControlListModel::RANDOM_BUTTON,
@@ -896,9 +900,28 @@ bool ControlbarProfileModel::reload()
                 return list;
             };
 
-            const std::array<QVector<int>, 3> data { split(alignments[1]),
-                                                     split(alignments[2]),
-                                                     split(alignments[3]) };
+            std::array<QVector<int>, 3> data { split(alignments[1]),
+                                               split(alignments[2]),
+                                               split(alignments[3]) };
+
+            /* Terrikon: bars saved before the subtitles button existed get
+             * it, before the language button, once */
+            if (!m_settings->value(QStringLiteral("subtitleButtonAdded")).toBool())
+            {
+                bool has = false;
+                for (const auto &list : data)
+                    has = has || list.contains(ControlListModel::SUBTITLE_BUTTON);
+                if (!has)
+                    for (auto &list : data)
+                    {
+                        const int lang = list.indexOf(ControlListModel::LANG_BUTTON);
+                        if (lang >= 0)
+                        {
+                            list.insert(lang, ControlListModel::SUBTITLE_BUTTON);
+                            break;
+                        }
+                    }
+            }
 
             ptrNewProfile->setModelData(identifier, data);
             ptrNewProfile->resetDirty(); // Newly loaded model can not be dirty
@@ -908,6 +931,7 @@ bool ControlbarProfileModel::reload()
     }
 
     m_settings->endArray();
+    m_settings->setValue(QStringLiteral("subtitleButtonAdded"), true);
 
     m_selectedProfile = -1;
     std::for_each(m_profiles.begin(), m_profiles.end(), [](auto i) { delete i; });
