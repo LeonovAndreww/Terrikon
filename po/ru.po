@@ -44548,3 +44548,11 @@ msgstr "Показать в «Видео»"
 #: terrikon
 msgid "Open folder"
 msgstr "Открыть папку"
+
+#: terrikon
+msgid "No podcasts yet: add one by the address of its feed."
+msgstr "Подкастов пока нет: добавьте подкаст по адресу его ленты."
+
+#: terrikon
+msgid "Add podcasts…"
+msgstr "Добавить подкасты…"

@@ -24,6 +24,7 @@ import VLC.Widgets as Widgets
 import VLC.MainInterface
 import VLC.Style
 import VLC.Network
+import VLC.Dialogs
 
 Widgets.PageExt {
 
@@ -335,15 +336,23 @@ Widgets.PageExt {
                 coverWidth : VLCStyle.dp(182, VLCStyle.scale)
                 coverHeight: VLCStyle.dp(114, VLCStyle.scale)
 
-                text: qsTr("Nothing to see here, go back.")
+                // Terrikon: the podcasts are the feeds one adds: say so, and
+                // where (VLC 4 had lost the way to its dialog)
+                readonly property bool _podcasts: (root.source_name ?? "") === "podcast"
 
-                button.iconTxt: VLCIcons.back
-                button.text: qsTr("Back")
-                button.enabled: !History.previousEmpty
+                text: _podcasts ? qsTr("No podcasts yet: add one by the address of its feed.")
+                                : qsTr("Nothing to see here, go back.")
+
+                button.iconTxt: _podcasts ? VLCIcons.add : VLCIcons.back
+                button.text: _podcasts ? qsTr("Add podcasts…") : qsTr("Back")
+                button.enabled: _podcasts || !History.previousEmpty
                 button.width: button.implicitWidth
 
                 function onNavigate(reason) {
-                    History.previous(reason)
+                    if (_podcasts)
+                        DialogsProvider.podcastConfigureDialog()
+                    else
+                        History.previous(reason)
                 }
 
                 Navigation.parentItem: root
