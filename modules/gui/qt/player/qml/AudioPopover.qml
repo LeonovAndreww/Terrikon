@@ -44,6 +44,17 @@ T.Popup {
     // Clicking the speaker itself (mute) keeps it open
     closePolicy: T.Popup.CloseOnEscape | T.Popup.CloseOnPressOutsideParent
 
+    // Terrikon: menus open and close with a short movement
+    enter: Transition {
+        ParallelAnimation {
+            NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 150; easing.type: Easing.OutCubic }
+            NumberAnimation { property: "scale"; from: 0.96; to: 1; duration: 150; easing.type: Easing.OutCubic }
+        }
+    }
+    exit: Transition {
+        NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 110; easing.type: Easing.InCubic }
+    }
+
     implicitWidth: VLCStyle.dp(280, VLCStyle.scale)
     implicitHeight: implicitContentHeight + topPadding + bottomPadding
 

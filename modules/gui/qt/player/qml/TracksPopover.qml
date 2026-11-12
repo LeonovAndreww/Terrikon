@@ -41,6 +41,17 @@ T.Popup {
     margins: VLCStyle.margin_small
     closePolicy: T.Popup.CloseOnEscape | T.Popup.CloseOnPressOutside
 
+    // Terrikon: menus open and close with a short movement
+    enter: Transition {
+        ParallelAnimation {
+            NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 150; easing.type: Easing.OutCubic }
+            NumberAnimation { property: "scale"; from: 0.96; to: 1; duration: 150; easing.type: Easing.OutCubic }
+        }
+    }
+    exit: Transition {
+        NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 110; easing.type: Easing.InCubic }
+    }
+
     // The synchronization page needs more room than the lists
     readonly property bool _wide: stack.currentItem ? !!stack.currentItem.wide : false
     implicitWidth: _wide ? VLCStyle.dp(560, VLCStyle.scale) : VLCStyle.dp(320, VLCStyle.scale)
@@ -88,6 +99,8 @@ T.Popup {
         property string value: ""
         property bool checkMark: false
         property bool opensPage: false
+        // an action (not a choice): no room kept for a check mark
+        property bool noCheckMark: false
 
         Layout.fillWidth: true
         implicitHeight: VLCStyle.dp(40, VLCStyle.scale)
@@ -104,7 +117,7 @@ T.Popup {
 
             Text {
                 Layout.preferredWidth: VLCStyle.dp(18, VLCStyle.scale)
-                visible: !row.opensPage
+                visible: !row.opensPage && !row.noCheckMark
                 text: row.checkMark ? "✓" : ""
                 color: "white"
                 font.pixelSize: VLCStyle.fontSize_normal
@@ -220,6 +233,7 @@ T.Popup {
             }
             Row {
                 text: qsTr("Open subtitle file…")
+                noCheckMark: true
                 onClicked: {
                     root.close()
                     DialogsProvider.loadSubtitlesFile()

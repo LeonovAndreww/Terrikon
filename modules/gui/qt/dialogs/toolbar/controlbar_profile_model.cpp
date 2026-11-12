@@ -105,7 +105,6 @@ decltype (ControlbarProfileModel::m_defaults)
                             {
                                 {
                                     ControlListModel::SUBTITLE_BUTTON,
-                                    ControlListModel::LANG_BUTTON,
                                     ControlListModel::BOOKMARK_BUTTON,
                                     ControlListModel::CLIP_BUTTON,
                                     ControlListModel::EXTENDED_BUTTON,
@@ -130,7 +129,6 @@ decltype (ControlbarProfileModel::m_defaults)
                             {
                                 {
                                     ControlListModel::SUBTITLE_BUTTON,
-                                    ControlListModel::LANG_BUTTON,
                                     ControlListModel::BOOKMARK_BUTTON,
                                     ControlListModel::EXTENDED_BUTTON
                                 },
@@ -479,7 +477,6 @@ decltype (ControlbarProfileModel::m_defaults)
                                 },
                                 {
                                     ControlListModel::SUBTITLE_BUTTON,
-                                    ControlListModel::LANG_BUTTON,
                                     ControlListModel::BOOKMARK_BUTTON,
                                     ControlListModel::CLIP_BUTTON,
                                     ControlListModel::EXTENDED_BUTTON,
@@ -506,7 +503,6 @@ decltype (ControlbarProfileModel::m_defaults)
                                 },
                                 {
                                     ControlListModel::SUBTITLE_BUTTON,
-                                    ControlListModel::LANG_BUTTON,
                                     ControlListModel::BOOKMARK_BUTTON,
                                     ControlListModel::RANDOM_BUTTON,
                                     ControlListModel::LOOP_BUTTON,
@@ -904,6 +900,28 @@ bool ControlbarProfileModel::reload()
                                                split(alignments[2]),
                                                split(alignments[3]) };
 
+            /* Terrikon: the subtitles button took over the language one
+             * (its menu opens from it): it goes, once */
+            if (!m_settings->value(QStringLiteral("langMergedIntoSubtitles")).toBool())
+            {
+                bool hasSubtitles = false;
+                for (const auto &list : data)
+                    hasSubtitles = hasSubtitles || list.contains(ControlListModel::SUBTITLE_BUTTON);
+                for (auto &list : data)
+                {
+                    const int lang = list.indexOf(ControlListModel::LANG_BUTTON);
+                    if (lang < 0)
+                        continue;
+                    if (hasSubtitles)
+                        list.removeAt(lang);
+                    else
+                    {
+                        list[lang] = ControlListModel::SUBTITLE_BUTTON;
+                        hasSubtitles = true;
+                    }
+                }
+            }
+
             /* Terrikon: bars saved before the subtitles button existed get
              * it, before the language button, once */
             if (!m_settings->value(QStringLiteral("subtitleButtonAdded")).toBool())
@@ -932,6 +950,7 @@ bool ControlbarProfileModel::reload()
 
     m_settings->endArray();
     m_settings->setValue(QStringLiteral("subtitleButtonAdded"), true);
+    m_settings->setValue(QStringLiteral("langMergedIntoSubtitles"), true);
 
     m_selectedProfile = -1;
     std::for_each(m_profiles.begin(), m_profiles.end(), [](auto i) { delete i; });

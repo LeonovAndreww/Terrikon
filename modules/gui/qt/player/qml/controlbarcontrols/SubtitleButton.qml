@@ -22,37 +22,121 @@ import VLC.Style
 import VLC.Player
 import VLC.Util
 
-// Subtitles on / off, as on video sites: shown only when the media has some,
-// off by default (unless switched on last time); the track the button turns
-// back on is the one last shown
+// Subtitles: a click switches them on or off (the track last shown comes
+// back); resting the pointer on it, or a right click, opens the menu of the
+// tracks (which subtitles, their delay, a file of them; the sound tracks
+// too), the former "Audio and subtitles" button. Off by default, unless
+// switched on last time.
 Widgets.IconToolButton {
     id: root
 
-    visible: Player.subtitleTracks.count > 0
-    width: visible ? implicitWidth : 0
+    readonly property var _parentItem: {
+        if ((typeof rootPlayer !== 'undefined') && (rootPlayer !== null))
+            return rootPlayer
+        else
+            return g_mainDisplay
+    }
 
+    signal requestLockUnlockAutoHide(bool lock)
+    signal menuOpened(var menu)
+
+    readonly property bool _has: Player.subtitleTracks.count > 0
     readonly property bool _on: Player.subtitleTracks.anySelected
 
     checked: _on
     text: VLCIcons.audiosub
-    description: _on ? qsTr("Subtitles off") : qsTr("Subtitles on")
+    description: !_has ? qsTr("Subtitles and tracks")
+                       : (_on ? qsTr("Subtitles off") : qsTr("Subtitles on"))
 
-    onClicked: Player.subtitleTracks.toggleShown()
-
-    // Terrikon: on and off told apart whatever the accent (white by default,
-    // the colour of the icons): dim when off, a dot under it when on
-    opacity: checked ? 1.0 : 0.55
+    // off: dim and struck through
+    opacity: (_has && _on) ? 1.0 : 0.55
     Rectangle {
-        visible: parent.checked
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: -VLCStyle.dp(1, VLCStyle.scale)
-        width: VLCStyle.dp(4, VLCStyle.scale)
-        height: width
-        radius: width / 2
-        color: parent.color
+        visible: !(root._has && root._on)
+        anchors.centerIn: parent
+        width: parent.width * 0.62
+        height: VLCStyle.dp(1.5, VLCStyle.scale)
+        radius: height / 2
+        rotation: -45
+        color: root.color
     }
 
+    onClicked: {
+        if (_has)
+            Player.subtitleTracks.toggleShown()
+        else
+            _open()
+    }
+
+    // the menu: on resting the pointer, or a right click
+    function _open() {
+        if (menuLoader.item && !menuLoader.item.opened)
+            menuLoader.item.open()
+    }
+
+    Timer {
+        id: hoverOpen
+        interval: 450
+        onTriggered: root._open()
+    }
+    Timer {
+        id: hoverClose
+        interval: 500
+        onTriggered: {
+            if (menuLoader.item && menuLoader.item.opened && !menuLoader.item.pointerInside && !root.hovered)
+                menuLoader.item.close()
+        }
+    }
+    onHoveredChanged: {
+        if (hovered) {
+            hoverClose.stop()
+            hoverOpen.restart()
+        } else {
+            hoverOpen.stop()
+            hoverClose.restart()
+        }
+    }
+
+    TapHandler {
+        acceptedButtons: Qt.RightButton
+        onTapped: root._open()
+    }
+
+    Loader {
+        id: menuLoader
+
+        sourceComponent: TracksPopover {
+            id: menu
+
+            property bool pointerInside: menuHover.hovered
+
+            parent: root
+
+            x: 0
+            y: -height - VLCStyle.margin_small
+
+            focus: true
+
+            HoverHandler {
+                id: menuHover
+                onHoveredChanged: if (!hovered) hoverClose.restart()
+            }
+
+            onOpened: {
+                root.requestLockUnlockAutoHide(true)
+                root.menuOpened(menu)
+            }
+
+            onClosed: {
+                root.requestLockUnlockAutoHide(false)
+                root.menuOpened(null)
+            }
+        }
+    }
+
+    function forceUnlock() {
+        if (menuLoader.item)
+            menuLoader.item.close()
+    }
 
     AccessibleCompat.id: "subtitleButton"
 }
