@@ -44492,3 +44492,39 @@ msgstr "Очистить очередь"
 #: terrikon
 msgid "Journals of the last runs..."
 msgstr "Журналы последних запусков..."
+
+#: terrikon
+msgid "Minimizing during music shows the mini window"
+msgstr "Сворачивание во время музыки показывает мини-окно"
+
+#: terrikon
+msgid "Minimizing during a video goes to picture in picture"
+msgstr "Сворачивание во время видео включает «картинку в картинке»"
+
+#: terrikon
+msgid "Colour"
+msgstr "Цвет"
+
+#: terrikon
+msgid "More"
+msgstr "Ещё"
+
+#: terrikon
+msgid "Fainter layers behind"
+msgstr "Бледные слои позади"
+
+#: terrikon
+msgid "Mini window over the others"
+msgstr "Мини-окно поверх всех"
+
+#: terrikon
+msgid "VLC visualizations (the whole view)"
+msgstr "Визуализации VLC (на весь экран)"
+
+#: terrikon
+msgid "No visualization"
+msgstr "Нет"
+
+#: terrikon
+msgid "You stopped here last time (%1); click to go back there"
+msgstr "Здесь вы остановились в прошлый раз (%1); нажмите, чтобы вернуться"
