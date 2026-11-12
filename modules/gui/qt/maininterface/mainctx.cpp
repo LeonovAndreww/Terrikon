@@ -763,6 +763,28 @@ void MainCtx::setShowRemainingTime( bool show )
     emit showRemainingTimeChanged(show);
 }
 
+bool MainCtx::pipOnMinimizeVideo() const
+{
+    return getSettings()->value( "MainWindow/PipOnMinimizeVideo", true ).toBool();
+}
+
+bool MainCtx::pipOnMinimizeMusic() const
+{
+    return getSettings()->value( "MainWindow/PipOnMinimizeMusic", true ).toBool();
+}
+
+void MainCtx::setPipOnMinimizeVideo( bool on )
+{
+    getSettings()->setValue( "MainWindow/PipOnMinimizeVideo", on );
+    emit pipOnMinimizeChanged();
+}
+
+void MainCtx::setPipOnMinimizeMusic( bool on )
+{
+    getSettings()->setValue( "MainWindow/PipOnMinimizeMusic", on );
+    emit pipOnMinimizeChanged();
+}
+
 void MainCtx::setPointingCursor( bool on )
 {
     if (on == m_pointingCursor)

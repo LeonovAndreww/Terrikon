@@ -108,6 +108,10 @@ class MainCtx : public QObject
     Q_PROPERTY(bool showRemainingTime READ isShowRemainingTime WRITE setShowRemainingTime NOTIFY showRemainingTimeChanged FINAL)
     /* Terrikon: a hand over what can be clicked, or the arrow everywhere */
     Q_PROPERTY(bool pointingCursor READ isPointingCursor WRITE setPointingCursor NOTIFY pointingCursorChanged FINAL)
+    /* Terrikon: minimizing while playing goes to picture in picture (a video)
+     * or the mini window (music) */
+    Q_PROPERTY(bool pipOnMinimizeVideo READ pipOnMinimizeVideo WRITE setPipOnMinimizeVideo NOTIFY pipOnMinimizeChanged FINAL)
+    Q_PROPERTY(bool pipOnMinimizeMusic READ pipOnMinimizeMusic WRITE setPipOnMinimizeMusic NOTIFY pipOnMinimizeChanged FINAL)
     Q_PROPERTY(VLCVarChoiceModel* extraInterfaces READ getExtraInterfaces CONSTANT FINAL)
     Q_PROPERTY(double intfScaleFactor READ getIntfScaleFactor NOTIFY intfScaleFactorChanged FINAL)
     Q_PROPERTY(bool mediaLibraryAvailable READ hasMediaLibrary CONSTANT FINAL)
@@ -245,6 +249,8 @@ public:
     inline bool isHideAfterCreation() const { return b_hideAfterCreation; }
     inline bool isShowRemainingTime() const  { return m_showRemainingTime; }
     inline bool isPointingCursor() const  { return m_pointingCursor; }
+    bool pipOnMinimizeVideo() const;
+    bool pipOnMinimizeMusic() const;
     inline double getIntfScaleFactor() const { return m_intfScaleFactor; }
     Q_INVOKABLE inline double getIntfUserScaleFactor() const { return m_intfUserScaleFactor; }
     inline int CSDBorderSize() const { return 10; }
@@ -559,6 +565,8 @@ public slots:
     void setInterfaceAlwaysOnTop( bool );
     void setShowRemainingTime( bool );
     void setPointingCursor( bool );
+    void setPipOnMinimizeVideo( bool );
+    void setPipOnMinimizeMusic( bool );
     void setGridView( bool );
     void setGrouping( Grouping );
     void setAlbumSections( bool );
@@ -615,6 +623,7 @@ signals:
     void hasEmbededVideoChanged(bool);
     void showRemainingTimeChanged(bool);
     void pointingCursorChanged(bool);
+    void pipOnMinimizeChanged();
     void gridViewChanged( bool );
     void hasGridListModeChanged( bool );
     void groupingChanged( Grouping );

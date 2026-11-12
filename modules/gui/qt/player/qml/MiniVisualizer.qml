@@ -409,6 +409,8 @@ Window {
                     anchors.right: parent.right
                     anchors.top: parent.top
                     anchors.margins: 10
+                    // clear of the two buttons in the corner
+                    anchors.rightMargin: 10 + 2 * 22 + 4 + 6
                     size: Math.max(10, Math.min(15, root.width / 18))
                 }
                 Controls {

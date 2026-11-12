@@ -237,7 +237,7 @@ bool InterfaceWindowHandler::eventFilter(QObject*, QEvent* event)
             /* Terrikon: a video goes on in picture in picture instead of
              * leaving the screen; music shows the mini window (from QML) */
             terrikon::CompactPlayer *compact = terrikon::CompactPlayer::instance();
-            if( compact && !compact->active() &&
+            if( compact && !compact->active() && m_mainCtx->pipOnMinimizeVideo() &&
                 THEMIM->getPlayingState() == PlayerController::PLAYING_STATE_PLAYING &&
                 THEMIM->hasVideoOutput() && THEMIM->getVideoTracks()->getCount() > 0 )
             {

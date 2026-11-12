@@ -737,6 +737,18 @@ SPrefsPanel::SPrefsPanel( qt_intf_t *_p_intf, QWidget *_parent,
             /* Terrikon: a hand over what can be clicked, or the arrow */
             if( MainCtx *mainCtx = p_intf->p_mi )
             {
+                for( int music = 0; music < 2; ++music )
+                {
+                    auto *pip = new QCheckBox( music ? qtr( "Minimizing during music shows the mini window" )
+                                                     : qtr( "Minimizing during a video goes to picture in picture" ), panel );
+                    pip->setChecked( music ? mainCtx->pipOnMinimizeMusic() : mainCtx->pipOnMinimizeVideo() );
+                    connect( pip, &QCheckBox::toggled, mainCtx, music ? &MainCtx::setPipOnMinimizeMusic
+                                                                      : &MainCtx::setPipOnMinimizeVideo );
+                    if( auto *panelLayout = qobject_cast<QBoxLayout *>( panel->layout() ) )
+                        panelLayout->insertWidget( panelLayout->count() - 1, pip );
+                    else if( panel->layout() )
+                        panel->layout()->addWidget( pip );
+                }
                 auto *hand = new QCheckBox( qtr( "Hand cursor over what can be clicked" ), panel );
                 hand->setChecked( mainCtx->isPointingCursor() );
                 connect( hand, &QCheckBox::toggled, mainCtx, &MainCtx::setPointingCursor );

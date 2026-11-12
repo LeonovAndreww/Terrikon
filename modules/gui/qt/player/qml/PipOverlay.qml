@@ -47,6 +47,19 @@ Item {
 
     HoverHandler {
         id: hover
+        // the pointer shows over the video too (it hid until over a button)
+        cursorShape: Qt.ArrowCursor
+    }
+
+    // the wheel sets the volume, as on video sites
+    WheelHandler {
+        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+        onWheel: (event) => {
+            const step = event.angleDelta.y > 0 ? 0.05 : -0.05
+            Player.volume = Math.max(0, Math.min(1.25, Player.volume + step))
+            if (Player.muted && step > 0)
+                Player.muted = false
+        }
     }
 
     // Dragging the video moves the window; a click plays or pauses
@@ -142,7 +155,7 @@ Item {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.top: parent.top
-            anchors.margins: VLCStyle.margin_xsmall
+            anchors.margins: VLCStyle.margin_xxxsmall
             spacing: 0
 
             Text {
@@ -204,8 +217,10 @@ Item {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: parent.bottom
-            anchors.margins: VLCStyle.margin_small
-            spacing: 0
+            anchors.leftMargin: VLCStyle.margin_xsmall
+            anchors.rightMargin: VLCStyle.margin_xsmall
+            anchors.bottomMargin: VLCStyle.margin_xxxsmall
+            spacing: -VLCStyle.dp(4, VLCStyle.scale)
 
             Widgets.SliderExt {
                 id: seek
@@ -235,6 +250,19 @@ Item {
                     size: VLCStyle.icon_small
                     tip: (Player.muted ? qsTr("Unmute") : qsTr("Mute")) + TerrikonActions.hint("vol-mute")
                     onClicked: Player.muted = !Player.muted
+                }
+
+                Widgets.SliderExt {
+                    Layout.preferredWidth: VLCStyle.dp(64, VLCStyle.scale)
+                    from: 0
+                    to: 1.25
+                    value: Player.muted ? 0 : Player.volume
+                    color: "white"
+                    onMoved: {
+                        Player.volume = value
+                        if (Player.muted && value > 0)
+                            Player.muted = false
+                    }
                 }
             }
         }

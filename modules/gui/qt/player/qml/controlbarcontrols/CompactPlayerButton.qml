@@ -29,12 +29,19 @@ Widgets.ImageToolButton {
 
     sourceSize: Qt.size(VLCStyle.icon_toolbar, VLCStyle.icon_toolbar)
 
-    enabled: Player.hasVideoOutput
+    // a video goes to picture in picture; music to its mini window
+    readonly property bool _music: Player.videoTracks.count === 0 && Player.isStarted
+    enabled: Player.hasVideoOutput || _music
     imageSource: SVGColorImage.colorize("qrc:///icons/compact_player.svg")
                      .color1(pipBtn.colorContext.fg.primary).uri()
     description: qsTr("Picture in picture") + TerrikonActions.hint("pip-toggle")
 
-    onClicked: CompactPlayer.toggle()
+    onClicked: {
+        if (pipBtn._music)
+            Visualizer.miniWindow = !Visualizer.miniWindow
+        else
+            CompactPlayer.toggle()
+    }
 
     AccessibleCompat.id: "compactPlayerButton"
 }
