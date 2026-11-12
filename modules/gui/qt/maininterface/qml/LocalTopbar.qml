@@ -152,6 +152,20 @@ T.ToolBar {
                     sourceSize.width: VLCStyle.bannerButton_height
                     sourceSize.height: VLCStyle.bannerButton_height
                     color: theme.fg.primary
+
+                    // Terrikon: as a site's logo, it leads home
+                    animated: true
+                    onClicked: {
+                        if (!History.match(History.viewPath, ["home"]))
+                            History.push(["home"])
+                    }
+
+                    Widgets.ToolTipExt {
+                        colorContext.palette: theme.palette
+                        visible: logoHover.hovered
+                        text: qsTr("Home")
+                    }
+                    HoverHandler { id: logoHover }
                 }
             }
         }
