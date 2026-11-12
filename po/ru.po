@@ -44528,3 +44528,15 @@ msgstr "Нет"
 #: terrikon
 msgid "You stopped here last time (%1); click to go back there"
 msgstr "Здесь вы остановились в прошлый раз (%1); нажмите, чтобы вернуться"
+
+#: terrikon
+msgid "Subtitles and tracks"
+msgstr "Субтитры и дорожки"
+
+#: terrikon
+msgid "Change the cursor over interactive elements"
+msgstr "Менять курсор над интерактивными элементами"
+
+#: terrikon
+msgid "Favourite stations"
+msgstr "Любимые станции"

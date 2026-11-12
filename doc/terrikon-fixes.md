@@ -66,6 +66,10 @@ bug is upstream's; when unsure, the original build is run.
 | The radio stations (and any directory of a network service) showed grey folders instead of their country flags and station logos in the grid view: the grid gave Qt the http(s) address directly, which it does not fetch, while the list view goes through VLC's access | the grid view too goes through `VLCAccessImage` (upstream VLC 4 bug) |
 | Opening a video while a VLC visualization (Goom, spectrum...) was on for music: the visualization kept the player's window and the video opened in a window of its own | an input with a video gets no visualization on its sound (upstream VLC 4 behaviour) |
 | Muting a preview in the library muted Terrikon as a whole, in the Windows volume mixer, from run to run | the preview plays in an audio session of its own (Terrikon's own bug) |
+| A file on a network drive played with the prefetch filter began only once 128 MiB were read (27 s against 2.4 s without it, an OBS recording on an SMB share) | the filter read the whole free space of its buffer in one read, and the first bytes and the seek to the index at the end waited for it; reads are now of 512 KiB at most (0.7 s to start, a seek to the middle in 1.3 s) (upstream VLC 4 bug: `prefetch-read-size` is gone since 4.0) |
+| Some radio stations showed three errors "DVDRead could not open the disc """ each time they played | the "iso" demuxer of dvdread (priority 6, before avformat) was probed on the http stream and opened the default disc; probing a stream without a local file now does nothing, and a failed probe shows no error (upstream VLC 4 bug; dvdnav already did so) |
+| The player of a radio showed neither the seek bar nor "On air" | the "On air" row was never placed in the layout of the bar (Terrikon's own bug) |
+| "Binding loop detected for property active" in the video tiles | the preview's loader stayed active while its own item faded out; a flag of the tile now tells it (Terrikon's own bug) |
 
 ## Known upstream issues, not fixed yet
 

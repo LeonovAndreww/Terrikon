@@ -749,7 +749,7 @@ SPrefsPanel::SPrefsPanel( qt_intf_t *_p_intf, QWidget *_parent,
                     else if( panel->layout() )
                         panel->layout()->addWidget( pip );
                 }
-                auto *hand = new QCheckBox( qtr( "Hand cursor over what can be clicked" ), panel );
+                auto *hand = new QCheckBox( qtr( "Change the cursor over interactive elements" ), panel );
                 hand->setChecked( mainCtx->isPointingCursor() );
                 connect( hand, &QCheckBox::toggled, mainCtx, &MainCtx::setPointingCursor );
                 if( auto *panelLayout = qobject_cast<QBoxLayout *>( panel->layout() ) )
