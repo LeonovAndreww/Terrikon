@@ -231,44 +231,186 @@ FocusScope {
     // cover), then their colour and background, then VLC's, which take the
     // whole view. Choosing one side turns the other off.
     function chooseVisualization(globalPos) {
-        const mark = (on) => on ? "✓  " : "     "
-        const names = []
-        const actions = []
-        const add = (name, action) => { names.push(name); actions.push(action) }
+        const p = rootPlayer.mapFromGlobal(globalPos.x, globalPos.y)
+        visPanel.x = Math.max(VLCStyle.margin_small,
+                              Math.min(rootPlayer.width - visPanel.width - VLCStyle.margin_small, p.x - visPanel.width + VLCStyle.dp(40, VLCStyle.scale)))
+        visPanel.y = Math.min(rootPlayer.height - VLCStyle.dp(120, VLCStyle.scale), p.y + VLCStyle.margin_xxsmall)
+        rootPlayer._vlcVisualization = rootPlayer._vlcVisualizationIndex()
+        visPanel.open()
+    }
 
-        const styles = Visualizer.styleNames
-        for (let s = 1; s < styles.length; ++s) {
-            const style = s
-            add(mark(Visualizer.style === s) + styles[s], () => rootPlayer._chooseOwn(style))
-        }
-        const colors = Visualizer.colorModeNames
-        for (let c = 0; c < colors.length; ++c) {
-            const mode = c
-            add(mark(Visualizer.colorMode === c) + qsTr("Colour: %1").arg(colors[c]) + (c === 2 ? "…" : ""),
-                () => {
-                    if (mode === 2)
-                        Visualizer.pickCustomColor()
-                    else
-                        Visualizer.colorMode = mode
-                })
-        }
-        const backgrounds = Visualizer.backgroundNames
-        for (let b = 0; b < backgrounds.length; ++b) {
-            const background = b
-            add(mark(Visualizer.background === b) + backgrounds[b], () => { Visualizer.background = background })
-        }
-        add(mark(Visualizer.miniWindow) + qsTr("Mini window over all the others"),
-            () => { Visualizer.miniWindow = !Visualizer.miniWindow })
+    // Terrikon: the visualization's settings in one panel of chips rather
+    // than a long menu: style, colour, background, layers, mini window, and
+    // VLC's own visualizations
+    T.Popup {
+        id: visPanel
 
-        const vlcOn = Visualizer.style === 0
-        const current = _vlcVisualizationIndex()
-        for (let i = 0; i < visualizations.count; ++i) {
-            const v = visualizations.objectAt(i)
-            const index = i
-            add(mark(vlcOn && i === current) + qsTr("VLC: %1").arg(v.display), () => rootPlayer._chooseVlc(index))
+        width: VLCStyle.dp(360, VLCStyle.scale)
+        height: implicitContentHeight + topPadding + bottomPadding
+        padding: VLCStyle.margin_normal
+        modal: false
+        focus: true
+        closePolicy: T.Popup.CloseOnEscape | T.Popup.CloseOnPressOutside
+
+        readonly property ColorContext colorContext: ColorContext {
+            id: visTheme
+            colorSet: ColorContext.Window
+            palette: VLCStyle.darkPalette
         }
-        visualizationMenu.actions = actions
-        visualizationMenu.popup(globalPos, names)
+
+        background: Rectangle {
+            radius: VLCStyle.dp(12, VLCStyle.scale)
+            color: Qt.rgba(0.11, 0.11, 0.11, 0.96)
+            border.color: Qt.rgba(1, 1, 1, 0.12)
+            border.width: 1
+        }
+
+        function _cap(text) { return text.length ? text[0].toUpperCase() + text.slice(1) : text }
+
+        enter: Transition { NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 140 } }
+        exit: Transition { NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 120 } }
+
+        component Chip: Rectangle {
+            id: chip
+            property string label
+            property bool on: false
+            property color swatch: "transparent"
+            signal picked()
+
+            implicitWidth: chipRow.implicitWidth + VLCStyle.margin_small * 2
+            implicitHeight: VLCStyle.dp(30, VLCStyle.scale)
+            radius: height / 2
+            color: on ? Qt.rgba(1, 1, 1, 0.92)
+                      : (chipHover.hovered ? Qt.rgba(1, 1, 1, 0.16) : Qt.rgba(1, 1, 1, 0.08))
+            Behavior on color { ColorAnimation { duration: 120 } }
+
+            Row {
+                id: chipRow
+                anchors.centerIn: parent
+                spacing: VLCStyle.margin_xxsmall
+                Rectangle {
+                    visible: chip.swatch.a > 0
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: VLCStyle.dp(12, VLCStyle.scale)
+                    height: width
+                    radius: width / 2
+                    color: chip.swatch
+                    border.color: Qt.rgba(0, 0, 0, 0.3)
+                }
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: chip.label
+                    color: chip.on ? "#111111" : "white"
+                    font.pixelSize: VLCStyle.fontSize_normal
+                }
+            }
+            HoverHandler { id: chipHover; cursorShape: VLCStyle.pointerCursor }
+            TapHandler { onTapped: chip.picked() }
+        }
+
+        component Section: Text {
+            color: Qt.rgba(1, 1, 1, 0.6)
+            font.pixelSize: VLCStyle.fontSize_small
+            font.weight: Font.DemiBold
+            topPadding: VLCStyle.margin_xsmall
+        }
+
+        contentItem: Column {
+            width: visPanel.availableWidth
+            spacing: VLCStyle.margin_xsmall
+
+            Section { text: qsTr("Style") }
+            Flow {
+                width: parent.width
+                spacing: VLCStyle.margin_xxsmall
+                Chip {
+                    label: qsTr("No visualization")
+                    on: Visualizer.style === 0 && rootPlayer._vlcVisualization <= 0
+                    onPicked: { rootPlayer._chooseOwn(0); if (rootPlayer._vlcVisualization > 0) rootPlayer._chooseVlc(0) }
+                }
+                Repeater {
+                    model: Visualizer.styleNames.length - 1
+                    delegate: Chip {
+                        required property int index
+                        label: Visualizer.styleNames[index + 1]
+                        on: Visualizer.style === index + 1
+                        onPicked: rootPlayer._chooseOwn(index + 1)
+                    }
+                }
+            }
+
+            Section { text: qsTr("Colour"); visible: Visualizer.style !== 0 }
+            Flow {
+                visible: Visualizer.style !== 0
+                width: parent.width
+                spacing: VLCStyle.margin_xxsmall
+                Repeater {
+                    model: Visualizer.colorModeNames.length
+                    delegate: Chip {
+                        required property int index
+                        label: visPanel._cap(Visualizer.colorModeNames[index].replace(/…$/, "")) + (index === 2 ? "…" : "")
+                        on: Visualizer.colorMode === index
+                        swatch: index === Visualizer.colorMode ? Visualizer.color : "transparent"
+                        onPicked: {
+                            if (index === 2)
+                                Visualizer.pickCustomColor()
+                            else
+                                Visualizer.colorMode = index
+                        }
+                    }
+                }
+            }
+
+            Section { text: qsTr("Background"); visible: Visualizer.style !== 0 }
+            Flow {
+                visible: Visualizer.style !== 0
+                width: parent.width
+                spacing: VLCStyle.margin_xxsmall
+                Repeater {
+                    model: Visualizer.backgroundNames.length
+                    delegate: Chip {
+                        required property int index
+                        // the section says "Background" already
+                        label: visPanel._cap(Visualizer.backgroundNames[index].replace(/^[^:]+:\s*/, ""))
+                        on: Visualizer.background === index
+                        onPicked: Visualizer.background = index
+                    }
+                }
+            }
+
+            Section { text: qsTr("More"); visible: Visualizer.style !== 0 }
+            Flow {
+                visible: Visualizer.style !== 0
+                width: parent.width
+                spacing: VLCStyle.margin_xxsmall
+                Chip {
+                    label: qsTr("Fainter layers behind")
+                    on: Visualizer.echoes
+                    onPicked: Visualizer.echoes = !Visualizer.echoes
+                }
+                Chip {
+                    label: qsTr("Mini window over the others")
+                    on: Visualizer.miniWindow
+                    onPicked: Visualizer.miniWindow = !Visualizer.miniWindow
+                }
+            }
+
+            Section { text: qsTr("VLC visualizations (the whole view)") }
+            Flow {
+                width: parent.width
+                spacing: VLCStyle.margin_xxsmall
+                Repeater {
+                    model: visualizations.count
+                    delegate: Chip {
+                        required property int index
+                        visible: index > 0
+                        label: visualizations.objectAt(index) ? visualizations.objectAt(index).display : ""
+                        on: Visualizer.style === 0 && rootPlayer._vlcVisualization === index
+                        onPicked: rootPlayer._chooseVlc(index)
+                    }
+                }
+            }
+        }
     }
 
     function _onNavigationCancel() {
@@ -1163,7 +1305,8 @@ FocusScope {
     TopBar {
         id: topBar
 
-        showVisualization: rootPlayer._vlcVisualization > 0
+        // Terrikon: the one visualization button, for any music
+        showVisualization: rootPlayer._vlcVisualization > 0 || Player.videoTracks.count === 0
         onVisualizationRequested: (globalPos) => rootPlayer.chooseVisualization(globalPos)
 
         anchors.top: parent.top

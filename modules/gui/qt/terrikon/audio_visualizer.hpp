@@ -58,6 +58,8 @@ class Visualizer : public QObject
     Q_PROPERTY(bool miniDismissed READ miniDismissed WRITE setMiniDismissed NOTIFY miniDismissedChanged FINAL)
     // White, taken from the cover, or one of the user's
     Q_PROPERTY(int colorMode READ colorMode WRITE setColorMode NOTIFY colorsChanged FINAL)
+    /* the fainter, delayed layers behind the main one (hills) */
+    Q_PROPERTY(bool echoes READ echoes WRITE setEchoes NOTIFY echoesChanged FINAL)
     Q_PROPERTY(QStringList colorModeNames READ colorModeNames CONSTANT FINAL)
     Q_PROPERTY(QColor customColor READ customColor WRITE setCustomColor NOTIFY colorsChanged FINAL)
     // The colours to draw with, following the mode and the cover
@@ -65,6 +67,8 @@ class Visualizer : public QObject
     Q_PROPERTY(QColor color2 READ color2 NOTIFY colorsChanged FINAL)
 
 public:
+    bool echoes() const { return m_echoes; }
+    void setEchoes(bool on);
     enum Style { Off = 0, Ring, Bars, Wave, Hills, Mirror, Line, StyleCount };
     Q_ENUM(Style)
     enum Background { BlurredCover = 0, Black, Cover, BackgroundCount };
@@ -125,6 +129,7 @@ public:
     terrikon_tap *tap() const { return m_tap; }
 
 signals:
+    void echoesChanged();
     void styleChanged();
     void backgroundChanged();
     void miniWindowChanged();
@@ -134,6 +139,7 @@ signals:
     void miniDismissedChanged();
 
 private:
+    bool m_echoes = true;
     void listen();
     void readCoverColor();
 

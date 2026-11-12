@@ -74,6 +74,7 @@ Visualizer::Visualizer(qt_intf_t *intf, QObject *parent)
                           BackgroundCount - 1);
 
     m_miniWindow = m_intf->mainSettings->value(QString::fromLatin1(miniKey), false).toBool();
+    m_echoes = m_intf->mainSettings->value(QStringLiteral("Visualizer/echoes"), true).toBool();
     m_hasMiniPosition = m_intf->mainSettings->contains(QString::fromLatin1(miniPositionKey));
     m_miniPosition = m_intf->mainSettings->value(QString::fromLatin1(miniPositionKey), QPoint(-1, -1)).toPoint();
     m_miniShape = qBound(0, m_intf->mainSettings->value(QString::fromLatin1(miniShapeKey), int(Card)).toInt(),
@@ -92,6 +93,15 @@ Visualizer::Visualizer(qt_intf_t *intf, QObject *parent)
     connect(m_intf->p_mainPlayerController, &PlayerController::playingStateChanged,
             this, [this]() { if (m_listening != (m_style != Off || m_miniWindow)) listen(); });
     listen();
+}
+
+void Visualizer::setEchoes(bool on)
+{
+    if (on == m_echoes)
+        return;
+    m_echoes = on;
+    m_intf->mainSettings->setValue(QStringLiteral("Visualizer/echoes"), on);
+    emit echoesChanged();
 }
 
 void Visualizer::setStyle(int style)
@@ -679,8 +689,12 @@ QSGNode *AudioVisualizer::updatePaintNode(QSGNode *old, UpdatePaintNodeData *)
         const struct { const QVector<float> *values; qreal alpha; qreal lift; } layers[] = {
             { &m_echo2, .14, 1.15 }, { &m_echo1, .22, 1.05 }, { &m_bands, .4, 1.0 },
         };
+        const Visualizer *settings = Visualizer::instance();
+        const bool echoes = !settings || settings->echoes();
         for (const auto &layer : layers)
         {
+            if (!echoes && layer.values != &m_bands)
+                continue;
             const QVector<float> curve = smoothCurve(*layer.values, 4);
             const int n = curve.size();
             const qreal dx = w / (n - 1);
