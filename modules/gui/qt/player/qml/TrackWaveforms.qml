@@ -61,8 +61,24 @@ Item {
     readonly property var _shown: pick < 0 ? _playing
                                            : (_playing.length > pick ? [_playing[pick]] : [])
 
+    // Terrikon: something to draw: one of the shown tracks is decoded (not
+    // only known); before, the bar kept room, and its tool tip floated over
+    // empty space, when the waves could not be made (a network file...)
+    property int _loadedRevision: 0
+    Connections {
+        target: root.loader
+        function onTrackLoaded() { root._loadedRevision++ }
+        function onTracksChanged() { root._loadedRevision++ }
+    }
+    readonly property bool hasData: {
+        void _loadedRevision
+        if (!loader || loader.trackCount <= 0)
+            return false
+        return _shown.some(t => loader.isLoaded(t))
+    }
+
     visible: opacity > 0
-    opacity: (shown && loader && loader.trackCount > 0 && _shown.length > 0) ? 1 : 0
+    opacity: (shown && hasData) ? 1 : 0
 
     Behavior on opacity {
         NumberAnimation { duration: VLCStyle.duration_short }

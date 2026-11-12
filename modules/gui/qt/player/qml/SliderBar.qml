@@ -56,7 +56,7 @@ T.ProgressBar {
     readonly property real _overlayGap: VLCStyle.margin_xxsmall
     // Follows the waves while they fade out too, so the preview above
     // does not drop when the pointer leaves
-    readonly property real _tooltipLift: (trackWaveforms.visible && waveformLoader.trackCount > 0)
+    readonly property real _tooltipLift: (trackWaveforms.visible && trackWaveforms.hasData)
                                          ? trackWaveforms.height + _overlayGap : 0
 
     Keys.onRightPressed: Player.jumpFwd()
