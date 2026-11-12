@@ -45,7 +45,9 @@ Widgets.GridItem {
 
     image: {
         if (model.artwork && model.artwork.toString() !== "") {
-            return model.artwork
+            // through VLC's own access, as the list view does: Qt alone
+            // does not fetch http(s) (country flags, station logos)
+            return VLCAccessImage.uri(model.artwork)
         }
         return ""
     }

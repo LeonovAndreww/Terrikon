@@ -54,6 +54,11 @@ T.Pane {
     property real bookmarksHeight: VLCStyle.controlBarBookmarksHeight
     property bool showRemainingTime: true
 
+    // Terrikon: a live stream (a radio): nothing to seek, no end
+    readonly property bool _live: (Player.playingState === Player.PLAYING_STATE_PLAYING
+                                   || Player.playingState === Player.PLAYING_STATE_PAUSED)
+                                  && !Player.seekable
+
     property var menu: undefined
 
     signal requestLockUnlockAutoHide(bool lock)
@@ -176,7 +181,7 @@ T.Pane {
                 opacity: mediaTime.opacity
                 horizontalAlignment: Text.AlignHCenter
 
-                visible: root.showRemainingTime
+                visible: root.showRemainingTime && !root._live
 
                 // TODO: Do not use `Binding` when minimum Qt is 6.12:
                 Binding {
@@ -223,9 +228,39 @@ T.Pane {
                     x: (parent.width - width) / 2
                 }
             },
+            // Terrikon: on air, instead of a bar to seek in
+            Row {
+                visible: root._live
+                Layout.fillWidth: true
+                spacing: VLCStyle.margin_xsmall
+
+                Rectangle {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: VLCStyle.dp(8, VLCStyle.scale)
+                    height: width
+                    radius: width / 2
+                    color: "#E53935"
+
+                    SequentialAnimation on opacity {
+                        running: root._live && Player.playingState === Player.PLAYING_STATE_PLAYING
+                        loops: Animation.Infinite
+                        NumberAnimation { to: 0.35; duration: 900; easing.type: Easing.InOutSine }
+                        NumberAnimation { to: 1; duration: 900; easing.type: Easing.InOutSine }
+                    }
+                }
+
+                T.Label {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: qsTr("On air")
+                    color: mediaTime.color
+                    font.pixelSize: VLCStyle.fontSize_normal
+                    font.weight: Font.DemiBold
+                }
+            },
             SliderBar {
                 id: trackPositionSlider
 
+                visible: !root._live
                 barHeight: root.sliderHeight
 
                 Accessible.role: Accessible.Slider
