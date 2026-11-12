@@ -25,6 +25,10 @@
 #include "playlist_controller_p.hpp"
 #include <vlc_player.h>
 #include <vlc_url.h>
+#include <vlc_input_item.h>
+#ifdef _WIN32
+# include <windows.h>
+#endif
 #include "util/shared_input_item.hpp"
 #include <algorithm>
 #include <QVariant>
@@ -481,6 +485,41 @@ PlaylistController::append(const QVector<Media> &media, bool startPlaying)
     }
 }
 
+/* Terrikon: a file on a network drive (a share, a mapped drive) is read
+ * well ahead in the background, 128 MiB, rather than about a second: a slow
+ * or unsteady connection then no longer stalls the playback at once */
+static void readAheadOnNetworkDrives(const QVector<vlc::playlist::Media> &media)
+{
+#ifdef _WIN32
+    for (const vlc::playlist::Media &m : media)
+    {
+        input_item_t *item = m.raw();
+        if (!item)
+            continue;
+        char *uri = input_item_GetURI(item);
+        if (!uri)
+            continue;
+        char *path = strncmp(uri, "file:", 5) == 0 ? vlc_uri2path(uri) : nullptr;
+        free(uri);
+        if (!path)
+            continue;
+        bool remote = path[0] == '\\' && path[1] == '\\';
+        if (!remote && path[0] && path[1] == ':')
+        {
+            const wchar_t root[] = { (wchar_t)path[0], L':', L'\\', 0 };
+            remote = GetDriveTypeW(root) == DRIVE_REMOTE;
+        }
+        free(path);
+        if (!remote)
+            continue;
+        input_item_AddOption(item, ":stream-filter=prefetch", VLC_INPUT_OPTION_TRUSTED);
+        input_item_AddOption(item, ":prefetch-buffer-size=131072", VLC_INPUT_OPTION_TRUSTED);
+    }
+#else
+    VLC_UNUSED(media);
+#endif
+}
+
 void
 PlaylistController::appendNow(const QVector<Media> &media, bool startPlaying)
 {
@@ -488,6 +527,7 @@ PlaylistController::appendNow(const QVector<Media> &media, bool startPlaying)
 
     if (Q_UNLIKELY(media.isEmpty()))
         return;
+    readAheadOnNetworkDrives(media);
 
     vlc_playlist_locker locker(d->m_playlist);
 
@@ -516,6 +556,7 @@ PlaylistController::insert(size_t index, const QVector<Media> &media, bool start
 
     if (Q_UNLIKELY(media.isEmpty()))
         return;
+    readAheadOnNetworkDrives(media);
 
     vlc_playlist_locker locker(d->m_playlist);
 

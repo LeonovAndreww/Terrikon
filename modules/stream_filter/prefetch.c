@@ -79,6 +79,8 @@ typedef struct
     struct stream_ctrl *controls;
 } stream_sys_t;
 
+#define PREFETCH_CHUNK (512 * 1024)
+
 static ssize_t ThreadRead(stream_t *stream, void *buf, size_t length)
 {
     stream_sys_t *sys = stream->p_sys;
@@ -244,6 +246,12 @@ static void *Thread(void *data)
          /* Do not step past the sharp edge of the circular buffer */
         if (offset + len > sys->buffer_size)
             len = sys->buffer_size - offset;
+        /* Terrikon: nor read the whole free space at once. With a large
+         * buffer, one read of it (128 MiB from a network share) took seconds,
+         * while the first bytes and any seek waited for it: a file only began
+         * to play once the buffer was full. */
+        if (len > PREFETCH_CHUNK)
+            len = PREFETCH_CHUNK;
 
         ssize_t val = ThreadRead(stream, sys->buffer + offset, len);
         if (val < 0)

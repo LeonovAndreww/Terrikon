@@ -350,9 +350,16 @@ static int FileControl( stream_t *p_access, int i_query, va_list args )
     switch( i_query )
     {
         case STREAM_CAN_SEEK:
-        case STREAM_CAN_FASTSEEK:
             pb_bool = va_arg( args, bool * );
             *pb_bool = (p_access->pf_seek != NULL);
+            break;
+
+        case STREAM_CAN_FASTSEEK:
+            pb_bool = va_arg( args, bool * );
+            /* Terrikon: not on a network drive, so that reading ahead of it
+             * (the prefetch filter) may be used */
+            *pb_bool = (p_access->pf_seek != NULL)
+                    && !IsRemote (p_sys->fd, p_access->psz_filepath);
             break;
 
         case STREAM_CAN_PAUSE:
