@@ -98,6 +98,29 @@ Components::Components(qt_intf_t *intf, QObject *parent)
     s_instance = this;
     /* yt-dlp has to follow the sites: once a day, quietly */
     QTimer::singleShot(15000, this, &Components::updateYtdlpInBackground);
+    QTimer::singleShot(3000, this, &Components::installAskedByInstaller);
+}
+
+/* Asked for by the installer (its "Components" box): the tools are
+ * downloaded at the first start, with the window showing how far */
+void Components::installAskedByInstaller()
+{
+    QSettings installer(QStringLiteral("HKEY_CURRENT_USER\\Software\\Terrikon"), QSettings::NativeFormat);
+    if (installer.value(QStringLiteral("InstallComponents")).toString() != QLatin1String("1"))
+        return;
+    installer.setValue(QStringLiteral("InstallComponents"), QStringLiteral("0"));
+    bool any = false;
+    for (const char *id : { "ffmpeg", "yt-dlp" })
+    {
+        const QString tool = QString::fromLatin1(id);
+        if (!installed(tool))
+        {
+            install(tool);
+            any = true;
+        }
+    }
+    if (any)
+        showDialog();
 }
 
 Components *Components::instance()

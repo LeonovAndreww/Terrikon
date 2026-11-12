@@ -26,6 +26,9 @@
 # include "config.h"
 #endif
 
+#include "terrikon/components.hpp"
+#include <QGroupBox>
+#include <QBoxLayout>
 #include "simple_preferences.hpp"
 #include "preferences_widgets.hpp"
 #include "dialogs/dialogs_provider.hpp"
@@ -700,6 +703,36 @@ SPrefsPanel::SPrefsPanel( qt_intf_t *_p_intf, QWidget *_parent,
             auto& ui = m_interfaceUI;
             ui.setupUi( panel );
             panel_label->setText( qtr("Interface Settings") );
+
+            /* Terrikon: the outside tools (ffmpeg, yt-dlp): what is there,
+             * and the window to download, update or remove them */
+            if( terrikon::Components *components = terrikon::Components::instance() )
+            {
+                auto *box = new QGroupBox( qtr( "Components" ), panel );
+                auto *boxLayout = new QHBoxLayout( box );
+                auto *status = new QLabel( box );
+                status->setWordWrap( true );
+                const auto describe = [components]( const char *id, const char *name ) {
+                    const QString tool = QString::fromLatin1( id );
+                    return components->installed( tool )
+                        ? qtr( "%1: %2" ).arg( QString::fromLatin1( name ), components->version( tool ) )
+                        : qtr( "%1: not installed" ).arg( QString::fromLatin1( name ) );
+                };
+                const auto refresh = [status, describe]() {
+                    status->setText( describe( "ffmpeg", "ffmpeg" ) + QLatin1Char( '\n' )
+                                     + describe( "yt-dlp", "yt-dlp" ) );
+                };
+                refresh();
+                connect( components, &terrikon::Components::changed, status, refresh );
+                auto *manage = new QPushButton( qtr( "Manage..." ), box );
+                connect( manage, &QPushButton::clicked, components, &terrikon::Components::showDialog );
+                boxLayout->addWidget( status, 1 );
+                boxLayout->addWidget( manage, 0, Qt::AlignTop );
+                if( auto *panelLayout = qobject_cast<QBoxLayout *>( panel->layout() ) )
+                    panelLayout->insertWidget( panelLayout->count() - 1, box );
+                else if( panel->layout() )
+                    panel->layout()->addWidget( box );
+            }
 
 #ifndef _WIN32
             ui.langBox->hide();

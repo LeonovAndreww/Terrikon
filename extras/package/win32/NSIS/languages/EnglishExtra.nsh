@@ -12,6 +12,8 @@ ${LangFileString} Name_SectionGroupVideo "Video Files"
 ${LangFileString} Name_SectionGroupOther "Other"
 ${LangFileString} Name_Section07 "Context Menus"
 ${LangFileString} Name_Section08 "Delete preferences and cache"
+${LangFileString} Name_Section09 "Components: FFmpeg and yt-dlp"
+${LangFileString} Desc_Section09 "Download on first start FFmpeg (clips, sound waves, frames on the seek bar) and yt-dlp (links to YouTube and other sites); remove or update them in Tools > Components"
 
 ${LangFileString} Desc_Section01 \
     "The media player itself"

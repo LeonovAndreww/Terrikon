@@ -63,6 +63,8 @@ public:
     Q_INVOKABLE void offer(const QString &id, const QString &why);
     /* The window listing the components */
     Q_INVOKABLE void showDialog();
+    /* the installer's "Components" box: download them now, once */
+    void installAskedByInstaller();
 
 signals:
     void changed(const QString &id);
