@@ -28,6 +28,7 @@ import VLC.Widgets as Widgets
 import VLC.Util
 import VLC.Style
 import VLC.Terrikon
+import VLC.Playlist
 
 Widgets.PageExt {
     id: root
@@ -451,6 +452,82 @@ Widgets.PageExt {
 
             Navigation.parentItem: root
             Navigation.upItem: coneNButtons
+
+            // Terrikon: favourite stations, a click plays one
+            Widgets.ViewHeader {
+                visible: favouritesRow.count > 0
+                text: qsTr("Favourite stations")
+                view: favouritesRow
+                seeAllButton.visible: false
+            }
+
+            ListView {
+                id: favouritesRow
+
+                anchors.left: parent.left
+                anchors.right: parent.right
+
+                // in line with the rows below (and their headers)
+                readonly property int contentLeftMargin: continueWatchingRow.visible
+                                                         ? continueWatchingRow.contentLeftMargin
+                                                         : VLCStyle.layout_left_margin
+                readonly property int contentRightMargin: contentLeftMargin
+                leftMargin: contentLeftMargin
+                rightMargin: contentRightMargin
+
+                visible: count > 0
+                height: visible ? VLCStyle.dp(150, VLCStyle.scale) : 0
+                orientation: ListView.Horizontal
+                spacing: VLCStyle.margin_normal
+                clip: true
+                model: MediaFolders.favourites
+
+                delegate: Item {
+                    id: station
+                    required property var modelData
+                    width: VLCStyle.dp(120, VLCStyle.scale)
+                    height: favouritesRow.height
+
+                    Rectangle {
+                        id: stationArt
+                        width: parent.width
+                        height: width
+                        radius: VLCStyle.dp(10, VLCStyle.scale)
+                        color: Qt.rgba(1, 1, 1, stationHover.hovered ? 0.12 : 0.06)
+                        clip: true
+
+                        // no logo: the first letter of its name
+                        Text {
+                            anchors.centerIn: parent
+                            visible: !station.modelData.art
+                            text: (station.modelData.name || "?").trim().charAt(0).toUpperCase()
+                            color: theme.fg.secondary
+                            font.pixelSize: VLCStyle.dp(48, VLCStyle.scale)
+                            font.weight: Font.DemiBold
+                        }
+
+                        Image {
+                            anchors.fill: parent
+                            anchors.margins: VLCStyle.margin_small
+                            source: station.modelData.art ? VLCAccessImage.uri(station.modelData.art) : ""
+                            fillMode: Image.PreserveAspectFit
+                            asynchronous: true
+                            cache: true
+                        }
+                    }
+                    Text {
+                        anchors.top: stationArt.bottom
+                        anchors.topMargin: VLCStyle.margin_xsmall
+                        width: parent.width
+                        text: station.modelData.name
+                        elide: Text.ElideRight
+                        color: theme.fg.primary
+                        font.pixelSize: VLCStyle.fontSize_normal
+                    }
+                    HoverHandler { id: stationHover; cursorShape: VLCStyle.pointerCursor }
+                    TapHandler { onTapped: MainPlaylistController.append([station.modelData.mrl], true) }
+                }
+            }
 
             Widgets.ViewHeader {
                 visible: continueWatchingRow.visible

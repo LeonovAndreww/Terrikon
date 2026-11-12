@@ -22,6 +22,7 @@ import VLC.Widgets as Widgets
 import VLC.Network
 import VLC.Style
 import VLC.Util
+import VLC.Terrikon
 
 Widgets.GridItem {
     id: root
@@ -53,6 +54,19 @@ Widgets.GridItem {
     }
 
     fillMode: Image.PreserveAspectCrop
+
+    // Terrikon: a stream (a radio station) can be kept among the favourites,
+    // shown on the home page
+    readonly property bool _stream: {
+        const mrl = model.mrl?.toString() ?? ""
+        return model.type !== NetworkMediaModel.TYPE_DIRECTORY && model.type !== NetworkMediaModel.TYPE_NODE
+               && /^(https?|mms|rtsp|icyx?):/i.test(mrl)
+    }
+    property bool _favourite: _stream && MediaFolders.isFavourite(model.mrl.toString())
+    Connections {
+        target: MediaFolders
+        function onFavouritesChanged() { root._favourite = root._stream && MediaFolders.isFavourite(model.mrl.toString()) }
+    }
 
     cacheImage: true // we may have network thumbnail
 
@@ -99,6 +113,29 @@ Widgets.GridItem {
             value:  visible
                     ? Helpers.clamp(model.progress, 0, 1)
                     : 0
+        }
+
+        Rectangle {
+            visible: root._stream && (root.hovered || root._favourite)
+            anchors.top: parent.top
+            anchors.right: parent.right
+            anchors.margins: VLCStyle.margin_xsmall
+            width: VLCStyle.dp(28, VLCStyle.scale)
+            height: width
+            radius: width / 2
+            color: heartHover.hovered ? Qt.rgba(0, 0, 0, 0.75) : Qt.rgba(0, 0, 0, 0.5)
+
+            Text {
+                anchors.centerIn: parent
+                text: root._favourite ? "\u2665" : "\u2661"
+                color: root._favourite ? "#FF4F6D" : "white"
+                font.pixelSize: VLCStyle.dp(17, VLCStyle.scale)
+            }
+            HoverHandler { id: heartHover; cursorShape: VLCStyle.pointerCursor }
+            TapHandler {
+                onTapped: MediaFolders.toggleFavourite(model.name || "", model.mrl.toString(),
+                                                       model.artwork ? model.artwork.toString() : "")
+            }
         }
     }
 }

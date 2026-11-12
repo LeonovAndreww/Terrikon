@@ -44,6 +44,45 @@ MediaFolders::MediaFolders(QObject *parent)
     connect(VideoFields::instance(), &VideoFields::changed, this, &MediaFolders::videoFieldsChanged);
 }
 
+static QSettings &favouriteSettings()
+{
+    static QSettings settings(QSettings::IniFormat, QSettings::UserScope,
+                              QStringLiteral("terrikon"), QStringLiteral("library"));
+    return settings;
+}
+
+QVariantList MediaFolders::favourites() const
+{
+    return favouriteSettings().value(QStringLiteral("Favourites/stations")).toList();
+}
+
+bool MediaFolders::isFavourite(const QString &mrl) const
+{
+    for (const QVariant &v : favourites())
+        if (v.toMap().value(QStringLiteral("mrl")).toString() == mrl)
+            return true;
+    return false;
+}
+
+void MediaFolders::toggleFavourite(const QString &name, const QString &mrl, const QString &art)
+{
+    QVariantList list = favourites();
+    bool removed = false;
+    for (int i = 0; i < list.size(); ++i)
+        if (list[i].toMap().value(QStringLiteral("mrl")).toString() == mrl)
+        {
+            list.removeAt(i);
+            removed = true;
+            break;
+        }
+    if (!removed)
+        list.append(QVariantMap{ { QStringLiteral("name"), name },
+                                 { QStringLiteral("mrl"), mrl },
+                                 { QStringLiteral("art"), art } });
+    favouriteSettings().setValue(QStringLiteral("Favourites/stations"), list);
+    emit favouritesChanged();
+}
+
 void MediaFolders::popupCaptions(const QPoint &globalPoint)
 {
     auto *menu = new QMenu;

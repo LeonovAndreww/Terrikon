@@ -33,6 +33,8 @@ class MediaFolders : public QObject
 
     /* What is written under the covers of Videos (see VideoFields) */
     Q_PROPERTY(QStringList videoFields READ videoFields NOTIFY videoFieldsChanged FINAL)
+    /* Terrikon: favourite stations, [{ name, mrl, art }], shown on the home page */
+    Q_PROPERTY(QVariantList favourites READ favourites NOTIFY favouritesChanged FINAL)
 
 public:
     explicit MediaFolders(QObject *parent = nullptr);
@@ -40,8 +42,12 @@ public:
     QStringList videoFields() const;
     /* The captions menu, at a point of the screen */
     Q_INVOKABLE void popupCaptions(const QPoint &globalPoint);
+    QVariantList favourites() const;
+    Q_INVOKABLE bool isFavourite(const QString &mrl) const;
+    Q_INVOKABLE void toggleFavourite(const QString &name, const QString &mrl, const QString &art);
 
 signals:
+    void favouritesChanged();
     void videoFieldsChanged();
     /* the answer to requestSuggestions() */
     void suggestionsReady(const QVariantList &suggestions);
