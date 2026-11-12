@@ -18,6 +18,7 @@
 
 
 #include "networksourcesmodel.hpp"
+#include <QCollator>
 #include "networkmediamodel.hpp"
 
 #include "util/locallistbasemodel.hpp"
@@ -98,24 +99,23 @@ public: // BaseModelPrivate implementation
 
     LocalListCacheLoader<SourceItemPtr>::ItemCompare getSortFunction() const override
     {
-        if (m_sortOrder == Qt::DescendingOrder)
-            return [](const SourceItemPtr& a, const SourceItemPtr& b) {
-                //always put our dummy item first
-                if (a->isDummy)
-                    return true;
-                if (b->isDummy)
-                    return false;
-                return QString::compare(a->name, b->name, Qt::CaseInsensitive) > 0;
-            };
-        else
-            return [](const SourceItemPtr& a, const SourceItemPtr& b) {
-                //always put our dummy item first
-                if (a->isDummy)
-                    return true;
-                if (b->isDummy)
-                    return false;
-                return QString::compare(a->name, b->name, Qt::CaseInsensitive) < 0;
-            };
+        /* Terrikon: by the name shown (translated), in the language's
+         * alphabet, not by the module's own; and a strict order (two dummy
+         * items each came "first") */
+        const bool desc = (m_sortOrder == Qt::DescendingOrder);
+        return [desc](const SourceItemPtr& a, const SourceItemPtr& b) {
+            //always put our dummy item first
+            if (a->isDummy != b->isDummy)
+                return a->isDummy;
+            thread_local const QCollator collator = [] {
+                QCollator c;
+                c.setCaseSensitivity(Qt::CaseInsensitive);
+                c.setNumericMode(true);
+                return c;
+            }();
+            const int c = collator.compare(a->longName, b->longName);
+            return desc ? c > 0 : c < 0;
+        };
     }
 
     bool initializeModel() override

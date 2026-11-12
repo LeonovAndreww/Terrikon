@@ -45,6 +45,7 @@ build, or by reading when the path is taken.
 | Services | Free Music Charts showed an empty page: its list on archive.org is gone (403) | no longer shipped |
 | Services | The podcasts page, empty until a feed is added, said "Nothing to see here, go back"; the dialog to add one was only behind a right click on the service | it says how, and its button opens the dialog |
 | Services | Clicking a service: "Cannot call method 'forceActiveFocus' of undefined" (the grid has no current item) | the call is skipped then |
+| Services | Sorted by their modules' names ("fmc", "jamendo", "podcast"...), not by the names shown; two items placed first each came before the other, not a strict order | by the shown name, in the language's alphabet; a strict order |
 
 ## 2. VLC 4's bugs brought out by Terrikon
 
