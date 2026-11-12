@@ -36,6 +36,40 @@
 #define DEFAULT_BASE_URL "https://radio.videolan.org/"
 #define MRL_PREFIX "radio://"
 #define CSV_MAX_FIELDS 100
+
+#ifdef _WIN32
+# include <windows.h>
+# include <vlc_charset.h>
+typedef int (WINAPI *GetGeoInfoExFn)(PWSTR, int, PWSTR, int);
+#endif
+
+/* Terrikon: the short, usual name of a country from its ISO 3166-1 code, in
+ * the language of the system; NULL if unknown */
+static char *CountryName(const char *iso)
+{
+#ifdef _WIN32
+    static GetGeoInfoExFn get_geo_info;
+    static bool looked_up;
+    if (!looked_up)
+    {
+        HMODULE kernel = GetModuleHandleW(L"kernel32.dll");
+        if (kernel)
+            get_geo_info = (GetGeoInfoExFn)(void (*)(void))GetProcAddress(kernel, "GetGeoInfoEx");
+        looked_up = true;
+    }
+    if (!get_geo_info || strlen(iso) != 2)
+        return NULL;
+    wchar_t code[3] = { (wchar_t)toupper((unsigned char)iso[0]),
+                        (wchar_t)toupper((unsigned char)iso[1]), 0 };
+    wchar_t name[128];
+    if (get_geo_info(code, 8 /* GEO_FRIENDLYNAME */, name, ARRAY_SIZE(name)) <= 0)
+        return NULL;
+    return FromWide(name);
+#else
+    VLC_UNUSED(iso);
+    return NULL;
+#endif
+}
 #define STATIONS_PAGE_SIZE 1000
 
 typedef struct
@@ -362,7 +396,12 @@ static void *Run(void *data)
             continue;
         }
 
-        input_item_t *country_node = input_item_NewDirectory(mrl, parser->fields[name_index], ITEM_NET);
+        /* Terrikon: the country as people call it, in the system's language
+         * ("Россия", not "The Russian Federation") */
+        char *local_name = CountryName(parser->fields[iso_3166_1_index]);
+        input_item_t *country_node = input_item_NewDirectory(mrl,
+                local_name ? local_name : parser->fields[name_index], ITEM_NET);
+        free(local_name);
         free(mrl);
         if (!country_node)
         {
