@@ -43,10 +43,12 @@ FocusScope {
 
         property real spacing: VLCStyle.margin_large
 
+        // Terrikon: the logo only on the empty home page; next to the
+        // button, over the library, it only repeated the one at the top
         implicitWidth: orientation === Qt.Vertical ? Math.max(cone.implicitWidth, button.implicitWidth)
-                                                   : cone.implicitWidth + spacing + button.implicitWidth
+                                                   : button.implicitWidth
         implicitHeight: orientation === Qt.Vertical ? cone.implicitHeight + spacing + button.implicitHeight
-                                                    : cone.implicitHeight
+                                                    : button.implicitHeight
 
         states: [
             State {
@@ -84,13 +86,13 @@ FocusScope {
 
                     anchors.top: undefined
                     anchors.horizontalCenter: undefined
-                    anchors.left: cone.right
+                    anchors.left: coneNButtons.left
                     anchors.verticalCenter: coneNButtons.verticalCenter
                 }
                 PropertyChanges {
-                    target: button
+                    target: cone
 
-                    anchors.leftMargin: coneNButtons.spacing
+                    visible: false
                 }
             }
         ]

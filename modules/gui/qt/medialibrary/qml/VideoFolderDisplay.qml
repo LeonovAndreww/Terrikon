@@ -42,10 +42,10 @@ Widgets.PageExt {
         onGrouping: (grouping) => { MainCtx.grouping = grouping }
     }
 
-    VideoAll {
+    // Terrikon: the page's content, so that its header gets the sort, the
+    // search and the grid / list buttons
+    contentItem: VideoAll {
         id: videoAll
-
-        anchors.fill: parent
 
         focus: true
 

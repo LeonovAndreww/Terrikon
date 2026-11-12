@@ -40,7 +40,10 @@ MouseArea {
     property bool collapsed: false
     signal collapseRequested()
     signal expandRequested()
-    property bool _folded: false
+    // where the drag began, on the screen, and the width then: the panel
+    // moves under the pointer while folding, its own coordinates with it
+    property real _pressGlobalX: 0
+    property int _pressWidth: 0
 
     property int _previousX
 
@@ -52,7 +55,8 @@ MouseArea {
     onPressed: (mouse) => {
         MainCtx.setCursor(cursorShape)
         _previousX = mouseX
-        _folded = false
+        _pressGlobalX = mapToGlobal(mouseX, 0).x
+        _pressWidth = currentWidth
     }
 
     onReleased:(mouse) => {
@@ -65,26 +69,26 @@ MouseArea {
 
     onPositionChanged: {
         const f = atRight ? 1 : -1
-        const delta = mouseX - _previousX
-        if (root.collapsible && !root._folded) {
-            const fold = VLCStyle.dp(56, VLCStyle.scale)
-            if (!root.collapsed && root.currentWidth + delta * f < minimumWidth - fold) {
-                root._folded = true
-                root.collapseRequested()
-                return
-            }
-            if (root.collapsed && delta * f > fold) {
-                root._folded = true
-                root.expandRequested()
-                return
-            }
-        }
-        if (root.collapsed || root._folded)
+        if (!root.collapsible) {
+            const delta = mouseX - _previousX
+            root.requestedWidth = Helpers.clamp(root.currentWidth + (delta * f), minimumWidth, maximumWidth)
             return
-        root.requestedWidth = Helpers.clamp(
-            root.currentWidth + (delta * f),
-            minimumWidth,
-            maximumWidth)
+        }
+        // the width the pointer asks for, from where the drag began: folding
+        // and unfolding happen within the same drag, both ways
+        const wanted = _pressWidth + (mapToGlobal(mouseX, 0).x - _pressGlobalX) * f
+        const fold = VLCStyle.dp(48, VLCStyle.scale)
+        if (!root.collapsed && wanted < minimumWidth - fold) {
+            root.collapseRequested()
+            return
+        }
+        if (root.collapsed) {
+            if (wanted > minimumWidth - fold / 2)
+                root.expandRequested()
+            else
+                return
+        }
+        root.requestedWidth = Helpers.clamp(wanted, minimumWidth, maximumWidth)
     }
 
 }

@@ -173,6 +173,24 @@ T.Page {
 
             anchors.fill: parent
 
+            // Terrikon: back where one came from, next to the name of the
+            // page, for a page inside another (a folder in a folder...)
+            IconToolButton {
+                id: pageBack
+
+                visible: {
+                    const path = History.viewPath
+                    return !History.previousEmpty && path.length > 0
+                           && path[path.length - 1] !== "base"
+                }
+                width: VLCStyle.bannerButton_width
+                height: VLCStyle.bannerButton_height
+                font.pixelSize: VLCStyle.icon_banner
+                text: VLCIcons.back
+                description: qsTr("Back")
+                onClicked: History.previous()
+            }
+
             SubtitleLabel {
                 id: label
 
