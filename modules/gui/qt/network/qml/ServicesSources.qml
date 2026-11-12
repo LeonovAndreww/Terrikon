@@ -109,7 +109,8 @@ Widgets.PageExt {
                 if (select)
                     grid.selectionModel.updateSelection(modifier, grid.currentIndex, index)
                 grid.currentIndex = index
-                grid.currentItem.forceActiveFocus(Qt.MouseFocusReason)
+                // Terrikon: no current item yet when the page is being left (a double click)
+                grid.currentItem?.forceActiveFocus(Qt.MouseFocusReason)
             }
 
             onContextMenuButtonClicked: (menuParent, globalMousePos) => {
