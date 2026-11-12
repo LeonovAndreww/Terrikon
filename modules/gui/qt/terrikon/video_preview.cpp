@@ -198,6 +198,12 @@ void VideoPreview::start()
     /* the main player's video filters and visualizations are not for it */
     var_Create(owner, "video-filter", VLC_VAR_STRING);
     var_Create(owner, "audio-visual", VLC_VAR_STRING);
+    /* Its sound in a Windows audio session of its own: muting it, which
+     * the output does on the session, must not mute the main player (and
+     * Windows keeps a session's volume from run to run). Its volume is not
+     * saved over the main player's either. */
+    var_Create(owner, "volume-save", VLC_VAR_BOOL);
+    var_SetBool(owner, "volume-save", false);
 
     vlc_player_t *player = vlc_player_New(owner, VLC_PLAYER_LOCK_NORMAL);
     if (!player)
