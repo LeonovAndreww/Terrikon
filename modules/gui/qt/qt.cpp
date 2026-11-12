@@ -93,6 +93,7 @@ extern "C" char **environ;
 #include "dialogs/help/help.hpp"     /* Launch Update */
 #include "terrikon/window_theme.hpp"
 #include "terrikon/autoscroll.hpp"
+#include "terrikon/automation.hpp"
 #include "util/dismiss_popup_event_filter.hpp"
 #include "maininterface/compositor.hpp"
 #include "util/vlctick.hpp"
@@ -1452,6 +1453,7 @@ static void *Thread( void *obj )
     /* Terrikon: dialogs dark or light like the player */
     terrikon::WindowTheme::install( p_intf, app, s_style.isEmpty() );
     terrikon::AutoScroll::install( app );
+    terrikon::Automation::install( p_intf, app );
 
     /* Terrikon: the native menus (right click, the "more" button) look
      * like the rest of the player, dark and roomy, rather than like the

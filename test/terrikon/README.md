@@ -41,3 +41,12 @@ reach the player from it: network tests (`unc-hang.ps1`) run outside it.
 The clip export is tested inside the player: `TERRIKON_SELFTEST=<config.json>`
 makes it export the clips listed there and write `<config>.result.json`, with
 the size shown beforehand next to the size made.
+
+## Driving the interface (automation)
+
+Started with `TERRIKON_AUTOMATION=<port>` in the environment (Start-Tk uses
+4213), Terrikon listens on 127.0.0.1 for one command per line and answers
+one line of JSON: `items`, `at X Y`, `hover`, `click`, `wheel`, `key`, `type`,
+`get`/`set`/`props`, `eval`, `grab`, `player`, `widgets`, `windows`; `help`
+lists them. `Send-TkUi` in tk.psm1 sends them. Pointer, clicks and keys go to
+Qt itself, so hovering works without taking the desktop's mouse.

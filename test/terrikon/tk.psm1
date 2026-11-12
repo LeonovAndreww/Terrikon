@@ -35,6 +35,8 @@ function Start-Tk([string]$File, [switch]$RealProfile, [string[]]$ExtraArgs = @(
     # A profile of its own (settings, media library, history), so tests leave
     # the user's alone
     $exe = if ($RealProfile) { "$script:Installed\terrikon.exe" } else { if (-not (Test-Path $script:Exe)) { Sync-TkCopy }; $script:Exe }
+    # the interface driven by Send-TkUi (terrikon/automation.cpp)
+    $env:TERRIKON_AUTOMATION = '4213'
     Start-Process $exe -WorkingDirectory (Split-Path $exe) -ArgumentList (@(
         '--no-qt-video-autoresize', '--extraintf=rc', '--rc-host=127.0.0.1:4212', '--rc-quiet',
         '--file-logging', '--log-verbose=1', "--logfile=$script:Log") + $ExtraArgs) | Out-Null
@@ -58,6 +60,34 @@ function Send-Tk([string[]]$Commands, [int]$WaitMs = 300) {
         $c.Close()
     } catch { }
     $out
+}
+
+# Drives the interface itself (TERRIKON_AUTOMATION): one command per line,
+# one JSON object back each (send 'help' for the list). The pointer, the
+# clicks and the keys go to Qt, not to the desktop: nothing is borrowed
+# from the user, and hovering works in a window behind the others.
+$script:Ui = $null
+function Send-TkUi([string[]]$Commands, [switch]$Raw) {
+    $answers = foreach ($cmd in $Commands) {
+        for ($try = 0; $try -lt 2; $try++) {
+            try {
+                if (-not $script:Ui -or -not $script:Ui.Connected) {
+                    $c = New-Object Net.Sockets.TcpClient; $c.Connect('127.0.0.1', 4213)
+                    $c.ReceiveTimeout = 15000
+                    $s = $c.GetStream()
+                    $script:Ui = $c
+                    $script:UiW = New-Object IO.StreamWriter($s, (New-Object Text.UTF8Encoding $false)); $script:UiW.AutoFlush = $true
+                    $script:UiR = New-Object IO.StreamReader($s, [Text.Encoding]::UTF8)
+                }
+                $script:UiW.WriteLine($cmd)
+                $line = $script:UiR.ReadLine()
+                if ($null -eq $line) { throw 'closed' }
+                if ($Raw) { $line } else { $line | ConvertFrom-Json }
+                break
+            } catch { $script:Ui = $null }
+        }
+    }
+    $answers
 }
 
 function Get-TkTime { $a = Send-Tk 'get_time'; if ($a -match '(-?\d+)') { [int]$Matches[1] } else { $null } }
