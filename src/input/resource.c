@@ -84,6 +84,9 @@ struct input_resource_t
 
     bool            b_aout_busy;
     audio_output_t *p_aout;
+
+    /* Terrikon: video decoders of the current input */
+    unsigned        video_decoders;
 };
 
 #define resource_GetFirstVoutRsc(resource) \
@@ -644,4 +647,24 @@ void input_resource_TerminateSout( input_resource_t *p_resource )
     vlc_mutex_lock( &p_resource->lock );
     DestroySout(p_resource);
     vlc_mutex_unlock( &p_resource->lock );
+}
+
+/* Terrikon: whether the input has a video (some decoder of it), so that
+ * its sound gets no visualization */
+void input_resource_CountVideoDecoder(input_resource_t *p_resource, bool added)
+{
+    vlc_mutex_lock(&p_resource->lock);
+    if (added)
+        p_resource->video_decoders++;
+    else if (p_resource->video_decoders > 0)
+        p_resource->video_decoders--;
+    vlc_mutex_unlock(&p_resource->lock);
+}
+
+bool input_resource_HasVideoDecoder(input_resource_t *p_resource)
+{
+    vlc_mutex_lock(&p_resource->lock);
+    const bool has = p_resource->video_decoders > 0;
+    vlc_mutex_unlock(&p_resource->lock);
+    return has;
 }

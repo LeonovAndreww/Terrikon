@@ -689,6 +689,7 @@ static int ModuleThread_UpdateAudioFormat( decoder_t *p_dec )
                 .clock = p_owner->p_clock,
                 .str_id = p_owner->psz_id,
                 .replay_gain = &p_dec->fmt_out.audio_replay_gain,
+                .no_visual = input_resource_HasVideoDecoder( p_owner->p_resource ),
             };
             p_astream = vlc_aout_stream_New( p_aout, &cfg );
             if( p_astream == NULL )
@@ -2221,6 +2222,10 @@ CreateDecoder( vlc_object_t *p_parent, const struct vlc_input_decoder_cfg *cfg )
         vlc_object_delete(p_dec);
         return NULL;
     }
+    /* Terrikon: counted for the sound (no visualization); uncounted by
+     * DeleteDecoder() */
+    if( p_owner->cat == VIDEO_ES && p_owner->p_resource != NULL )
+        input_resource_CountVideoDecoder( p_owner->p_resource, true );
 
     vlc_cond_init( &p_owner->wait_request );
     vlc_cond_init( &p_owner->wait_acknowledge );
@@ -2322,6 +2327,8 @@ CreateDecoder( vlc_object_t *p_parent, const struct vlc_input_decoder_cfg *cfg )
 static void DeleteDecoder( vlc_input_decoder_t *p_owner, enum es_format_category_e i_cat )
 {
     decoder_t *p_dec = &p_owner->dec;
+    if( p_owner->cat == VIDEO_ES && p_owner->p_resource != NULL )
+        input_resource_CountVideoDecoder( p_owner->p_resource, false );
     msg_Dbg( p_dec, "killing decoder fourcc `%4.4s'",
              (char*)&p_dec->fmt_in->i_codec );
 

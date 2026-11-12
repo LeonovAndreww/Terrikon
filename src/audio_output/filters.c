@@ -658,7 +658,8 @@ aout_filters_t *aout_FiltersNewWithClock(vlc_object_t *obj, vlc_clock_t *clock,
         free (str);
     }
 
-    char *visual = var_InheritString(obj, "audio-visual");
+    char *visual = (cfg != NULL && cfg->no_visual) ? NULL
+                 : var_InheritString(obj, "audio-visual");
     if (visual != NULL && strcasecmp(visual, "none"))
         AppendFilter(obj, "visualization", visual, filters,
                      &input_format, &output_format, NULL);

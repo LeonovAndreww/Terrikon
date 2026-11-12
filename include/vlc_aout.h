@@ -587,11 +587,18 @@ typedef struct
      * binauralizer audio filter).
      */
     bool headphones;
+    /**
+     * Terrikon: no visualization, the media having a video of its own (the
+     * visualization would take the player's window, the video getting
+     * a window of its own)
+     */
+    bool no_visual;
 } aout_filters_cfg_t;
 
 #define AOUT_FILTERS_CFG_INIT (aout_filters_cfg_t) \
     { .remap = AOUT_CHAN_REMAP_INIT, \
       .headphones = false, \
+      .no_visual = false, \
     };
 
 typedef struct aout_filters aout_filters_t;

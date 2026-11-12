@@ -47,6 +47,7 @@ struct vlc_aout_stream
     aout_volume_t *volume;
     aout_filters_t *filters;
     aout_filters_cfg_t filters_cfg;
+    bool no_visual;
 
     atomic_bool drained;
     _Atomic vlc_tick_t drain_deadline;
@@ -385,6 +386,7 @@ vlc_aout_stream * vlc_aout_stream_New(audio_output_t *p_aout,
     stream->sync.clock = cfg->clock;
     stream->sync.clock_id = 0;
     stream->str_id = cfg->str_id;
+    stream->no_visual = cfg->no_visual;
 
     stream->timing.rate_audio_ts = VLC_TICK_INVALID;
     stream->timing.rate = 1.f;
@@ -419,6 +421,7 @@ vlc_aout_stream * vlc_aout_stream_New(audio_output_t *p_aout,
             aout_volume_SetFormat(stream->volume, stream->mixer_format.i_format);
 
         /* Create the audio filtering "input" pipeline */
+        stream->filters_cfg.no_visual = stream->no_visual;
         stream->filters = aout_FiltersNewWithClock(VLC_OBJECT(p_aout), cfg->clock,
                                                    &stream->filter_format,
                                                    &stream->mixer_format,
@@ -520,6 +523,7 @@ static int stream_CheckReady (vlc_aout_stream *stream)
 
         if (stream->mixer_format.i_format && !owner->bitexact)
         {
+            stream->filters_cfg.no_visual = stream->no_visual;
             stream->filters = aout_FiltersNewWithClock(VLC_OBJECT(aout),
                                                        stream->sync.clock,
                                                        &stream->filter_format,

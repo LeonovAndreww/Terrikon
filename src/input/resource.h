@@ -45,6 +45,9 @@ void input_resource_SetInput( input_resource_t *, input_thread_t * );
  */
 audio_output_t *input_resource_HoldAout( input_resource_t * );
 
+void input_resource_CountVideoDecoder(input_resource_t *, bool added);
+bool input_resource_HasVideoDecoder(input_resource_t *);
+
 /**
  * This function creates or recycles an audio output.
  */

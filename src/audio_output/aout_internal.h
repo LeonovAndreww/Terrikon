@@ -161,6 +161,8 @@ struct vlc_aout_stream_cfg
     struct vlc_clock_t *clock;
     const char *str_id;
     const audio_replay_gain_t *replay_gain;
+    /* Terrikon: the media has a video, no visualization */
+    bool no_visual;
 };
 
 vlc_aout_stream *vlc_aout_stream_New(audio_output_t *p_aout,
