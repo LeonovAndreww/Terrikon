@@ -734,6 +734,18 @@ SPrefsPanel::SPrefsPanel( qt_intf_t *_p_intf, QWidget *_parent,
                     panel->layout()->addWidget( box );
             }
 
+            /* Terrikon: a hand over what can be clicked, or the arrow */
+            if( MainCtx *mainCtx = p_intf->p_mi )
+            {
+                auto *hand = new QCheckBox( qtr( "Hand cursor over what can be clicked" ), panel );
+                hand->setChecked( mainCtx->isPointingCursor() );
+                connect( hand, &QCheckBox::toggled, mainCtx, &MainCtx::setPointingCursor );
+                if( auto *panelLayout = qobject_cast<QBoxLayout *>( panel->layout() ) )
+                    panelLayout->insertWidget( panelLayout->count() - 1, hand );
+                else if( panel->layout() )
+                    panel->layout()->addWidget( hand );
+            }
+
 #ifndef _WIN32
             ui.langBox->hide();
 #else

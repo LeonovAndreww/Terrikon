@@ -204,16 +204,66 @@ T.Pane {
                     font.pixelSize: VLCStyle.dp(24, VLCStyle.scale)
                 }
 
-                // Play the next video when one ends
-                Widgets.ImageToolButton {
+                // Play the next video when one ends: a switch, as video sites
+                // have it, its knob sliding over with play or pause in it
+                Item {
                     id: autoplayButton
 
-                    sourceSize: Qt.size(VLCStyle.icon_banner, VLCStyle.icon_banner)
-                    imageSource: SVGColorImage.colorize(Autoplay.enabled ? "qrc:///icons/autoplay_on.svg"
-                                                                         : "qrc:///icons/autoplay_off.svg")
-                                     .color1(Autoplay.enabled ? theme.fg.primary : theme.fg.secondary).uri()
-                    description: Autoplay.enabled ? qsTr("Autoplay is on") : qsTr("Autoplay is off")
-                    onClicked: Autoplay.enabled = !Autoplay.enabled
+                    implicitWidth: autoplayTrack.width
+                    implicitHeight: VLCStyle.icon_banner
+
+                    Rectangle {
+                        id: autoplayTrack
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: VLCStyle.dp(36, VLCStyle.scale)
+                        height: VLCStyle.dp(14, VLCStyle.scale)
+                        radius: height / 2
+                        color: Autoplay.enabled ? Qt.alpha(theme.fg.primary, 0.55) : Qt.alpha(theme.fg.primary, 0.2)
+                        Behavior on color { ColorAnimation { duration: 160 } }
+
+                        Rectangle {
+                            id: autoplayKnob
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: VLCStyle.dp(20, VLCStyle.scale)
+                            height: width
+                            radius: width / 2
+                            x: Autoplay.enabled ? parent.width - width + VLCStyle.dp(2, VLCStyle.scale)
+                                                : -VLCStyle.dp(2, VLCStyle.scale)
+                            color: Autoplay.enabled ? theme.fg.primary : theme.fg.secondary
+                            Behavior on x { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+                            Behavior on color { ColorAnimation { duration: 160 } }
+
+                            Widgets.IconLabel {
+                                anchors.centerIn: parent
+                                text: Autoplay.enabled ? VLCIcons.play_filled : VLCIcons.pause_filled
+                                font.pixelSize: VLCStyle.dp(11, VLCStyle.scale)
+                                color: theme.bg.primary
+                            }
+                        }
+                    }
+
+                    HoverHandler {
+                        id: autoplayHover
+                        cursorShape: VLCStyle.pointerCursor
+                    }
+                    TapHandler { onTapped: Autoplay.enabled = !Autoplay.enabled }
+
+                    Widgets.ToolTipExt {
+                        colorContext.palette: theme.palette
+                        visible: autoplayHover.hovered
+                        text: Autoplay.enabled ? qsTr("Autoplay is on") : qsTr("Autoplay is off")
+                    }
+                }
+
+                // Terrikon: empties the queue
+                Widgets.IconToolButton {
+                    id: clearButton
+
+                    font.pixelSize: VLCStyle.icon_banner
+                    text: VLCIcons.playlist_clear
+                    description: qsTr("Clear the queue")
+                    enabled: MainPlaylistController.count > 0
+                    onClicked: MainPlaylistController.clear()
                 }
 
                 Widgets.SortControl {
@@ -351,7 +401,7 @@ T.Pane {
                 HoverHandler {
                     id: coverHeaderHover
                     cursorShape: MainPlaylistController.sortKey !== PlaylistController.SORT_KEY_NONE
-                                 ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                 ? VLCStyle.pointerCursor : Qt.ArrowCursor
                 }
                 TapHandler { onTapped: root._unsort() }
 
@@ -372,7 +422,7 @@ T.Pane {
                 text: qsTr("Title") + root._sortArrow(PlaylistController.SORT_KEY_TITLE)
                 color: titleHeaderHover.hovered ? theme.fg.primary : theme.fg.secondary
 
-                HoverHandler { id: titleHeaderHover; cursorShape: Qt.PointingHandCursor }
+                HoverHandler { id: titleHeaderHover; cursorShape: VLCStyle.pointerCursor }
                 TapHandler { onTapped: root._sortBy(PlaylistController.SORT_KEY_TITLE) }
 
                 Accessible.role: Accessible.ColumnHeader
@@ -387,7 +437,7 @@ T.Pane {
                         || MainPlaylistController.sortKey === PlaylistController.SORT_KEY_DURATION)
                        ? theme.fg.primary : theme.fg.secondary
 
-                HoverHandler { id: durationHeaderHover; cursorShape: Qt.PointingHandCursor }
+                HoverHandler { id: durationHeaderHover; cursorShape: VLCStyle.pointerCursor }
                 TapHandler { onTapped: root._sortBy(PlaylistController.SORT_KEY_DURATION) }
 
                 // The order arrow sits left of the clock, outside the column

@@ -352,6 +352,7 @@ MainCtx::~MainCtx()
     {
         settings->beginGroup("MainWindow");
         settings->setValue( "ShowRemainingTime", m_showRemainingTime );
+        settings->setValue( "PointingCursor", m_pointingCursor );
         settings->setValue( "interface-scale", QString::number( m_intfUserScaleFactor ) );
 
         /* Save playlist state */
@@ -526,6 +527,7 @@ void MainCtx::loadFromSettingsImpl(const bool callSignals)
     loadFromSettings(m_grouping, "MainWindow/video-grouping", GROUPING_FOLDER, this, &MainCtx::groupingChanged);
 
     loadFromSettings(m_showRemainingTime, "MainWindow/ShowRemainingTime", false, this, &MainCtx::showRemainingTimeChanged);
+    loadFromSettings(m_pointingCursor, "MainWindow/PointingCursor", true, this, &MainCtx::pointingCursorChanged);
 
     loadFromSettings(m_albumSections, "MainWindow/album-sections", true, this, &MainCtx::albumSectionsChanged);
 
@@ -759,6 +761,15 @@ void MainCtx::setShowRemainingTime( bool show )
 {
     m_showRemainingTime = show;
     emit showRemainingTimeChanged(show);
+}
+
+void MainCtx::setPointingCursor( bool on )
+{
+    if (on == m_pointingCursor)
+        return;
+    m_pointingCursor = on;
+    getSettings()->setValue( "MainWindow/PointingCursor", on );
+    emit pointingCursorChanged(on);
 }
 
 void MainCtx::setGridView(bool asGrid)

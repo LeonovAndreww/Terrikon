@@ -146,7 +146,7 @@ Window {
         MouseArea {
             anchors.fill: parent
             acceptedButtons: Qt.LeftButton | Qt.RightButton
-            cursorShape: Qt.PointingHandCursor
+            cursorShape: VLCStyle.pointerCursor
 
             property point _press
             property bool _moved: false
@@ -282,7 +282,7 @@ Window {
             colorContext.palette: VLCStyle.palette
         }
 
-        HoverHandler { id: buttonHover; cursorShape: Qt.PointingHandCursor }
+        HoverHandler { id: buttonHover; cursorShape: VLCStyle.pointerCursor }
         TapHandler { onTapped: button.clicked() }
     }
 

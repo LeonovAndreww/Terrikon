@@ -195,7 +195,7 @@ T.ProgressBar {
         z: 1
         width: VLCStyle.dp(10, VLCStyle.scale)
         height: control.barHeight * 2.5
-        cursorShape: Qt.PointingHandCursor
+        cursorShape: VLCStyle.pointerCursor
         onClicked: Player.position = _last
 
         Rectangle {
@@ -228,7 +228,7 @@ T.ProgressBar {
             height: control.barHeight * 4
 
             acceptedButtons: Qt.LeftButton | Qt.RightButton
-            cursorShape: Qt.PointingHandCursor
+            cursorShape: VLCStyle.pointerCursor
 
             onClicked: (mouse) => {
                 if (mouse.button === Qt.RightButton)

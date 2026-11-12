@@ -120,4 +120,10 @@ T.ToolButton {
 
         font: control.font
     }
+
+    // Terrikon: a hand over it, if chosen in the settings
+    HoverHandler {
+        enabled: control.enabled
+        cursorShape: VLCStyle.pointerCursor
+    }
 }

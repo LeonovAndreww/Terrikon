@@ -322,6 +322,9 @@ QtObject {
     // New indicator
     readonly property url newIndicator: "qrc:///misc/new_indicator.svg";
 
+    // Terrikon: the cursor over what can be clicked (a setting)
+    readonly property int pointerCursor: MainCtx.pointingCursor ? Qt.PointingHandCursor : Qt.ArrowCursor
+
     // ControlBar
 
     readonly property int controlBarBookmarksHeight: icon_xsmall * 0.9

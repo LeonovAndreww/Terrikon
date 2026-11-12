@@ -71,12 +71,13 @@ PrefsDialog::PrefsDialog( QWindow *parent, qt_intf_t *_p_intf )
     QHBoxLayout *types_l = new QHBoxLayout;
     types_l->setSpacing( 3 );
     types_l->setContentsMargins(3, 3, 3, 3);
-    simple = new QRadioButton( qtr( "Simple" ), types );
-    simple->setToolTip( qtr( "Switch to simple preferences view" ) );
-    all = new QRadioButton( qtr("All"), types );
-    all->setToolTip( qtr( "Switch to full preferences view" ) );
-    expert = new QRadioButton( qtr("Expert"), types );
-    expert->setToolTip( qtr( "Switch to expert preferences view" ) );
+    /* Terrikon: names that say what each view is */
+    simple = new QRadioButton( qtr( "Main" ), types );
+    simple->setToolTip( qtr( "The settings most people change, by theme" ) );
+    all = new QRadioButton( qtr( "All, by module" ), types );
+    all->setToolTip( qtr( "Every setting, in a tree of the player's modules" ) );
+    expert = new QRadioButton( qtr( "All, as a list" ), types );
+    expert->setToolTip( qtr( "Every setting in one list with a search, showing which ones were changed" ) );
     types_l->addWidget( simple );
     types_l->addWidget( all );
     types_l->addWidget( expert );

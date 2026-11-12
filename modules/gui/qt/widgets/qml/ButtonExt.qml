@@ -212,4 +212,10 @@ T.Button {
             Layout.fillWidth: true
         }
     }
+
+    // Terrikon: a hand over it, if chosen in the settings
+    HoverHandler {
+        enabled: root.enabled
+        cursorShape: VLCStyle.pointerCursor
+    }
 }

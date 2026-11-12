@@ -19,6 +19,7 @@
 #ifndef MODEL_RECOVERY_AGENT_HPP
 #define MODEL_RECOVERY_AGENT_HPP
 
+#include <QLocale>
 #include <QFile>
 #include <QTimer>
 #include <QSettings>
@@ -71,7 +72,11 @@ public:
                 if (fileInfo.size() > 0)
                 {
                     m_question = std::make_unique<QMessageBox>();
-                    m_question->setText(qtr("Do you want to restore the %1 model from %2?").arg(modelIdentifier.toLower(), fileInfo.lastModified().toString()));
+                    /* Terrikon: in words and a date of the interface's language */
+                    const QString what = modelIdentifier == QLatin1String("Playlist")
+                                       ? qtr("the play queue") : modelIdentifier.toLower();
+                    m_question->setText(qtr("Restore %1 as it was on %2?")
+                                        .arg(what, QLocale().toString(fileInfo.lastModified(), QLocale::ShortFormat)));
                     m_question->setWindowTitle(qtr("The application closed abruptly."));
                     m_question->setIcon(QMessageBox::Question);
                     m_question->setStandardButtons(QMessageBox::Yes | QMessageBox::No);

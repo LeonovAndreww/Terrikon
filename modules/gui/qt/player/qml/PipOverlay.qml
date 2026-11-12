@@ -101,7 +101,7 @@ Item {
             }
         }
 
-        HoverHandler { cursorShape: Qt.PointingHandCursor }
+        HoverHandler { cursorShape: VLCStyle.pointerCursor }
     }
 
     Item {

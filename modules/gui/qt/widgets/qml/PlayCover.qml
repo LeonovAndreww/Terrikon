@@ -114,4 +114,10 @@ Item {
 
         font.pixelSize: Math.round(parent.width / 2)
     }
+
+    // Terrikon: a hand over it, if chosen in the settings
+    HoverHandler {
+        enabled: true
+        cursorShape: VLCStyle.pointerCursor
+    }
 }

@@ -73,4 +73,10 @@ T.ToolButton {
         border.color: visualFocus ? theme.visualFocus : Qt.alpha(theme.visualFocus, 0.0)
         radius: control.radius
     }
+
+    // Terrikon: a hand over it, if chosen in the settings
+    HoverHandler {
+        enabled: control.enabled
+        cursorShape: VLCStyle.pointerCursor
+    }
 }

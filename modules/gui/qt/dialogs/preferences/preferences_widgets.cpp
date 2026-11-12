@@ -1370,6 +1370,10 @@ void KeySelectorControl::finish()
 
         if( p_config_item->i_type != CONFIG_ITEM_KEY )
             continue;
+        /* Terrikon: a key without a name (an internal one) made an empty,
+         * yet editable, row */
+        if( p_config_item->psz_text == NULL || p_config_item->psz_text[0] == ' ' )
+            continue;
 
         /* Capture global key items to fill in afterwards */
         if( strncmp( p_config_item->psz_name, "global-", 7 ) == 0 )

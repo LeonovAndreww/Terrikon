@@ -373,11 +373,11 @@ Widgets.PageExt {
                             Widgets.IconToolButton {
                                 id: removeButton
                                 anchors.verticalCenter: parent.verticalCenter
-                                width: VLCStyle.dp(22, VLCStyle.scale)
+                                width: VLCStyle.dp(28, VLCStyle.scale)
                                 height: width
-                                font.pixelSize: VLCStyle.icon_xsmall
+                                font.pixelSize: VLCStyle.icon_small
                                 text: VLCIcons.close
-                                description: qsTr("Remove from the media library (the files stay)")
+                                description: qsTr("Remove from the media library")
                                 onClicked: mlFolders.removeAt(chip.index)
                             }
                         }
@@ -399,7 +399,7 @@ Widgets.PageExt {
                         color: offerHover.hovered ? Qt.rgba(1, 1, 1, 0.08) : "transparent"
                         border.color: Qt.rgba(1, 1, 1, 0.18)
 
-                        HoverHandler { id: offerHover; cursorShape: Qt.PointingHandCursor }
+                        HoverHandler { id: offerHover; cursorShape: VLCStyle.pointerCursor }
                         TapHandler { onTapped: foldersCard.addFolder(offer.modelData.url) }
 
                         Widgets.ToolTipExt {
