@@ -16,6 +16,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 
+#include <QCollator>
 #include "networkmediamodel.hpp"
 #include "mediatreelistener.hpp"
 
@@ -32,6 +33,7 @@
 #include <unordered_set>
 
 #include <QSemaphore>
+#include <QTimer>
 #include <QDateTime>
 #include <QTimeZone>
 #include <QJSValue>
@@ -266,13 +268,41 @@ public:
 
         ++m_revision;
         invalidateCache();
+
+        /* Terrikon: the first items of a service came: no longer loading */
+        if (m_waitingForItems && !m_items.empty())
+        {
+            m_waitingForItems = false;
+            m_loading = false;
+            emit q->loadingChanged();
+        }
     }
+
+    /* Terrikon: a service (the radio stations...) adds its items from a
+     * thread of its own, after its node is "parsed": the page said "Nothing
+     * to see here" for seconds before they came. While none came, and for 10
+     * seconds at most, it is still loading. */
+    bool m_waitingForItems = false;
+    unsigned m_waitGeneration = 0;
 
     bool canBeIndexed(const QUrl& url , NetworkMediaModel::ItemType itemType )
     {
         return m_mediaLib
             && static_cast<input_item_type_e>(itemType) != ITEM_TYPE_FILE
             && (url.scheme() == "smb" || url.scheme() == "ftp" || url.scheme() == "file");
+    }
+
+    static const QCollator &nameCollator()
+    {
+        /* one per thread: the list may be sorted off the interface thread */
+        thread_local const QCollator collator = [] {
+            QCollator c;
+            c.setCaseSensitivity(Qt::CaseInsensitive);
+            c.setNumericMode(true);
+            c.setIgnorePunctuation(false);
+            return c;
+        }();
+        return collator;
     }
 
     //BaseModelPrivateT interface implementation
@@ -335,15 +365,19 @@ public:
         }
         else // m_sortCriteria == "name"
         {
-            if (m_sortOrder == Qt::SortOrder::DescendingOrder)
+            /* Terrikon: no sort chosen (the pages keep the default, descending,
+             * as soon as they are left) is A to Z, not Z to A; and names
+             * compare as people read them: in the language's alphabet,
+             * "Episode 2" before "Episode 10" */
+            if (m_sortOrder == Qt::SortOrder::DescendingOrder && !m_sortCriteria.isEmpty())
                 return [](const NetworkMediaItemPtr& a, const NetworkMediaItemPtr& b) -> bool {
                     if(isADir(a) != isADir(b)) return isADir(a);
-                    return QString::compare(a->name, b->name, Qt::CaseInsensitive) > 0;
+                    return nameCollator().compare(a->name, b->name) > 0;
                 };
             else
                 return [](const NetworkMediaItemPtr& a, const NetworkMediaItemPtr& b) -> bool {
                     if(isADir(a) != isADir(b)) return isADir(a);
-                    return QString::compare(a->name, b->name, Qt::CaseInsensitive) < 0;
+                    return nameCollator().compare(a->name, b->name) < 0;
                 };
         }
     }
@@ -1041,7 +1075,23 @@ void NetworkMediaModelPrivate::ListenerCb::onItemPreparseEnded(MediaTreePtr, inp
         if (p_node != model->d_func()->m_treeItem.media)
             return;
 
-        model->d_func()->m_loading = false;
+        auto d = model->d_func();
+        if (d->m_items.empty() && d->m_url.scheme() != QLatin1String("file"))
+        {
+            d->m_waitingForItems = true;
+            const unsigned generation = ++d->m_waitGeneration;
+            QTimer::singleShot(10000, model, [model, generation]() {
+                auto d = model->d_func();
+                if (!d->m_waitingForItems || d->m_waitGeneration != generation)
+                    return;
+                d->m_waitingForItems = false;
+                d->m_loading = false;
+                emit model->loadingChanged();
+            });
+            return;
+        }
+        d->m_waitingForItems = false;
+        d->m_loading = false;
         emit model->loadingChanged();
     });
 }

@@ -103,7 +103,9 @@ signals:
 private:
     QJSValue m_model;
     QString m_criteria;
-    Qt::SortOrder m_order = Qt::DescendingOrder;
+    /* Terrikon: A to Z (oldest first, shortest first...) unless chosen;
+     * descending made the names of every list run from Z to A */
+    Qt::SortOrder m_order = Qt::AscendingOrder;
     bool m_available = false;
 };
 

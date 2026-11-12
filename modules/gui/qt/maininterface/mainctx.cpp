@@ -160,6 +160,16 @@ MainCtx::MainCtx(qt_intf_t *_p_intf)
      **/
 
     settings = getSettings();
+
+    /* Terrikon: every page saved the former default order, descending, as
+     * soon as it was left, not a choice: forgotten once, so that the new
+     * default (ascending) shows */
+    if (!settings->value(QStringLiteral("Terrikon/sortOrderReset")).toBool())
+    {
+        settings->remove(QStringLiteral("sortOrder"));
+        settings->setValue(QStringLiteral("Terrikon/sortOrderReset"), true);
+    }
+
     m_colorScheme = new ColorSchemeModel(this);
 
     connect(m_colorScheme, &ColorSchemeModel::currentChanged, qGuiApp, [colorScheme = m_colorScheme]() {

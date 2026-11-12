@@ -18,6 +18,7 @@
 
 #include <unordered_set>
 #include <QTimer>
+#include <QCollator>
 #include <QJSValue>
 #include <QQmlEngine>
 
@@ -149,34 +150,48 @@ bool itemMatchPattern(const NetworkDeviceItemPtr& a, const QString& pattern)
     return a->name.contains(pattern, Qt::CaseInsensitive);
 }
 
+/* Terrikon: strict orderings, as std::sort needs (<= and >= made it
+ * read out of bounds on equal names), and names as people read them: in the
+ * language's alphabet, "Station 2" before "Station 10" */
+static const QCollator &nameCollator()
+{
+    thread_local const QCollator collator = [] {
+        QCollator c;
+        c.setCaseSensitivity(Qt::CaseInsensitive);
+        c.setNumericMode(true);
+        return c;
+    }();
+    return collator;
+}
+
 bool ascendingMrl(const NetworkDeviceItemPtr& a, const NetworkDeviceItemPtr& b)
 {
-    return (QString::compare(a->mainMrl.toString(),
-                             b->mainMrl.toString(), Qt::CaseInsensitive) <= 0);
+    return QString::compare(a->mainMrl.toString(),
+                            b->mainMrl.toString(), Qt::CaseInsensitive) < 0;
 }
 
 bool ascendingName(const NetworkDeviceItemPtr& a, const NetworkDeviceItemPtr& b)
 {
-    int result = QString::compare(a->name, b->name, Qt::CaseInsensitive);
+    int result = nameCollator().compare(a->name, b->name);
 
     if (result != 0)
-        return (result <= 0);
+        return result < 0;
 
     return ascendingMrl(a, b);
 }
 
 bool descendingMrl(const NetworkDeviceItemPtr& a, const NetworkDeviceItemPtr& b)
 {
-    return (QString::compare(a->mainMrl.toString(),
-                             b->mainMrl.toString(), Qt::CaseInsensitive) >= 0);
+    return QString::compare(a->mainMrl.toString(),
+                            b->mainMrl.toString(), Qt::CaseInsensitive) > 0;
 }
 
 bool descendingName(const NetworkDeviceItemPtr& a, const NetworkDeviceItemPtr& b)
 {
-    int result = QString::compare(a->name, b->name, Qt::CaseInsensitive);
+    int result = nameCollator().compare(a->name, b->name);
 
     if (result != 0)
-        return (result >= 0);
+        return result > 0;
 
     return descendingMrl(a, b);
 }
@@ -314,6 +329,23 @@ public:
         m_sourcesProvider->init();
 
         //service discovery don't notify preparse end
+        /* Terrikon: a service of its own (the radio stations...) adds its
+         * items from a thread of its own, seconds later: until the first
+         * came (10 s at most), it is loading, not "Nothing to see here" */
+        if (m_items.empty() && m_sourceName != QLatin1String("*"))
+        {
+            m_waitingForItems = true;
+            const unsigned generation = ++m_waitGeneration;
+            QTimer::singleShot(10000, q, [this, generation]() {
+                if (!m_waitingForItems || m_waitGeneration != generation)
+                    return;
+                m_waitingForItems = false;
+                m_loading = false;
+                emit q_func()->loadingChanged();
+            });
+            return true;
+        }
+        m_waitingForItems = false;
         m_loading = false;
         emit q->loadingChanged();
 
@@ -345,6 +377,12 @@ public:
             m_items.push_back(std::make_unique<NetworkDeviceItem>(media, mediaSource));
             m_revision += 1;
             invalidateCache();
+            if (m_waitingForItems)
+            {
+                m_waitingForItems = false;
+                m_loading = false;
+                emit q_func()->loadingChanged();
+            }
         }
     }
 
@@ -398,6 +436,8 @@ public:
     MainCtx* m_ctx = nullptr;
     NetworkDeviceModel::SDCatType m_sdSource = NetworkDeviceModel::CAT_UNDEFINED;
     QString m_sourceName; // '*' -> all sources
+    bool m_waitingForItems = false;
+    unsigned m_waitGeneration = 0;
     QString m_name; // source long name
 
     std::vector<QMetaObject::Connection> m_sourceUpdateConnections;
