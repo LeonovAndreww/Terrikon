@@ -63,6 +63,9 @@ bug is upstream's; when unsure, the original build is run.
 | The Videos folder tree was built again for the count, each page and each lookup | built once, again after a library change |
 | A folder dropped (or picked) that is already in the library, inside one of its folders, did nothing visible | Videos opens on it |
 | Picture in picture lost 5 to 15 MB each time in and out | it was the Direct3D11 staging leak (the window changes size, the output format resources are made again); now under 1 MB per round, as noise (`leak.ps1 -Tests pipsame,pip`) |
+| The radio stations (and any directory of a network service) showed grey folders instead of their country flags and station logos in the grid view: the grid gave Qt the http(s) address directly, which it does not fetch, while the list view goes through VLC's access | the grid view too goes through `VLCAccessImage` (upstream VLC 4 bug) |
+| Opening a video while a VLC visualization (Goom, spectrum...) was on for music: the visualization kept the player's window and the video opened in a window of its own | an input with a video gets no visualization on its sound (upstream VLC 4 behaviour) |
+| Muting a preview in the library muted Terrikon as a whole, in the Windows volume mixer, from run to run | the preview plays in an audio session of its own (Terrikon's own bug) |
 
 ## Known upstream issues, not fixed yet
 

@@ -44408,3 +44408,35 @@ msgstr "%1 из %2"
 #: modules/gui/qt/terrikon/components.cpp
 msgid " MB"
 msgstr " МБ"
+
+#: terrikon
+msgid "Quality (HD, 4K...)"
+msgstr "Качество (HD, 4K...)"
+
+#: terrikon
+msgid "Captions in the library"
+msgstr "Подписи в медиатеке"
+
+#: terrikon
+msgid "Subtitles on / off"
+msgstr "Субтитры вкл / выкл"
+
+#: terrikon
+msgid "Subtitles on"
+msgstr "Включить субтитры"
+
+#: terrikon
+msgid "On air"
+msgstr "В эфире"
+
+#: terrikon
+msgid "%1: not installed"
+msgstr "%1: не установлен"
+
+#: terrikon
+msgid "%1: %2"
+msgstr "%1: %2"
+
+#: terrikon
+msgid "Manage..."
+msgstr "Управлять..."
