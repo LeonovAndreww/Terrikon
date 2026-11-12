@@ -42,6 +42,9 @@ build, or by reading when the path is taken.
 | Core | With one VLC running, a second one hung at its start: its pipes were named `AnonPipe_<count>`, the same in every process, so it could not make them, nor start its preparser processes or the rc interface | `src/win32/filesystem.c`: the name holds the process id |
 | Windows | Closing could leave the process running with no window, holding the files and the drive it had opened (seen after days): on the way out Windows ends the threads left over wherever they are, and one ended holding the lock of the thread keys left the C++ runtime clean up of the Qt module waiting forever | `bin/winvlc.c`: once libvlc is released, the process ends at once |
 | Video output | Each close of a Direct3D11 output with a software decoded video or a visualization lost the whole D3D11 device, some 12 MB and 14 handles: the staging textures were overwritten, not released, when the format resources were made again | `direct3d11.cpp`: the old staging textures are released first (found with the D3D11 debug layer) |
+| Services | Free Music Charts showed an empty page: its list on archive.org is gone (403) | no longer shipped |
+| Services | The podcasts page, empty until a feed is added, said "Nothing to see here, go back"; the dialog to add one was only behind a right click on the service | it says how, and its button opens the dialog |
+| Services | Clicking a service: "Cannot call method 'forceActiveFocus' of undefined" (the grid has no current item) | the call is skipped then |
 
 ## 2. VLC 4's bugs brought out by Terrikon
 
@@ -50,6 +53,7 @@ build, or by reading when the path is taken.
 | Picture in picture lost 5 to 15 MB each time in and out | the Direct3D11 staging leak above | picture in picture changes the window's size, and the output makes its format resources again each time | the leak fixed; now under 1 MB per round, as noise (`leak.ps1 -Tests pipsame,pip`) |
 | A file on a network drive began to play only once 128 MiB were read (27 s against 2.4 s, an OBS recording on an SMB share) | the prefetch filter read the whole free space of its buffer in one read, and the first bytes and the seek to the index at the end waited for it (`prefetch-read-size` is gone since 4.0) | Terrikon plays network drive files through the prefetch filter with a large buffer; VLC 4 does not use it by default | reads of 512 KiB at most: 0.7 s to start, a seek to the middle in 1.3 s |
 | Random crashes (some a dozen a day), often at start or quit | Qt's per-thread PCRE2 JIT stack, a `thread_local`, crashed in its destructor under MinGW's emulated TLS when a thread pool thread that had used a regular expression ended (after 30 s idle) | Terrikon's own code used regular expressions on Qt's thread pool | regular expressions without JIT (`QT_ENABLE_REGEXP_JIT=0`); crashes now leave a minidump in `%LOCALAPPDATA%\terrikon\crashes` |
+| "Cannot assign to non-existent property parentId" (and title) on opening a folder of Videos | the page loader gave the last page's properties to every page on the way | Home opens a folder of Videos directly; in VLC 4 the pages on the way are always loaded already | the pages on the way take only the properties they have |
 
 ## 3. Terrikon's own bugs
 
@@ -86,6 +90,9 @@ build, or by reading when the path is taken.
 | The player of a radio showed neither the seek bar nor "On air" | the "On air" row was never placed in the layout of the bar |
 | "Binding loop detected for property active" in the video tiles | the preview's loader stayed active while its own item faded out; a flag of the tile now tells it |
 | A preview in the library opened its video in windows of its own ("VLC Video Output", flashing white) | the preview's player made a window; it now draws only into memory (`window=wdummy`) |
+| A folder chip of Home did nothing on a click, and "Open folder" showed "This PC" | the media library gives folders as `file:///c:%5CUsers%5C...`, which we passed on as they were; a usual file URL is now made of the path |
+| What an opened folder holds came after every folder, apart from its place | it was sorted with all the rest; it now keeps the folder's place |
+| The tiles of an opened folder came in with an animation each time one was made again while scrolling | only what the folder just opened brings in |
 
 ## Known upstream issues, not fixed yet
 
