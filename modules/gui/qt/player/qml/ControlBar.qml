@@ -57,7 +57,9 @@ T.Pane {
     // Terrikon: a live stream (a radio): nothing to seek, no end
     readonly property bool _live: (Player.playingState === Player.PLAYING_STATE_PLAYING
                                    || Player.playingState === Player.PLAYING_STATE_PAUSED)
-                                  && !Player.seekable
+                                  && (!Player.seekable || !Player.length.valid() || Player.length.toSeconds() <= 0)
+                                  // a file's length comes at once: not taken for a stream while opening
+                                  && Player.time.valid() && Player.time.toSeconds() >= 1
 
     property var menu: undefined
 

@@ -31,5 +31,19 @@ Widgets.IconToolButton {
     onClicked: MainPlaylistController.toggleRandom()
     description: qsTr("Random")
 
+    // Terrikon: on and off told apart whatever the accent (white by default,
+    // the colour of the icons): dim when off, a dot under it when on
+    opacity: checked ? 1.0 : 0.55
+    Rectangle {
+        visible: parent.checked
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: -VLCStyle.dp(1, VLCStyle.scale)
+        width: VLCStyle.dp(4, VLCStyle.scale)
+        height: width
+        radius: width / 2
+        color: parent.color
+    }
+
     AccessibleCompat.id: "randomButton"
 }

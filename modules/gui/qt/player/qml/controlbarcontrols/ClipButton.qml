@@ -34,7 +34,8 @@ Widgets.ImageToolButton {
 
     // Scissors, white; underlined like other active toggles when clip mode is on
     imageSource: SVGColorImage.colorize("qrc:///icons/clip.svg")
-                     .color1(clipBtn.colorContext.fg.primary).uri()
+                     .color1(clipBtn.checked ? clipBtn.colorContext.fg.primary
+                                             : Qt.alpha(clipBtn.colorContext.fg.primary, 0.75)).uri()
 
     description: qsTr("Clip") + TerrikonActions.hint("clip-toggle")
 

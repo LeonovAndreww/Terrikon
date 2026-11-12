@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <!-- colors values have a purpose, changing them may break the associated component -->
+  <!-- A microphone, the sign of lyrics in music players; strokes on the
+       icon font weight -->
+  <rect x="9" y="3" width="6" height="11" rx="3" fill="none" stroke="#ff00ff" stroke-width="1.2"/>
+  <path d="M6 11.5a6 6 0 0 0 12 0" fill="none" stroke="#ff00ff" stroke-width="1.2" stroke-linecap="round"/>
+  <path d="M12 17.5v3.5M9.5 21h5" fill="none" stroke="#ff00ff" stroke-width="1.2" stroke-linecap="round"/>
+</svg>

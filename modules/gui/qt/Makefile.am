@@ -839,6 +839,7 @@ libqt_plugin_la_RES = \
 	pixmaps/icons/autoplay_on.svg \
 	pixmaps/icons/clip.svg \
 	pixmaps/icons/compact_player.svg \
+	pixmaps/icons/lyrics.svg \
 	pixmaps/icons/compact_player_exit.svg \
 	pixmaps/icons/ic_audiosub.svg \
 	pixmaps/icons/back.svg \

@@ -23,7 +23,7 @@ import VLC.Player
 import VLC.Util
 
 // Subtitles on / off, as on video sites: shown only when the media has some,
-// on by default (VLC picks a track by itself); the track the button turns
+// off by default (unless switched on last time); the track the button turns
 // back on is the one last shown
 Widgets.IconToolButton {
     id: root
@@ -39,29 +39,20 @@ Widgets.IconToolButton {
 
     onClicked: Player.subtitleTracks.toggleShown()
 
-    // the "CC" plate of video players, filled while subtitles show
-    contentItem: Item {
-        implicitWidth: VLCStyle.icon_toolbar
-        implicitHeight: VLCStyle.icon_toolbar
-
-        Rectangle {
-            anchors.centerIn: parent
-            width: Math.round(parent.width * 0.86)
-            height: Math.round(parent.height * 0.62)
-            radius: VLCStyle.dp(3, VLCStyle.scale)
-            color: root._on ? root.color : "transparent"
-            border.color: root.color
-            border.width: VLCStyle.dp(1.5, VLCStyle.scale)
-
-            Text {
-                anchors.centerIn: parent
-                text: "CC"
-                font.pixelSize: Math.round(parent.height * 0.62)
-                font.bold: true
-                color: root._on ? root.backgroundColor : root.color
-            }
-        }
+    // Terrikon: on and off told apart whatever the accent (white by default,
+    // the colour of the icons): dim when off, a dot under it when on
+    opacity: checked ? 1.0 : 0.55
+    Rectangle {
+        visible: parent.checked
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: -VLCStyle.dp(1, VLCStyle.scale)
+        width: VLCStyle.dp(4, VLCStyle.scale)
+        height: width
+        radius: width / 2
+        color: parent.color
     }
+
 
     AccessibleCompat.id: "subtitleButton"
 }

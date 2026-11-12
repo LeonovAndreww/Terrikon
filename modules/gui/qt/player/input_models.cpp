@@ -324,7 +324,7 @@ void TrackListModel::showByDefault()
     if (m_autoDone || m_data.isEmpty())
         return;
     m_autoDone = true;
-    if (anySelected() || !subtitleSettings().value(QStringLiteral("Subtitles/shown"), true).toBool())
+    if (anySelected() || !subtitleSettings().value(QStringLiteral("Subtitles/shown"), false).toBool())
         return;
     vlc_player_locker lock{ m_player };
     vlc_player_SelectEsId(m_player, m_data[0].m_id.get(), VLC_PLAYER_SELECT_EXCLUSIVE);

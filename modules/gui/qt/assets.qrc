@@ -16,6 +16,7 @@
         <file alias="autoplay_on.svg">pixmaps/icons/autoplay_on.svg</file>
         <file alias="clip.svg">pixmaps/icons/clip.svg</file>
         <file alias="compact_player.svg">pixmaps/icons/compact_player.svg</file>
+        <file alias="lyrics.svg">pixmaps/icons/lyrics.svg</file>
         <file alias="compact_player_exit.svg">pixmaps/icons/compact_player_exit.svg</file>
         <file alias="ic_fluent_arrow_download_24_regular.svg">pixmaps/icons/ic_fluent_arrow_download_24_regular.svg</file>
         <file alias="ic_fluent_arrow_sync_24_regular.svg">pixmaps/icons/ic_fluent_arrow_sync_24_regular.svg</file>

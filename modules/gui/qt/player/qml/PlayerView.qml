@@ -693,10 +693,10 @@ FocusScope {
                     anchors.topMargin: VLCStyle.margin_xsmall + audioFocusScope.topPadding
                     anchors.bottomMargin: VLCStyle.margin_xsmall + audioFocusScope.bottomPadding
 
-                    // Terrikon: a right click gives the menu of the
-                    // visualization, its colour and background
-                    acceptedButtons: Qt.RightButton
-                    onClicked: (mouse) => rootPlayer.chooseVisualization(mapToGlobal(mouse.x, mouse.y))
+                    // Terrikon: clicks on the empty space do nothing of their
+                    // own (the visualization has its button in the top bar);
+                    // a right click gives the player's menu, as elsewhere
+                    acceptedButtons: Qt.NoButton
 
                     onWheel: (wheel) => {
                         wheel.accepted = true
@@ -1046,21 +1046,17 @@ FocusScope {
                                 AccessibleCompat.id: "audioStepBackButton"
                             }
 
-                            Widgets.IconToolButton {
-                                text: VLCIcons.visualization
-                                font.pixelSize: VLCStyle.icon_audioPlayerButton
-                                onClicked: rootPlayer.chooseVisualization(mapToGlobal(width / 2, height))
-                                description: qsTr("Visualization")
-
-                                AccessibleCompat.id: "audioVisualizationButton"
-                            }
-
-                            Widgets.IconToolButton {
-                                text: VLCIcons.topbar_music
-                                font.pixelSize: VLCStyle.icon_audioPlayerButton
-                                checked: MainCtx.lyricsMode
-                                onClicked: MainCtx.lyricsMode = !MainCtx.lyricsMode
-                                description: qsTr("Lyrics")
+                            Widgets.ImageToolButton {
+                                id: lyricsButton
+                                // always there, dim when the song has no lyrics
+                                opacity: Player.hasLyrics ? 1.0 : 0.4
+                                sourceSize: Qt.size(VLCStyle.icon_audioPlayerButton, VLCStyle.icon_audioPlayerButton)
+                                imageSource: SVGColorImage.colorize("qrc:///icons/lyrics.svg")
+                                                 .color1(MainCtx.lyricsMode ? lyricsButton.colorContext.accent
+                                                                            : lyricsButton.colorContext.fg.primary).uri()
+                                checked: MainCtx.lyricsMode && Player.hasLyrics
+                                onClicked: if (Player.hasLyrics) MainCtx.lyricsMode = !MainCtx.lyricsMode
+                                description: Player.hasLyrics ? qsTr("Lyrics") : qsTr("No lyrics for this song")
 
                                 Accessible.role: Accessible.Button
                                 Accessible.name: qsTr("Toggle lyrics view")
