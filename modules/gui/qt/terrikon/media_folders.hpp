@@ -77,6 +77,10 @@ public:
     /* A menu at the pointer for folders dropped on the window: 0 to play
      * them, 1 to add them to the media library, -1 if dismissed */
     Q_INVOKABLE int askDropAction() const;
+    /* the menu of a folder of the library: 0 show it in Videos, 1 take it
+     * out of the library, -1 nothing (opening it in the file manager is done
+     * here) */
+    Q_INVOKABLE int folderMenu(const QUrl &folder) const;
 };
 
 }

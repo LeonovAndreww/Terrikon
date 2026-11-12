@@ -336,6 +336,9 @@ Widgets.PageExt {
 
                         readonly property string _path: decodeURIComponent(String(display_url)).replace(/^file:\/\/\/?/, "")
                         readonly property string _name: _path.replace(/[\\\/]+$/, "").split(/[\\\/]/).pop()
+                        // the library gives "file:///c:%5CUsers%5C...": a usual
+                        // file URL, as Windows and the library's look up take it
+                        readonly property string _url: "file:///" + _path.replace(/\\/g, "/")
 
                         height: VLCStyle.dp(30, VLCStyle.scale)
                         width: chipRow.implicitWidth + 2 * VLCStyle.margin_small
@@ -343,7 +346,22 @@ Widgets.PageExt {
                         color: chipHover.hovered ? Qt.rgba(1, 1, 1, 0.1) : Qt.rgba(1, 1, 1, 0.05)
                         border.color: Qt.rgba(1, 1, 1, 0.1)
 
-                        HoverHandler { id: chipHover }
+                        HoverHandler { id: chipHover; cursorShape: VLCStyle.pointerCursor }
+
+                        // a click shows it in Videos; a right click, its menu
+                        TapHandler {
+                            onTapped: MainCtx.mediaLibrary.lookUpFolder(chip._url)
+                        }
+                        TapHandler {
+                            acceptedButtons: Qt.RightButton
+                            onTapped: {
+                                const action = MediaFolders.folderMenu(chip._url)
+                                if (action === 0)
+                                    MainCtx.mediaLibrary.lookUpFolder(chip._url)
+                                else if (action === 1)
+                                    mlFolders.removeAt(chip.index)
+                            }
+                        }
 
                         Widgets.ToolTipExt {
 

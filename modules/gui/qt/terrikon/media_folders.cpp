@@ -25,6 +25,8 @@
 #include "folder_tree.hpp"
 
 #include <QCursor>
+#include <QProcess>
+#include <QDesktopServices>
 #include <QDir>
 #include <thread>
 #include <QGuiApplication>
@@ -229,6 +231,30 @@ int MediaFolders::askDropAction() const
     QAction *add = menu.addAction(qtr("Add to the media library"));
     QAction *picked = menu.exec(QCursor::pos());
     return picked == play ? 0 : picked == add ? 1 : -1;
+}
+
+int MediaFolders::folderMenu(const QUrl &folder) const
+{
+    QMenu menu;
+    QAction *show = menu.addAction(qtr("Show in Videos"));
+    QAction *open = menu.addAction(qtr("Open folder"));
+    menu.addSeparator();
+    QAction *remove = menu.addAction(qtr("Remove from the media library"));
+    QAction *picked = menu.exec(QCursor::pos());
+    if (picked == open)
+    {
+        /* the file manager on the folder itself (opening the URL showed
+         * "This PC" for some of the library's) */
+        const QString path = QDir::toNativeSeparators(folder.toLocalFile());
+#ifdef _WIN32
+        if (!path.isEmpty())
+            QProcess::startDetached(QStringLiteral("explorer.exe"), { path });
+#else
+        QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+#endif
+        return -1;
+    }
+    return picked == show ? 0 : picked == remove ? 1 : -1;
 }
 
 QUrl MediaFolders::pickFolder() const
