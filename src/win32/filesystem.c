@@ -542,8 +542,14 @@ int vlc_pipe (int fds[2])
 
     uint_least64_t c = atomic_fetch_add(&count, 1);
 
+    /* Terrikon: the name holds the process id. A count alone is the same
+     * in every process: with one VLC running, a second one could not make
+     * its pipes ("AnonPipe_0" taken, the pipe allowing one instance), and
+     * neither its preparser processes nor the rc interface started; it
+     * hung at its start. */
     TCHAR pipeName[MAX_PATH] = {0};
-    if (wsprintf(pipeName, TEXT("\\\\.\\pipe\\AnonPipe_%lu"), c) < 0) {
+    if (wsprintf(pipeName, TEXT("\\\\.\\pipe\\AnonPipe_%lu_%lu"),
+                 (unsigned long)GetCurrentProcessId(), (unsigned long)c) < 0) {
         return -1;
     }
 
