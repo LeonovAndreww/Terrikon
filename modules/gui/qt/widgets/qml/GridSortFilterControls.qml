@@ -4,12 +4,13 @@ import VLC.MainInterface
 import VLC.Style
 import VLC.Util
 import VLC.Menus
+import VLC.Terrikon
 
 NavigableRow {
     id: root
 
     spacing: VLCStyle.margin_normal
-    enabled: gridListBtn.visible || sortControl.visible || searchBox.visible
+    enabled: gridListBtn.visible || captionsBtn.visible || sortControl.visible || searchBox.visible
 
     property SortMenu sortMenu: null
     required property SortCtx sort
@@ -29,6 +30,20 @@ NavigableRow {
         text: MainCtx.gridView ? VLCIcons.list : VLCIcons.grid
         description: qsTr("List/Grid")
         onClicked: MainCtx.gridView = !MainCtx.gridView
+    }
+
+    // Terrikon: what is written under the videos
+    IconToolButton {
+        id: captionsBtn
+
+        visible: root.sortMenu instanceof SortMenuVideo
+        enabled: visible
+        width: VLCStyle.bannerButton_width
+        height: VLCStyle.bannerButton_height
+        font.pixelSize: VLCStyle.icon_banner
+        text: VLCIcons.ic_fluent_text_change_case_24_regular
+        description: qsTr("Captions")
+        onClicked: MediaFolders.popupCaptions(mapToGlobal(0, height))
     }
 
     SortControl {

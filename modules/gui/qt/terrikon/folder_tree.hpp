@@ -28,6 +28,8 @@
 
 #include <vlc_media_library.h>
 
+class QMenu;
+
 namespace terrikon {
 
 /* Which folders of the media library are shown opened in Videos, in place
@@ -71,6 +73,8 @@ public:
     void setShown(const QString &field, bool shown);
 
     static QStringList all();
+    /* The fields as checkable entries, for the captions menus */
+    static void fillMenu(::QMenu *menu);
 
 signals:
     void changed();

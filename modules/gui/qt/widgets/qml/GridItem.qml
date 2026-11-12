@@ -59,6 +59,8 @@ T.ItemDelegate {
     property alias fillMode: picture.fillMode
 
     property alias title: titleLabel.text
+    // Terrikon: the colour the card is tinted with, none if transparent
+    property color tint: "transparent"
     property alias subtitle: subtitleTxt.text
     property alias subtitleVisible: subtitleTxt.visible
     property alias playCoverShowPlay: picture.playCoverShowPlay
@@ -259,7 +261,17 @@ T.ItemDelegate {
         enabled: theme.initialized
 
         //don't show the backgroud unless selected
-        color: root.selected ?  theme.bg.highlight : theme.bg.primary
+        // Terrikon: a card may be tinted (the colour of its folder)
+        color: {
+            const base = root.selected ? theme.bg.highlight : theme.bg.primary
+            if (root.tint.a <= 0)
+                return base
+            const strength = root.selected ? 0.28 : 0.14
+            // the card has no background of its own until selected
+            if (base.a < 0.05)
+                return Qt.alpha(root.tint, strength)
+            return Qt.tint(base, Qt.alpha(root.tint, strength))
+        }
         border.color: visualFocus ? theme.visualFocus : Qt.alpha(theme.visualFocus, 0.0)
     }
 

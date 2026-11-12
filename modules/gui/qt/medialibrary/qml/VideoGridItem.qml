@@ -36,6 +36,27 @@ Widgets.GridItem {
     property var treeModel: null
     property int treeRow: -1
 
+    // Terrikon: the folder the video is directly in (not the one expanded:
+    // expanding Videos, then NVIDIA, then a game, each game is its own)
+    readonly property string _parentKey: {
+        const mrl = String(model.mrl ?? "")
+        const slash = mrl.lastIndexOf("/")
+        return slash > 0 ? mrl.substring(0, slash) : ""
+    }
+    readonly property string _parentName: {
+        const key = _parentKey
+        const slash = key.lastIndexOf("/")
+        try {
+            return decodeURIComponent(key.substring(slash + 1))
+        } catch (e) {
+            return key.substring(slash + 1)
+        }
+    }
+    // brought in by expanding a folder: tinted with its folder's colour
+    readonly property bool _grouped: (model.group ?? "") !== "" && model.isVideo !== false
+    readonly property color _groupColor: Qt.hsla(_groupHue(_parentKey), 0.6, 0.55, 1)
+    tint: _grouped ? _groupColor : "transparent"
+
     // Terrikon: a hue from a folder key, the same each time
     function _groupHue(key) {
         let h = 0
@@ -96,6 +117,14 @@ Widgets.GridItem {
                 if (model?.size_text)
                     parts.push(model.size_text)
                 break
+            case "quality":
+                if (root.labels && root.labels.length > 0)
+                    parts.push(root.labels.join(" "))
+                break
+            case "folder":
+                if (root._parentName !== "" && model.isVideo !== false)
+                    parts.push(root._parentName)
+                break
             case "mtime":
                 if (model?.mtime_text)
                     parts.push(qsTr("changed %1").arg(model.mtime_text))
@@ -106,6 +135,9 @@ Widgets.GridItem {
                 break
             }
         }
+        // brought in by expanding: where from, unless already said
+        if (root._grouped && root._parentName !== "" && !MediaFolders.videoFields.includes("folder"))
+            parts.unshift(root._parentName)
         return parts.join("  ·  ")
     }
     pictureWidth: VLCStyle.gridCover_video_width
@@ -155,19 +187,6 @@ Widgets.GridItem {
         implicitWidth: root.pictureWidth
         implicitHeight: root.pictureHeight
 
-        // Terrikon: what an expanded folder brought in is marked with a colour
-        // of its own (the folder's), along the top of the picture
-        Rectangle {
-            readonly property string group: model.group ?? ""
-            visible: group !== ""
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: parent.top
-            height: VLCStyle.dp(4, VLCStyle.scale)
-            radius: height / 2
-            color: Qt.hsla(root._groupHue(group), 0.65, 0.55, 1)
-        }
-
         // Terrikon: resting the pointer on a video plays it in the tile, as
         // video sites preview theirs: muted unless asked, a seek bar with a
         // frame over the pointer, the time left. Opening the video then
@@ -187,11 +206,26 @@ Widgets.GridItem {
         Loader {
             id: previewLoader
             anchors.fill: parent
-            active: previewDelay.armed
+            // kept while fading out
+            active: previewDelay.armed || (item !== null && item.opacity > 0)
             sourceComponent: Item {
                 id: preview
 
-                readonly property bool showing: video.hasFrame
+                readonly property bool showing: video.hasFrame && previewDelay.armed
+                opacity: showing ? 1 : 0
+                Behavior on opacity {
+                    NumberAnimation { duration: 260; easing.type: Easing.InOutQuad }
+                }
+
+                // played part of the bars: the chosen accent, white by default
+                readonly property ColorContext colorContext: ColorContext {
+                    id: barTheme
+                    colorSet: ColorContext.Slider
+                }
+                readonly property color barColor: {
+                    const c = barTheme.fg.primary
+                    return (0.299 * c.r + 0.587 * c.g + 0.114 * c.b) < 0.35 ? "white" : c
+                }
                 onShowingChanged: root._previewShowing = showing
                 Component.onDestruction: root._previewShowing = false
 
@@ -220,25 +254,26 @@ Widgets.GridItem {
                     anchors.top: parent.top
                     anchors.right: parent.right
                     anchors.margins: VLCStyle.margin_xsmall
-                    width: VLCStyle.dp(30, VLCStyle.scale)
+                    width: VLCStyle.dp(28, VLCStyle.scale)
                     height: width
                     radius: width / 2
                     visible: video.hasFrame
-                    color: muteArea.containsMouse ? Qt.rgba(0, 0, 0, 0.85) : Qt.rgba(0, 0, 0, 0.6)
+                    color: muteHover.hovered ? Qt.rgba(0, 0, 0, 0.75) : Qt.rgba(0, 0, 0, 0.45)
 
                     Widgets.IconLabel {
                         anchors.centerIn: parent
                         text: video.muted ? VLCIcons.volume_muted : VLCIcons.volume_high
                         color: "white"
-                        font.pixelSize: VLCStyle.icon_small
+                        font.pixelSize: VLCStyle.dp(20, VLCStyle.scale)
                     }
 
-                    MouseArea {
-                        id: muteArea
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: video.muted = !video.muted
+                    // handlers, as the expand buttons: taken over from the
+                    // tile's own (which opens the video on a click)
+                    HoverHandler { id: muteHover; cursorShape: Qt.PointingHandCursor }
+                    TapHandler {
+                        gesturePolicy: TapHandler.WithinBounds
+                        grabPermissions: PointerHandler.CanTakeOverFromAnything
+                        onTapped: video.muted = !video.muted
                     }
                 }
 
@@ -246,7 +281,8 @@ Widgets.GridItem {
                 Rectangle {
                     anchors.right: parent.right
                     anchors.bottom: bar.top
-                    anchors.margins: VLCStyle.margin_xsmall
+                    anchors.rightMargin: VLCStyle.margin_xsmall
+                    anchors.bottomMargin: -VLCStyle.dp(3, VLCStyle.scale)
                     visible: video.hasFrame && video.length > 0
                     width: left.implicitWidth + VLCStyle.margin_xsmall * 2
                     height: left.implicitHeight + VLCStyle.margin_xxxsmall * 2
@@ -272,7 +308,7 @@ Widgets.GridItem {
                     anchors.bottom: parent.bottom
                     anchors.leftMargin: VLCStyle.margin_xsmall
                     anchors.rightMargin: VLCStyle.margin_xsmall
-                    height: VLCStyle.dp(22, VLCStyle.scale)
+                    height: VLCStyle.dp(16, VLCStyle.scale)
                     visible: video.hasFrame
 
                     readonly property real hoverFraction: barArea.containsMouse
@@ -291,7 +327,7 @@ Widgets.GridItem {
                             width: parent.width * video.position
                             height: parent.height
                             radius: parent.radius
-                            color: "#FF2D2D"
+                            color: preview.barColor
                         }
                     }
 
@@ -302,7 +338,7 @@ Widgets.GridItem {
                         width: VLCStyle.dp(11, VLCStyle.scale)
                         height: width
                         radius: width / 2
-                        color: "#FF2D2D"
+                        color: preview.barColor
                     }
 
                     MouseArea {
@@ -317,7 +353,19 @@ Widgets.GridItem {
                     ThumbnailStrip {
                         id: strip
                         keyFramesOnly: true
-                        Component.onCompleted: loadUrl(model.mrl)
+                        property bool _asked: false
+                        function _ask() {
+                            if (_asked || video.length <= 0)
+                                return
+                            _asked = true
+                            duration = video.length
+                            loadUrl(model.mrl)
+                        }
+                        Component.onCompleted: _ask()
+                    }
+                    Connections {
+                        target: video
+                        function onProgressChanged() { strip._ask() }
                     }
 
                     // the frame over the pointer, with its time
@@ -383,19 +431,32 @@ Widgets.GridItem {
         }
 
         // Terrikon: expand a folder into what it holds, collapse back; what
-        // comes of it in the tooltips
+        // comes of it in the tooltips. One small pill of frosted dark glass,
+        // its buttons lighting up under the pointer.
+        Rectangle {
+            anchors.fill: treeButtons
+            anchors.margins: -VLCStyle.dp(3, VLCStyle.scale)
+            radius: height / 2
+            visible: treeButtons.visible
+            color: Qt.rgba(0.08, 0.08, 0.08, 0.72)
+            border.color: Qt.rgba(1, 1, 1, 0.14)
+            border.width: 1
+            opacity: treeButtons.opacity
+        }
+
         Row {
             id: treeButtons
 
             anchors.top: parent.top
             anchors.left: parent.left
-            anchors.margins: VLCStyle.margin_xxsmall
-            spacing: VLCStyle.margin_xxsmall
+            anchors.margins: VLCStyle.margin_xsmall
+            spacing: VLCStyle.dp(2, VLCStyle.scale)
 
             readonly property bool _active: !!root.treeModel && root.treeRow >= 0
-            visible: _active && (root.hovered || root.highlighted)
+            visible: _active && opacity > 0
+            opacity: (root.hovered || root.highlighted) ? 1 : 0
+            Behavior on opacity { NumberAnimation { duration: 150 } }
 
-            // A dark chip with a white chevron (or two), clear on any cover
             component TreeButton: Rectangle {
                 id: treeButton
 
@@ -404,26 +465,26 @@ Widgets.GridItem {
                 property bool up: false
                 signal clicked()
 
-                width: VLCStyle.dp(30, VLCStyle.scale)
-                height: VLCStyle.dp(24, VLCStyle.scale)
-                radius: VLCStyle.dp(6, VLCStyle.scale)
-                color: buttonHover.hovered ? Qt.rgba(0, 0, 0, 0.9) : Qt.rgba(0, 0, 0, 0.7)
-                border.color: Qt.rgba(1, 1, 1, buttonHover.hovered ? 0.5 : 0.2)
+                width: VLCStyle.dp(26, VLCStyle.scale)
+                height: width
+                radius: width / 2
+                color: buttonHover.hovered ? Qt.rgba(1, 1, 1, 0.2) : "transparent"
+                Behavior on color { ColorAnimation { duration: 120 } }
 
                 Widgets.IconLabel {
                     anchors.centerIn: parent
-                    anchors.verticalCenterOffset: treeButton.twoChevrons ? VLCStyle.dp(3, VLCStyle.scale) : 0
+                    anchors.verticalCenterOffset: treeButton.twoChevrons ? VLCStyle.dp(2.5, VLCStyle.scale) : 0
                     text: treeButton.up ? VLCIcons.expand_inverted : VLCIcons.expand
-                    font.pixelSize: VLCStyle.dp(26, VLCStyle.scale)
+                    font.pixelSize: VLCStyle.dp(18, VLCStyle.scale)
                     color: "white"
                 }
 
                 Widgets.IconLabel {
                     visible: treeButton.twoChevrons
                     anchors.centerIn: parent
-                    anchors.verticalCenterOffset: -VLCStyle.dp(3, VLCStyle.scale)
+                    anchors.verticalCenterOffset: -VLCStyle.dp(2.5, VLCStyle.scale)
                     text: VLCIcons.expand_inverted
-                    font.pixelSize: VLCStyle.dp(26, VLCStyle.scale)
+                    font.pixelSize: VLCStyle.dp(18, VLCStyle.scale)
                     color: "white"
                 }
 
@@ -463,18 +524,6 @@ Widgets.GridItem {
                              ? qsTr("Collapse all into %1, as when added").arg(root.treeModel.collapseAllTarget(treeButtons._index())) : ""
                 onClicked: root.treeModel.collapseAllItem(treeButtons._index())
             }
-        }
-
-        Widgets.VideoQualityLabels {
-            anchors {
-                top: parent.top
-                right: parent.right
-                topMargin: VLCStyle.margin_xxsmall
-                leftMargin: VLCStyle.margin_xxsmall
-                rightMargin: VLCStyle.margin_xxsmall
-            }
-
-            labels: root.labels
         }
     }
 

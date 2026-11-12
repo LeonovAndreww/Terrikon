@@ -103,7 +103,11 @@ Item {
         text: VLCIcons.play_filled
 
         color: {
-            const accent = theme.accent
+            // Terrikon: towards the accent, unless it is too light to be
+            // seen on the white disc (white by default): then a dark grey
+            let accent = theme.accent
+            if (0.299 * accent.r + 0.587 * accent.g + 0.114 * accent.b > 0.7)
+                accent = Qt.rgba(0.25, 0.25, 0.25, 1)
             const t = root._hoverProgress
             return Qt.rgba(accent.r * t, accent.g * t, accent.b * t, 1)
         }

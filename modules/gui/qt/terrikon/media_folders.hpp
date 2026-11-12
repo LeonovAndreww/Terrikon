@@ -38,6 +38,8 @@ public:
     explicit MediaFolders(QObject *parent = nullptr);
 
     QStringList videoFields() const;
+    /* The captions menu, at a point of the screen */
+    Q_INVOKABLE void popupCaptions(const QPoint &globalPoint);
 
 signals:
     void videoFieldsChanged();

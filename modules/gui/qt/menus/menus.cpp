@@ -35,6 +35,7 @@
 #include <vlc_aout.h>                             /* audio_output_t */
 #include <vlc_interface.h>
 
+#include "terrikon/folder_tree.hpp"
 #include "menus.hpp"
 
 #include "maininterface/mainctx.hpp"                     /* View modifications */
@@ -524,6 +525,14 @@ void VLCMenuBar::VideoMenu( qt_intf_t *p_intf, QMenu *current )
         QAction* snapshotAction = new QAction(qtr( "Take &Snapshot" ), current);
         connect(snapshotAction, &QAction::triggered, THEMIM, &PlayerController::snapshot);
         current->addAction(snapshotAction);
+
+        /* Terrikon: what is written under the videos of the library */
+        current->addSeparator();
+        QMenu *captions = current->addMenu(qtr("Captions in the library"));
+        QObject::connect(captions, &QMenu::aboutToShow, captions, [captions]() {
+            captions->clear();
+            terrikon::VideoFields::fillMenu(captions);
+        });
     }
 }
 

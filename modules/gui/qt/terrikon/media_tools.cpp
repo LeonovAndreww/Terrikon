@@ -1326,6 +1326,11 @@ void ThumbnailStrip::load(const QString &path)
     });
 }
 
+static QString quickDir(const QString &cacheDir)
+{
+    return QDir(cacheDir).filePath(QStringLiteral("quick"));
+}
+
 void ThumbnailStrip::loadFrom(const QString &dir)
 {
     m_cacheDir = dir;
@@ -1343,7 +1348,66 @@ void ThumbnailStrip::loadFrom(const QString &dir)
             startPass(true);
         return;
     }
-    startPass(false);
+    if (readIndex(quickDir(m_cacheDir)))
+    {
+        m_ready = true;
+        emit readyChanged();
+        startPass(false);
+        return;
+    }
+    if (m_duration > 0.)
+        startQuickPass();
+    else
+        startPass(false);
+}
+
+void ThumbnailStrip::startQuickPass()
+{
+    const QString ffmpeg = findTool(QStringLiteral("ffmpeg"));
+    if (ffmpeg.isEmpty())
+        return;
+    const QString dir = quickDir(m_cacheDir);
+    QDir().mkpath(dir);
+
+    /* A few frames, each read by seeking to it (no going through the file),
+     * side by side in one sheet like the other passes */
+    const int count = 16;
+    QStringList args = { QStringLiteral("-hide_banner"), QStringLiteral("-nostdin"),
+                         QStringLiteral("-y"), QStringLiteral("-loglevel"), QStringLiteral("error") };
+    QString graph;
+    m_quickTimes.clear();
+    for (int i = 0; i < count; ++i)
+    {
+        const double t = m_duration * (i + 0.5) / count;
+        m_quickTimes.push_back(t);
+        args << QStringLiteral("-skip_frame") << QStringLiteral("nokey")
+             << QStringLiteral("-ss") << QString::number(t, 'f', 2)
+             << QStringLiteral("-i") << m_path;
+        graph += QStringLiteral("[%1:v:0]trim=end_frame=1,setpts=PTS-STARTPTS,"
+                                "scale=%2:%3:force_original_aspect_ratio=decrease,"
+                                "pad=%2:%3:(ow-iw)/2:(oh-ih)/2,setsar=1[v%1];")
+                     .arg(i).arg(cellWidth).arg(cellHeight);
+    }
+    for (int i = 0; i < count; ++i)
+        graph += QStringLiteral("[v%1]").arg(i);
+    graph += QStringLiteral("concat=n=%1:v=1:a=0,tile=%2x%3").arg(count).arg(columns).arg(rows);
+    args << QStringLiteral("-filter_complex") << graph
+         << QStringLiteral("-frames:v") << QStringLiteral("1")
+         << QStringLiteral("-q:v") << QStringLiteral("6")
+         << QDir(dir).filePath(QStringLiteral("sheet-001.jpg"));
+
+    m_quickPass = true;
+    m_densePass = false;
+    m_process = watched(new QProcess(this));
+    m_process->setProgram(ffmpeg);
+    m_process->setArguments(args);
+#ifdef _WIN32
+    m_process->setCreateProcessArgumentsModifier([](QProcess::CreateProcessArguments *a) {
+        a->flags |= BELOW_NORMAL_PRIORITY_CLASS;
+    });
+#endif
+    connect(m_process, &QProcess::finished, this, &ThumbnailStrip::onFinished);
+    m_process->start();
 }
 
 void ThumbnailStrip::startPass(bool dense)
@@ -1379,6 +1443,7 @@ void ThumbnailStrip::startPass(bool dense)
          << QDir(dir).filePath(QStringLiteral("sheet-%03d.jpg"));
 
     m_densePass = dense;
+    m_quickPass = false;
     m_process = watched(new QProcess(this));
     m_process->setProgram(ffmpeg);
     m_process->setArguments(args);
@@ -1417,6 +1482,30 @@ void ThumbnailStrip::onFinished(int exitCode, QProcess::ExitStatus status)
     const QString log = QString::fromUtf8(m_process->readAllStandardError());
     m_process->deleteLater();
     m_process = nullptr;
+    if (m_quickPass)
+    {
+        m_quickPass = false;
+        const QString dir = quickDir(m_cacheDir);
+        if (status == QProcess::NormalExit && exitCode == 0)
+        {
+            QFile index(QDir(dir).filePath(QStringLiteral("index.txt")));
+            if (index.open(QIODevice::WriteOnly | QIODevice::Text))
+            {
+                QTextStream out(&index);
+                for (double t : m_quickTimes)
+                    out << t << '\n';
+                index.close();
+                if (readIndex(dir))
+                {
+                    m_ready = true;
+                    emit readyChanged();
+                }
+            }
+        }
+        /* then the key frames, finer */
+        startPass(false);
+        return;
+    }
     if (status != QProcess::NormalExit || exitCode != 0)
         return;
 

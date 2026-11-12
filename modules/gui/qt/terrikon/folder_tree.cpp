@@ -20,9 +20,11 @@
 #endif
 
 #include "folder_tree.hpp"
+#include "qt.hpp"
 
 #include "medialibrary/mlhelper.hpp"
 
+#include <QMenu>
 #include <QSettings>
 #include <QStringList>
 
@@ -107,7 +109,31 @@ VideoFields *VideoFields::instance()
 QStringList VideoFields::all()
 {
     return { QStringLiteral("duration"), QStringLiteral("count"), QStringLiteral("size"),
+             QStringLiteral("quality"), QStringLiteral("folder"),
              QStringLiteral("mtime"), QStringLiteral("last_played") };
+}
+
+void VideoFields::fillMenu(QMenu *menu)
+{
+    const struct { const char *title; const char *field; } shown[] = {
+        { N_("Length"), "duration" },
+        { N_("Number of videos"), "count" },
+        { N_("Size"), "size" },
+        { N_("Quality (HD, 4K...)"), "quality" },
+        { N_("Folder"), "folder" },
+        { N_("Date modified"), "mtime" },
+        { N_("Last watched"), "last_played" },
+    };
+    for (const auto &entry : shown)
+    {
+        QAction *action = menu->addAction(qtr(entry.title));
+        action->setCheckable(true);
+        const QString field = QString::fromLatin1(entry.field);
+        action->setChecked(instance()->fields().contains(field));
+        QObject::connect(action, &QAction::toggled, instance(), [field](bool on) {
+            instance()->setShown(field, on);
+        });
+    }
 }
 
 void VideoFields::setShown(const QString &field, bool shown)

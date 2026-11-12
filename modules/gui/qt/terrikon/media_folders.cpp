@@ -44,6 +44,14 @@ MediaFolders::MediaFolders(QObject *parent)
     connect(VideoFields::instance(), &VideoFields::changed, this, &MediaFolders::videoFieldsChanged);
 }
 
+void MediaFolders::popupCaptions(const QPoint &globalPoint)
+{
+    auto *menu = new QMenu;
+    menu->setAttribute(Qt::WA_DeleteOnClose);
+    VideoFields::fillMenu(menu);
+    menu->popup(globalPoint);
+}
+
 QStringList MediaFolders::videoFields() const
 {
     return VideoFields::instance()->fields();

@@ -259,6 +259,10 @@ class ThumbnailStrip : public QObject
     /* Only the quick set from key frames, never the dense one (a preview
      * on hovering a video in the library) */
     Q_PROPERTY(bool keyFramesOnly MEMBER m_keyFramesOnly FINAL)
+    /* The media's length (seconds) when already known: a rough set of a
+     * few frames, each sought to, then comes first, in a moment even for a
+     * long file */
+    Q_PROPERTY(double duration MEMBER m_duration FINAL)
 
 public:
     static constexpr int cellWidth = 160;
@@ -292,6 +296,7 @@ private:
     void loadFrom(const QString &dir);
     bool readIndex(const QString &dir);
     void startPass(bool dense);
+    void startQuickPass();
     void onFinished(int exitCode, QProcess::ExitStatus status);
     void stop();
 
@@ -301,6 +306,9 @@ private:
     bool m_keyFramesOnly = false;
     QString m_sheetDir; /* where the sheets in use are */
     bool m_densePass = false;
+    bool m_quickPass = false;
+    double m_duration = 0.;
+    QVector<double> m_quickTimes;
     QVector<double> m_times;
     bool m_ready = false;
     QProcess *m_process = nullptr;

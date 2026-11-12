@@ -239,25 +239,6 @@ void SortMenuVideo::onPopup(QMenu * menu) /* override */
             action->setChecked(true);
     }
 
-    // Terrikon: what is written under the covers
-    QMenu *fields = menu->addMenu(qtr("Captions"));
-    const struct { const char *title; const char *field; } shown[] = {
-        { N_("Length"), "duration" },
-        { N_("Number of videos"), "count" },
-        { N_("Size"), "size" },
-        { N_("Date modified"), "mtime" },
-        { N_("Last watched"), "last_played" },
-    };
-    for (const auto &entry : shown)
-    {
-        QAction *action = fields->addAction(qtr(entry.title));
-        action->setCheckable(true);
-        const QString field = QString::fromLatin1(entry.field);
-        action->setChecked(terrikon::VideoFields::instance()->fields().contains(field));
-        connect(action, &QAction::toggled, this, [field](bool on) {
-            terrikon::VideoFields::instance()->setShown(field, on);
-        });
-    }
 }
 
 void SortMenuAlbums::onPopup(QMenu *menu)
