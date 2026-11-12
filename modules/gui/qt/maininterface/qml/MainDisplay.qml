@@ -604,7 +604,9 @@ FocusScope {
 
             height: parent.height - g_mainDisplay.displayMargin
 
-            property int maximumWidth: Math.max(minimumWidth, (g_mainDisplay.width + sidebarResizeHandle.width) / 3)
+            // Terrikon: wider brings nothing more (the names already fit)
+            property int maximumWidth: Math.max(minimumWidth, Math.min(Math.round(minimumWidth * 1.5),
+                                                                       (g_mainDisplay.width + sidebarResizeHandle.width) / 3))
 
             topPadding: 0
             leftPadding: 0
@@ -714,7 +716,10 @@ FocusScope {
                 panelObject: MainCtx.navigationPanel
                 atRight: true
 
-                resizeHandle.visible: (sidebar.state === "expanded") && !VLCStyle.isScreenSmall
+                resizeHandle.visible: !VLCStyle.isScreenSmall
+                // Terrikon: folded and unfolded by dragging too
+                resizeHandle.collapsible: true
+                resizeHandle.collapsed: sidebar.state !== "expanded"
                 visualBorder.visible: !topLeftCornerBackground.visible
 
                 minimumWidth: sidebar.minimumWidth
@@ -726,6 +731,17 @@ FocusScope {
                     right: parent.right
                 }
 
+                Connections {
+                    target: sidebarResizeHandle.resizeHandle
+                    function onCollapseRequested() {
+                        if (pannelVisiblity.showNavigation)
+                            pannelVisiblity.toggleNavigationVisibility()
+                    }
+                    function onExpandRequested() {
+                        if (!pannelVisiblity.showNavigation)
+                            pannelVisiblity.toggleNavigationVisibility()
+                    }
+                }
             }
         }
 

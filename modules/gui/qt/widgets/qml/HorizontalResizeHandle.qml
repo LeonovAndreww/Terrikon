@@ -34,6 +34,14 @@ MouseArea {
 
     property bool atRight: true
 
+    // Terrikon: the panel can be folded by dragging (beyond its minimum
+    // width) and unfolded the same way, as well as by its button
+    property bool collapsible: false
+    property bool collapsed: false
+    signal collapseRequested()
+    signal expandRequested()
+    property bool _folded: false
+
     property int _previousX
 
     cursorShape: Qt.SplitHCursor
@@ -44,6 +52,7 @@ MouseArea {
     onPressed: (mouse) => {
         MainCtx.setCursor(cursorShape)
         _previousX = mouseX
+        _folded = false
     }
 
     onReleased:(mouse) => {
@@ -57,6 +66,21 @@ MouseArea {
     onPositionChanged: {
         const f = atRight ? 1 : -1
         const delta = mouseX - _previousX
+        if (root.collapsible && !root._folded) {
+            const fold = VLCStyle.dp(56, VLCStyle.scale)
+            if (!root.collapsed && root.currentWidth + delta * f < minimumWidth - fold) {
+                root._folded = true
+                root.collapseRequested()
+                return
+            }
+            if (root.collapsed && delta * f > fold) {
+                root._folded = true
+                root.expandRequested()
+                return
+            }
+        }
+        if (root.collapsed || root._folded)
+            return
         root.requestedWidth = Helpers.clamp(
             root.currentWidth + (delta * f),
             minimumWidth,
