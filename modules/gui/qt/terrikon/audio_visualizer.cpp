@@ -91,7 +91,7 @@ Visualizer::Visualizer(qt_intf_t *intf, QObject *parent)
 
     /* The audio output may only come with the first playback */
     connect(m_intf->p_mainPlayerController, &PlayerController::playingStateChanged,
-            this, [this]() { if (m_listening != (m_style != Off || m_miniWindow)) listen(); });
+            this, [this]() { if (!m_listening) listen(); });
     listen();
 }
 
@@ -307,7 +307,12 @@ QStringList Visualizer::backgroundNames() const
 
 void Visualizer::listen()
 {
-    const bool want = m_style != Off || m_miniWindow;
+    /* Always on: putting the tap in or out restarts the audio output's
+     * filters, which stopped the music for a moment at each change of
+     * style. Idle, it only copies the samples it is given. */
+    const bool want = true;
+    if (m_listening)
+        return;
     vlc_player_t *player = m_intf->p_mainPlayerController->getPlayer();
     if (vlc_player_aout_EnableFilter(player, tapFilter, want) == 0)
         m_listening = want;
