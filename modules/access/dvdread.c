@@ -122,6 +122,14 @@ int OpenCommonDvdread( vlc_object_t *p_this , dvd_type_t type,
     if (p_demux->out == NULL)
         return VLC_EGENERIC;
 
+    /* Terrikon: probed as a demuxer of a stream (the "iso" one, when the
+     * demuxers before it did not know the stream), there is nothing to open
+     * without a local file: a station of radio over http got, each time it
+     * played, three errors "DVDRead could not open the disc """ */
+    const bool probing = p_demux->s != NULL;
+    if( probing && ( !p_demux->psz_filepath || !*p_demux->psz_filepath ) )
+        return VLC_EGENERIC;
+
     if( !p_demux->psz_filepath || !*p_demux->psz_filepath )
         psz_file = var_InheritString( p_this, "dvd" );
     else
@@ -201,8 +209,10 @@ int OpenCommonDvdread( vlc_object_t *p_this , dvd_type_t type,
     if( p_dvdread == NULL )
     {
         msg_Err( p_demux, "DVDRead cannot open source: %s", psz_file );
-        vlc_dialog_display_error( p_demux, _("Playback failure"),
-                      _("DVDRead could not open the disc \"%s\"."), psz_file );
+        /* a demuxer probed that does not know the file is not a failure */
+        if( !probing )
+            vlc_dialog_display_error( p_demux, _("Playback failure"),
+                          _("DVDRead could not open the disc \"%s\"."), psz_file );
 
         free( psz_file );
         return VLC_EGENERIC;
