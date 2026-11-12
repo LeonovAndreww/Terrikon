@@ -180,9 +180,10 @@ T.ProgressBar {
         transform: Scale { origin.y: VLCStyle.dp(8, VLCStyle.scale); yScale: -1 }
     }
 
-    // Terrikon: where the last playback stopped, a small blue tick under the
-    // bar (as long as this media plays); click to go back there
-    MouseArea {
+    // Terrikon: where the last playback stopped: a small round marker on the
+    // bar, saying so (and when) under the pointer; a click goes back there
+    Item {
+        id: lastMark
         readonly property real _last: {
             void Player.playingState
             void Player.url
@@ -191,22 +192,38 @@ T.ProgressBar {
         }
         visible: _last > 0.005 && _last < 0.98
         x: _last * control.width - width / 2
-        y: control.barHeight / 2
+        y: control.barHeight / 2 - height / 2
         z: 1
-        width: VLCStyle.dp(10, VLCStyle.scale)
-        height: control.barHeight * 2.5
-        cursorShape: VLCStyle.pointerCursor
-        onClicked: Player.position = _last
+        width: VLCStyle.dp(18, VLCStyle.scale)
+        height: width
 
         Rectangle {
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.top: parent.top
-            width: VLCStyle.dp(3, VLCStyle.scale)
-            height: control.barHeight * 2
+            anchors.centerIn: parent
+            width: lastHover.hovered ? VLCStyle.dp(12, VLCStyle.scale) : VLCStyle.dp(8, VLCStyle.scale)
+            height: width
             radius: width / 2
-            color: "#4FC3F7"
-            border.color: Qt.rgba(0, 0, 0, 0.6)
-            border.width: 1
+            color: "transparent"
+            border.color: "white"
+            border.width: VLCStyle.dp(2, VLCStyle.scale)
+            Behavior on width { NumberAnimation { duration: 100 } }
+
+            Rectangle {
+                anchors.centerIn: parent
+                width: parent.width - parent.border.width * 2 - 2
+                height: width
+                radius: width / 2
+                color: Qt.rgba(0, 0, 0, 0.55)
+            }
+        }
+
+        HoverHandler { id: lastHover; cursorShape: VLCStyle.pointerCursor }
+        TapHandler { onTapped: Player.position = lastMark._last }
+
+        Widgets.ToolTipExt {
+            colorContext.palette: theme.palette
+            visible: lastHover.hovered
+            text: qsTr("You stopped here last time (%1); click to go back there")
+                  .arg(Player.length.valid() ? Player.length.scale(lastMark._last).formatHMS() : "")
         }
     }
 
