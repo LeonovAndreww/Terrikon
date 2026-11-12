@@ -91,12 +91,26 @@ StackViewExt {
                     let pageProp = {
                         pagePrefix:[...pagePrefix, head]
                     }
-                    for (const key of properties.keys()) {
-                        pageProp[key] = properties[key]
+                    // Terrikon: the properties are the last page's; a page on
+                    // the way (loaded when a deeper path is pushed from
+                    // elsewhere, as Home opening a folder of Videos) only
+                    // takes those it has ("Cannot assign to non-existent
+                    // property")
+                    const onTheWay = path.length > 1
+                    if (!onTheWay) {
+                        for (const key of properties.keys()) {
+                            pageProp[key] = properties[key]
+                        }
                     }
 
                     History.update([...pagePrefix, head])
                     root.replace(null, component, pageProp)
+                    if (onTheWay && currentItem) {
+                        for (const key of properties.keys()) {
+                            if (key in currentItem)
+                                currentItem[key] = properties[key]
+                        }
+                    }
                     found = true
                     break;
                 } else {
