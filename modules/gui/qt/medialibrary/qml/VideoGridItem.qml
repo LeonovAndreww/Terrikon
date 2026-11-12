@@ -76,6 +76,11 @@ Widgets.GridItem {
         NumberAnimation { target: root; property: "scale"; from: 0.94; to: 1; duration: 220; easing.type: Easing.OutCubic }
     }
 
+    readonly property string _lengthText: {
+        const text = model?.duration?.formatHMS() ?? ""
+        return (text !== "" && !text.startsWith("-") && text !== "00:00") ? text : ""
+    }
+
     function play() {
         if ( model.id !== undefined ) {
             // Terrikon: a video plays with the rest of its folder after it
@@ -103,12 +108,9 @@ Widgets.GridItem {
         const parts = []
         for (const field of MediaFolders.videoFields) {
             switch (field) {
-            case "duration": {
-                const text = model?.duration?.formatHMS() ?? ""
-                if (text !== "" && !text.startsWith("-") && text !== "00:00")
-                    parts.push(text)
+            case "duration":
+                // on the picture (see lengthBadge), not under it
                 break
-            }
             case "count":
                 if (model?.isVideo === false && model?.count !== undefined)
                     parts.push(qsTr("%1 videos").arg(model.count))
@@ -262,6 +264,7 @@ Widgets.GridItem {
 
                     Widgets.IconLabel {
                         anchors.centerIn: parent
+                        anchors.horizontalCenterOffset: -VLCStyle.dp(1.5, VLCStyle.scale)
                         text: video.muted ? VLCIcons.volume_muted : VLCIcons.volume_high
                         color: "white"
                         font.pixelSize: VLCStyle.dp(20, VLCStyle.scale)
@@ -269,7 +272,7 @@ Widgets.GridItem {
 
                     // handlers, as the expand buttons: taken over from the
                     // tile's own (which opens the video on a click)
-                    HoverHandler { id: muteHover; cursorShape: Qt.PointingHandCursor }
+                    HoverHandler { id: muteHover; cursorShape: VLCStyle.pointerCursor }
                     TapHandler {
                         gesturePolicy: TapHandler.WithinBounds
                         grabPermissions: PointerHandler.CanTakeOverFromAnything
@@ -345,7 +348,7 @@ Widgets.GridItem {
                         id: barArea
                         anchors.fill: parent
                         hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
+                        cursorShape: VLCStyle.pointerCursor
                         onPressed: (mouse) => video.seek(mouse.x / width)
                         onPositionChanged: (mouse) => { if (pressed) video.seek(mouse.x / width) }
                     }
@@ -416,18 +419,48 @@ Widgets.GridItem {
             }
         }
 
-        Widgets.ScaledImage {
-            id: image
-
+        // Terrikon: not watched yet, said in words (it was a grey corner)
+        Rectangle {
+            visible: root.showNewIndicator && !root._previewShowing
             anchors.right: parent.right
             anchors.top: parent.top
+            anchors.margins: VLCStyle.margin_xsmall
+            width: newLabel.implicitWidth + VLCStyle.margin_xsmall * 2
+            height: newLabel.implicitHeight + VLCStyle.dp(2, VLCStyle.scale) * 2
+            radius: height / 2
+            color: Qt.rgba(0, 0, 0, 0.6)
 
-            width: VLCStyle.gridItem_newIndicator
-            height: width
+            Text {
+                id: newLabel
+                anchors.centerIn: parent
+                text: qsTr("New")
+                color: "white"
+                font.pixelSize: VLCStyle.fontSize_small
+                font.weight: Font.DemiBold
+            }
+        }
 
-            visible: root.showNewIndicator
+        // Terrikon: the length on the picture, bottom right
+        Rectangle {
+            id: lengthBadge
+            visible: root._lengthText !== "" && !root._previewShowing
+                     && MediaFolders.videoFields.includes("duration")
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            anchors.margins: VLCStyle.margin_xsmall
+            width: lengthText.implicitWidth + VLCStyle.margin_xsmall * 2
+            height: lengthText.implicitHeight + VLCStyle.dp(2, VLCStyle.scale) * 2
+            radius: VLCStyle.dp(4, VLCStyle.scale)
+            color: Qt.rgba(0, 0, 0, 0.75)
 
-            source: VLCStyle.newIndicator
+            Text {
+                id: lengthText
+                anchors.centerIn: parent
+                text: root._lengthText
+                color: "white"
+                font.pixelSize: VLCStyle.fontSize_small
+                font.weight: Font.DemiBold
+            }
         }
 
         // Terrikon: expand a folder into what it holds, collapse back; what
@@ -435,7 +468,6 @@ Widgets.GridItem {
         // its buttons lighting up under the pointer.
         Rectangle {
             anchors.fill: treeButtons
-            anchors.margins: -VLCStyle.dp(3, VLCStyle.scale)
             radius: height / 2
             visible: treeButtons.visible
             color: Qt.rgba(0.08, 0.08, 0.08, 0.72)
@@ -450,7 +482,7 @@ Widgets.GridItem {
             anchors.top: parent.top
             anchors.left: parent.left
             anchors.margins: VLCStyle.margin_xsmall
-            spacing: VLCStyle.dp(2, VLCStyle.scale)
+            spacing: 0
 
             readonly property bool _active: !!root.treeModel && root.treeRow >= 0
             visible: _active && opacity > 0
@@ -465,10 +497,10 @@ Widgets.GridItem {
                 property bool up: false
                 signal clicked()
 
-                width: VLCStyle.dp(26, VLCStyle.scale)
+                width: VLCStyle.dp(28, VLCStyle.scale)
                 height: width
                 radius: width / 2
-                color: buttonHover.hovered ? Qt.rgba(1, 1, 1, 0.2) : "transparent"
+                color: buttonHover.hovered ? Qt.rgba(1, 1, 1, 0.22) : "transparent"
                 Behavior on color { ColorAnimation { duration: 120 } }
 
                 Widgets.IconLabel {
@@ -488,7 +520,7 @@ Widgets.GridItem {
                     color: "white"
                 }
 
-                HoverHandler { id: buttonHover; cursorShape: Qt.PointingHandCursor }
+                HoverHandler { id: buttonHover; cursorShape: VLCStyle.pointerCursor }
                 TapHandler { onTapped: treeButton.clicked() }
 
                 Widgets.ToolTipExt {

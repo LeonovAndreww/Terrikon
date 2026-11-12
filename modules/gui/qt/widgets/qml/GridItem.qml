@@ -266,13 +266,17 @@ T.ItemDelegate {
             const base = root.selected ? theme.bg.highlight : theme.bg.primary
             if (root.tint.a <= 0)
                 return base
-            const strength = root.selected ? 0.28 : 0.14
+            // one colour whatever the state, only stronger: hovering and
+            // selecting no longer fight the folder's colour
+            const strength = root.selected ? 0.30 : (root.highlighted ? 0.22 : 0.13)
             // the card has no background of its own until selected
             if (base.a < 0.05)
                 return Qt.alpha(root.tint, strength)
             return Qt.tint(base, Qt.alpha(root.tint, strength))
         }
         border.color: visualFocus ? theme.visualFocus : Qt.alpha(theme.visualFocus, 0.0)
+        // Terrikon: rounded as the pictures
+        radius: VLCStyle.dp(8, VLCStyle.scale)
     }
 
     contentItem: ColumnLayout {
