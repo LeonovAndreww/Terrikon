@@ -448,6 +448,8 @@ qt_plugin_sources = files(
     'terrikon/autoscroll.cpp',
     'terrikon/autoscroll.hpp',
     'terrikon/automation.cpp',
+    'terrikon/qt_strings.cpp',
+    'terrikon/qt_strings.hpp',
     'terrikon/diagnostics.cpp',
     'terrikon/automation.hpp',
     'terrikon/link_resolver.cpp',

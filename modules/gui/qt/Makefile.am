@@ -291,6 +291,7 @@ libqt_plugin_la_SOURCES = \
 	terrikon/autoplay.cpp terrikon/autoplay.hpp \
 	terrikon/autoscroll.cpp terrikon/autoscroll.hpp \
 	terrikon/automation.cpp terrikon/automation.hpp \
+	terrikon/qt_strings.cpp terrikon/qt_strings.hpp \
 	terrikon/diagnostics.cpp terrikon/diagnostics.hpp \
 	terrikon/components.cpp terrikon/components.hpp \
 	terrikon/video_preview.cpp terrikon/video_preview.hpp \

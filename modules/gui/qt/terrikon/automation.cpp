@@ -62,6 +62,7 @@
 #include <QWidget>
 #include <QWindow>
 
+#include <algorithm>
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
@@ -215,6 +216,8 @@ public:
             return property(args, true);
         if (cmd == QLatin1String("props"))
             return props(args);
+        if (cmd == QLatin1String("call"))
+            return call(args);
         if (cmd == QLatin1String("eval"))
             return eval(rest);
         if (cmd == QLatin1String("grab"))
@@ -244,6 +247,7 @@ private:
             "type TEXT: type text into the focused item",
             "get ref:N|id PROPERTY; set ref:N|id PROPERTY JSON",
             "props ref:N|id: the item's properties",
+            "call ref:N|id METHOD: calls a method or signal without arguments (clicked, open...)",
             "eval JS: a QML expression in the main window (its ids, MainCtx, Player...)",
             "grab PATH [scale]: the window as a PNG",
             "player: what the main player is doing" } } };
@@ -348,6 +352,7 @@ private:
             if (!item->isVisible() || item->opacity() <= 0.)
                 return;
             QList<QQuickItem *> children = item->childItems();
+            std::reverse(children.begin(), children.end());
             std::stable_sort(children.begin(), children.end(),
                              [](QQuickItem *a, QQuickItem *b) { return a->z() > b->z(); });
             for (auto it = children.begin(); it != children.end(); ++it)
@@ -619,6 +624,16 @@ private:
             list[QString::fromLatin1(p.name())] = toJson(p.read(o));
         }
         return { { QStringLiteral("type"), typeName(o) }, { QStringLiteral("props"), list } };
+    }
+
+    QJsonObject call(const QStringList &args)
+    {
+        QObject *o = object(args.value(0));
+        if (!o || args.size() < 2)
+            return error(QStringLiteral("call ref:N|id METHOD"));
+        if (!QMetaObject::invokeMethod(o, args[1].toUtf8().constData(), Qt::DirectConnection))
+            return error(QStringLiteral("no such method"));
+        return { { QStringLiteral("called"), args[1] } };
     }
 
     QJsonObject eval(const QString &js)

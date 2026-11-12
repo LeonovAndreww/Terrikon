@@ -45,6 +45,7 @@
 #include <QTimer>
 #include <QWidget>
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
@@ -186,7 +187,9 @@ static QString describeAt(QQuickWindow *window, const QPointF &point)
     std::function<bool(QQuickItem *)> walk = [&](QQuickItem *item) -> bool {
         if (!item->isVisible() || item->opacity() <= 0.)
             return false;
+        /* topmost first: higher z, then the later declared */
         QList<QQuickItem *> children = item->childItems();
+        std::reverse(children.begin(), children.end());
         std::stable_sort(children.begin(), children.end(),
                          [](QQuickItem *a, QQuickItem *b) { return a->z() > b->z(); });
         for (QQuickItem *child : children)
