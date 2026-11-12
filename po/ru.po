@@ -44488,3 +44488,7 @@ msgstr "Курсор-рука над тем, что нажимается"
 #: terrikon
 msgid "Clear the queue"
 msgstr "Очистить очередь"
+
+#: terrikon
+msgid "Journals of the last runs..."
+msgstr "Журналы последних запусков..."

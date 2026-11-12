@@ -291,6 +291,7 @@ libqt_plugin_la_SOURCES = \
 	terrikon/autoplay.cpp terrikon/autoplay.hpp \
 	terrikon/autoscroll.cpp terrikon/autoscroll.hpp \
 	terrikon/automation.cpp terrikon/automation.hpp \
+	terrikon/diagnostics.cpp terrikon/diagnostics.hpp \
 	terrikon/components.cpp terrikon/components.hpp \
 	terrikon/video_preview.cpp terrikon/video_preview.hpp \
 	terrikon/link_resolver.cpp terrikon/link_resolver.hpp \
@@ -512,6 +513,7 @@ nodist_libqt_plugin_la_SOURCES = \
 	terrikon/autoplay.moc.cpp \
 	terrikon/autoscroll.moc.cpp \
 	terrikon/automation.moc.cpp \
+	terrikon/diagnostics.moc.cpp \
 	terrikon/components.moc.cpp \
 	terrikon/video_preview.moc.cpp \
 	terrikon/clip_selection.moc.cpp \

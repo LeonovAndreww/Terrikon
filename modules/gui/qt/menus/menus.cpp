@@ -55,6 +55,8 @@
 #include "util/colorizedsvgicon.hpp"
 #include "medialibrary/medialib.hpp"
 #include "terrikon/components.hpp"
+#include "terrikon/diagnostics.hpp"
+#include <QDesktopServices>
 #include "medialibrary/mlrecentmediamodel.hpp"
 #include "medialibrary/mlbookmarkmodel.hpp"
 
@@ -273,6 +275,15 @@ void VLCMenuBar::ToolsMenu( qt_intf_t *p_intf, QMenu *menu )
     /* Terrikon: ffmpeg, yt-dlp */
     if( terrikon::Components *components = terrikon::Components::instance() )
         menu->addAction( qtr( "Co&mponents..." ), components, &terrikon::Components::showDialog );
+    /* Terrikon: the journals of the last runs, to send when something
+     * went wrong */
+    if( terrikon::Diagnostics *diagnostics = terrikon::Diagnostics::instance() )
+    {
+        const QString folder = diagnostics->folder();
+        menu->addAction( qtr( "Journals of the last runs..." ), [folder]() {
+            QDesktopServices::openUrl( QUrl::fromLocalFile( folder ) );
+        } );
+    }
     menu->addSeparator();
 
     if( !p_intf->b_isDialogProvider )

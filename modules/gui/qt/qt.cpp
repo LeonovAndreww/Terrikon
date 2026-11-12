@@ -94,6 +94,7 @@ extern "C" char **environ;
 #include "terrikon/window_theme.hpp"
 #include "terrikon/autoscroll.hpp"
 #include "terrikon/automation.hpp"
+#include "terrikon/diagnostics.hpp"
 #include "util/dismiss_popup_event_filter.hpp"
 #include "maininterface/compositor.hpp"
 #include "util/vlctick.hpp"
@@ -1454,6 +1455,8 @@ static void *Thread( void *obj )
     terrikon::WindowTheme::install( p_intf, app, s_style.isEmpty() );
     terrikon::AutoScroll::install( app );
     terrikon::Automation::install( p_intf, app );
+    /* Terrikon: a journal of the run and a watchdog of the interface */
+    terrikon::Diagnostics::install( p_intf, app );
 
     /* Terrikon: the native menus (right click, the "more" button) look
      * like the rest of the player, dark and roomy, rather than like the
