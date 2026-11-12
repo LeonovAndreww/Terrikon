@@ -32,6 +32,10 @@ class MLVideoFoldersModel : public MLVideoModel
 {
     Q_OBJECT
 
+    /* Terrikon: the folder just opened, for a second: what comes in from it
+     * shows with an animation */
+    Q_PROPERTY(QString lastExpanded READ lastExpanded NOTIFY lastExpandedChanged FINAL)
+
 public:
     enum Roles
     {
@@ -58,6 +62,16 @@ public:
     Q_INVOKABLE QString collapseAllTarget(const QModelIndex &index) const;
 
     Q_INVOKABLE void expandItem(const QModelIndex &index);
+    QString lastExpanded() const { return m_lastExpanded; }
+    /* Terrikon: the folder a video brought in by expanding is directly in
+     * (its tint), empty for anything else: neighbours with the same one join
+     * their tinted cards */
+    Q_INVOKABLE QString tintKeyAt(int row) const;
+
+signals:
+    void lastExpandedChanged();
+
+public:
     Q_INVOKABLE void collapseItem(const QModelIndex &index);
     Q_INVOKABLE void collapseAllItem(const QModelIndex &index);
 
@@ -86,6 +100,7 @@ private:
 
         std::unique_ptr<MLItem> loadItemById(vlc_medialibrary_t* ml, MLItemId itemId) const override;
     };
+    QString m_lastExpanded;
 };
 
 #endif // MLVIDEOFOLDERSMODEL_HPP

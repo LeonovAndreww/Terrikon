@@ -57,6 +57,22 @@ Widgets.GridItem {
     readonly property color _groupColor: Qt.hsla(_groupHue(_parentKey), 0.6, 0.55, 1)
     tint: _grouped ? _groupColor : "transparent"
 
+    // Terrikon: the columns of the grid, to find the neighbours
+    property int gridColumns: 0
+    readonly property var _joins: {
+        void (treeModel?.count)
+        if (!_grouped || !treeModel || gridColumns <= 0 || treeRow < 0)
+            return [false, false, false, false]
+        const key = _parentKey, r = treeRow, c = gridColumns, n = treeModel.count
+        const same = (row) => row >= 0 && row < n && treeModel.tintKeyAt(row) === key
+        return [r % c !== 0 && same(r - 1), r % c !== c - 1 && same(r + 1),
+                same(r - c), same(r + c)]
+    }
+    joinLeft: _joins[0]
+    joinRight: _joins[1]
+    joinTop: _joins[2]
+    joinBottom: _joins[3]
+
     // Terrikon: a hue from a folder key, the same each time
     function _groupHue(key) {
         let h = 0
@@ -65,15 +81,17 @@ Widgets.GridItem {
         return h / 360
     }
 
-    // Terrikon: brought in by expanding a folder: comes in gently
+    // Terrikon: brought in by the folder just opened: comes in gently, in its
+    // place (not each time a tile is made again while scrolling)
     Component.onCompleted: {
-        if ((model.group ?? "") !== "")
+        const opened = treeModel?.lastExpanded ?? ""
+        if (opened !== "" && String(model.group ?? "").startsWith(opened))
             appear.start()
     }
     ParallelAnimation {
         id: appear
-        NumberAnimation { target: root; property: "opacity"; from: 0; to: 1; duration: 220; easing.type: Easing.OutCubic }
-        NumberAnimation { target: root; property: "scale"; from: 0.94; to: 1; duration: 220; easing.type: Easing.OutCubic }
+        NumberAnimation { target: root; property: "opacity"; from: 0; to: 1; duration: 240; easing.type: Easing.OutCubic }
+        NumberAnimation { target: root; property: "scale"; from: 0.9; to: 1; duration: 260; easing.type: Easing.OutBack }
     }
 
     readonly property string _lengthText: {

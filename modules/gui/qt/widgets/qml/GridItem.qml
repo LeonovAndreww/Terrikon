@@ -61,6 +61,16 @@ T.ItemDelegate {
     property alias title: titleLabel.text
     // Terrikon: the colour the card is tinted with, none if transparent
     property color tint: "transparent"
+
+    // Terrikon: tinted cards of the same folder side by side make one: a
+    // joined side reaches half way into the gap (the neighbour, the other
+    // half), its corners square
+    property bool joinLeft: false
+    property bool joinRight: false
+    property bool joinTop: false
+    property bool joinBottom: false
+    property real joinGapH: 0
+    property real joinGapV: 0
     property alias subtitle: subtitleTxt.text
     property alias subtitleVisible: subtitleTxt.visible
     property alias playCoverShowPlay: picture.playCoverShowPlay
@@ -252,11 +262,21 @@ T.ItemDelegate {
     }
 
     background: AnimatedBackground {
-        width: root.width + (selectedBorderWidth * 2)
-        height: root.height + (selectedBorderWidth * 2)
+        readonly property real _left: root.joinLeft ? root.joinGapH / 2 : selectedBorderWidth
+        readonly property real _right: root.joinRight ? root.joinGapH / 2 : selectedBorderWidth
+        readonly property real _top: root.joinTop ? root.joinGapV / 2 : selectedBorderWidth
+        readonly property real _bottom: root.joinBottom ? root.joinGapV / 2 : selectedBorderWidth
 
-        x: - selectedBorderWidth
-        y: - selectedBorderWidth
+        width: root.width + _left + _right
+        height: root.height + _top + _bottom
+
+        x: - _left
+        y: - _top
+
+        topLeftRadius: (root.joinLeft || root.joinTop) ? 0 : radius
+        topRightRadius: (root.joinRight || root.joinTop) ? 0 : radius
+        bottomLeftRadius: (root.joinLeft || root.joinBottom) ? 0 : radius
+        bottomRightRadius: (root.joinRight || root.joinBottom) ? 0 : radius
 
         enabled: theme.initialized
 

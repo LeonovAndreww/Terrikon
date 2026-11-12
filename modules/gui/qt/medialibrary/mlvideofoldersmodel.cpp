@@ -35,6 +35,7 @@
 
 #include "terrikon/folder_tree.hpp"
 
+#include <QTimer>
 #include <QCollator>
 #include <QDateTime>
 #include <QHash>
@@ -263,10 +264,14 @@ struct Shown
     int index = -1;       // in Tree::nodes or Tree::media
     int collapseTo = -1;  // node
     int collapseAllTo = -1;
+    /* Terrikon: the opened folders it is shown for, from the top: what is
+     * inside an opened folder stays together, in the folder's place */
+    std::vector<int> groups;
 };
 
 static void place(const Tree &tree, int node, int producer, int top,
-                  const QSet<QString> &expanded, std::vector<Shown> &out)
+                  const QSet<QString> &expanded, std::vector<Shown> &out,
+                  const std::vector<int> &groups = {})
 {
     const Node &n = tree.nodes[node];
     if (n.count == 0)
@@ -274,13 +279,15 @@ static void place(const Tree &tree, int node, int producer, int top,
     if (expanded.contains(n.key))
     {
         const int t = (top < 0) ? node : top;
+        std::vector<int> inner = groups;
+        inner.push_back(node);
         for (int c : n.children)
-            place(tree, c, node, t, expanded, out);
+            place(tree, c, node, t, expanded, out, inner);
         for (int v : n.videos)
-            out.push_back({ true, v, node, t });
+            out.push_back({ true, v, node, t, inner });
     }
     else
-        out.push_back({ false, node, producer, top });
+        out.push_back({ false, node, producer, top, groups });
 }
 
 static QString titleOf(const Tree &tree, const Shown &s)
@@ -326,7 +333,7 @@ static std::vector<Shown> shownItems(const Tree &tree, const MLItemId &parent,
         }
         for (int v : videos)
         {
-            const Shown s{ true, v, -1, -1 };
+            const Shown s{ true, v, -1, -1, {} };
             if (titleOf(tree, s).contains(pattern, Qt::CaseInsensitive))
                 out.push_back(s);
         }
@@ -337,7 +344,7 @@ static std::vector<Shown> shownItems(const Tree &tree, const MLItemId &parent,
         place(tree, i, -1, -1, expanded, out);
     if (parentNode >= 0)
         for (int v : tree.nodes[parentNode].videos)
-            out.push_back({ true, v, -1, -1 });
+            out.push_back({ true, v, -1, -1, {} });
     return out;
 }
 
@@ -348,50 +355,78 @@ static void sortShown(const Tree &tree, std::vector<Shown> &items,
     collator.setNumericMode(true);
     collator.setCaseSensitivity(Qt::CaseInsensitive);
 
-    struct Key { QString title; int64_t count, duration, size, mtime, last; bool video; };
-    std::vector<Key> keys;
-    keys.reserve(items.size());
-    for (const Shown &s : items)
-    {
-        if (s.video)
-        {
-            const vlc_ml_media_t &m = tree.media->p_items[s.index];
-            keys.push_back({ qfu(m.psz_title), 1, m.i_duration, tree.mediaSize[s.index],
-                             tree.mediaMtime[s.index], m.i_last_played_date, true });
-        }
-        else
-        {
-            const Node &n = tree.nodes[s.index];
-            keys.push_back({ n.name, n.count, n.durationMs, n.size, n.mtime, n.lastPlayed, false });
-        }
-    }
+    struct Key { QString title; int64_t count, duration, size, mtime, last; bool video; int index; };
+    auto nodeKey = [&](int node) {
+        const Node &n = tree.nodes[node];
+        return Key{ n.name, n.count, n.durationMs, n.size, n.mtime, n.lastPlayed, false, node };
+    };
+    auto itemKey = [&](const Shown &s) {
+        if (!s.video)
+            return nodeKey(s.index);
+        const vlc_ml_media_t &m = tree.media->p_items[s.index];
+        return Key{ qfu(m.psz_title), 1, m.i_duration, tree.mediaSize[s.index],
+                    tree.mediaMtime[s.index], m.i_last_played_date, true, s.index };
+    };
 
-    std::vector<size_t> order(items.size());
-    for (size_t i = 0; i < order.size(); ++i)
-        order[i] = i;
-
-    auto byTitle = [&](size_t a, size_t b) { return collator.compare(keys[a].title, keys[b].title) < 0; };
-    std::stable_sort(order.begin(), order.end(), [&](size_t a, size_t b) {
-        const Key &ka = keys[a], &kb = keys[b];
+    /* <0, 0 or >0, as the chosen sort puts a before b; equal keys fall back
+     * to the name, then to the place in the tree (a strict order) */
+    auto compare = [&](const Key &ka, const Key &kb) -> int {
         int64_t va = 0, vb = 0;
+        bool byValue = true;
         switch (sort)
         {
             case VLC_ML_SORTING_ALPHA:
-                return desc ? byTitle(b, a) : byTitle(a, b);
+            {
+                const int c = collator.compare(ka.title, kb.title);
+                if (c != 0)
+                    return desc ? -c : c;
+                byValue = false;
+                break;
+            }
             case VLC_ML_SORTING_NB_VIDEO: va = ka.count; vb = kb.count; break;
             case VLC_ML_SORTING_DURATION: va = ka.duration; vb = kb.duration; break;
             case VLC_ML_SORTING_FILESIZE: va = ka.size; vb = kb.size; break;
             case VLC_ML_SORTING_LASTMODIFICATIONDATE: va = ka.mtime; vb = kb.mtime; break;
             case VLC_ML_SORTING_LASTPLAYBACKDATE: va = ka.last; vb = kb.last; break;
             default:
-                // Folders first, then videos, each by name
+                // Folders (opened ones too, with what they hold) first, then
+                // videos, each by name
                 if (ka.video != kb.video)
-                    return !ka.video;
-                return byTitle(a, b);
+                    return ka.video ? 1 : -1;
+                byValue = false;
+                break;
         }
-        if (va != vb)
-            return desc ? va > vb : va < vb;
-        return byTitle(a, b);
+        if (byValue && va != vb)
+            return (desc ? va > vb : va < vb) ? -1 : 1;
+        const int c = collator.compare(ka.title, kb.title);
+        if (c != 0)
+            return c;
+        if (ka.video != kb.video)
+            return ka.video ? 1 : -1;
+        return ka.index < kb.index ? -1 : (ka.index > kb.index ? 1 : 0);
+    };
+
+    std::vector<Key> keys;
+    keys.reserve(items.size());
+    for (const Shown &s : items)
+        keys.push_back(itemKey(s));
+
+    std::vector<size_t> order(items.size());
+    for (size_t i = 0; i < order.size(); ++i)
+        order[i] = i;
+
+    /* Each item is compared through the opened folders it sits in: at the
+     * first level where they part, the folders (or the items) there are
+     * compared, so an opened folder's content takes the folder's place */
+    std::stable_sort(order.begin(), order.end(), [&](size_t a, size_t b) {
+        const std::vector<int> &ga = items[a].groups, &gb = items[b].groups;
+        const size_t depth = std::min(ga.size(), gb.size());
+        for (size_t i = 0; i < depth; ++i)
+            if (ga[i] != gb[i])
+                return compare(nodeKey(ga[i]), nodeKey(gb[i])) < 0;
+        const Key ka = ga.size() > depth ? nodeKey(ga[depth]) : keys[a];
+        const Key kb = gb.size() > depth ? nodeKey(gb[depth]) : keys[b];
+        return compare(ka, kb) < 0;
     });
 
     std::vector<Shown> sorted;
@@ -643,7 +678,34 @@ void MLVideoFoldersModel::expandItem(const QModelIndex &index)
 {
     const MLItem *it = item(index.row());
     if (it && it->getId().type == VLC_ML_PARENT_FOLDER)
-        terrikon::FolderExpansion::instance()->expand(static_cast<const TreeFolder *>(it)->key);
+    {
+        const QString key = static_cast<const TreeFolder *>(it)->key;
+        m_lastExpanded = key;
+        emit lastExpandedChanged();
+        QTimer::singleShot(1500, this, [this, key]() {
+            if (m_lastExpanded != key)
+                return;
+            m_lastExpanded.clear();
+            emit lastExpandedChanged();
+        });
+        terrikon::FolderExpansion::instance()->expand(key);
+    }
+}
+
+QString MLVideoFoldersModel::tintKeyAt(int row) const
+{
+    if (row < 0 || row >= rowCount())
+        return {};
+    const QModelIndex idx = index(row, 0);
+    if (data(idx, FOLDER_GROUP).toString().isEmpty())
+        return {};
+    static const int mrlRole = roleNames().key(QByteArrayLiteral("mrl"), -1);
+    if (mrlRole < 0)
+        return {};
+    const QVariant v = data(idx, mrlRole);
+    const QString mrl = v.canConvert<QUrl>() ? v.toUrl().toString() : v.toString();
+    const int slash = mrl.lastIndexOf(QLatin1Char('/'));
+    return slash > 0 ? mrl.left(slash) : QString();
 }
 
 void MLVideoFoldersModel::collapseItem(const QModelIndex &index)

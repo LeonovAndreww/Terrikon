@@ -98,6 +98,9 @@ Widgets.ExpandGridItemView {
 
         treeModel: (gridView.model instanceof MLVideoFoldersModel) ? gridView.model : null
         treeRow: index
+        gridColumns: gridView.nbItemPerRow
+        joinGapH: gridView.horizontalSpacing
+        joinGapV: gridView.verticalSpacing
 
         // Events
 
