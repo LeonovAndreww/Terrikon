@@ -41,11 +41,11 @@ LUA_MODULES = \
 	lua/playlist/vocaroo.lua \
 	lua/playlist/twitch.lua \
 	lua/playlist/zapiks.lua \
-	lua/sd/fmc.lua \
 	lua/sd/jamendo.lua \
 	$(NULL)
 
 LUA_MODULES_DOC = \
+	lua/sd/fmc.lua \
 	lua/sd/icecast.lua \
 	lua/sd/icast.lua \
 	$(NULL)
