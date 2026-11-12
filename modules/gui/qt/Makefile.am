@@ -913,6 +913,7 @@ libqt_plugin_la_RES = \
 	pixmaps/icons/topbar_filter.svg \
 	pixmaps/icons/ic_fluent_music_note_2.svg \
 	pixmaps/icons/ic_fluent_wifi_1.svg \
+	pixmaps/icons/ic_fluent_folder_open_24_regular.svg \
 	pixmaps/icons/ic_fluent_arrow_sort.svg \
 	pixmaps/icons/ic_fluent_filmstrip.svg \
 	pixmaps/icons/ic_fluent_chevron_up.svg \

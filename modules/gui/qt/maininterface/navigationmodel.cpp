@@ -283,7 +283,9 @@ public:
             m_model.children.push_back(std::move(musicEntry));
         }
 
-        m_model.children.emplace_back(qtr("Browse"), "network", VLCIcons::topbar_network, QStringLiteral(":/icons/ic_fluent_wifi_1.svg"));
+        /* Terrikon: the folders and drives of the computer and the shared
+         * folders of the network: "Files", with a folder, not a wifi sign */
+        m_model.children.emplace_back(qtr("Files"), "network", VLCIcons::ic_fluent_folder_open_24_regular, QStringLiteral(":/icons/ic_fluent_folder_open_24_regular.svg"));
 
         ModelEntry discoverEntry{ qtr("Discover"), "discover", VLCIcons::topbar_discover, QStringLiteral(":/icons/ic_fluent_globe.svg") };
         discoverEntry.children.emplace_back(qtr("Services"), "services");
