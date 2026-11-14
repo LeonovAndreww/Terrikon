@@ -680,7 +680,7 @@ QHash<int, QByteArray> ControlbarProfileModel::roleNames() const
 
 bool ControlbarProfileModel::insertRows(int row, int count, const QModelIndex &parent)
 {
-    if (row < 0 || row > m_profiles.size())
+    if (row < 0 || row > m_profiles.size() || count < 1 || parent.isValid())
         return false;
 
     beginInsertRows(parent, row, row + count - 1);
@@ -708,7 +708,7 @@ bool ControlbarProfileModel::removeRows(int row, int count, const QModelIndex &p
     beginRemoveRows(parent, row, row + count - 1);
 
     auto from = m_profiles.begin() + row;
-    auto to = from + count - 1;
+    auto to = from + count; // one past the last
     std::for_each(from, to, [](auto* item) {
         assert(item);
         item->deleteLater();

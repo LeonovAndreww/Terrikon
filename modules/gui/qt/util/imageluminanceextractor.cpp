@@ -113,7 +113,7 @@ int ImageLuminanceExtractor::LuminanceCalculator::execute()
             if (!pixelColor.isValid())
                 continue;
 
-            lumimance += 0.299*pixelColor.red() + 0.587*pixelColor.green() + 0.144*pixelColor.blue();
+            lumimance += 0.299*pixelColor.red() + 0.587*pixelColor.green() + 0.114*pixelColor.blue();
             count++;
         }
     }

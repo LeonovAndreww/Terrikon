@@ -234,7 +234,7 @@ struct ModelEntry
         if (it == end)
             return this;
         else
-            return &children[*it];
+            return children[*it].getModelEntry(it + 1, end);
     }
 
     template<typename OutIterator>

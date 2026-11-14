@@ -109,6 +109,8 @@ void ControlListFilter::setPlayer(PlayerController * player)
         connect(player, &PlayerController::hasMenuChanged,           this, &ControlListFilter::invalidateFilter);
         connect(player, &PlayerController::hasChaptersChanged,       this, &ControlListFilter::invalidateFilter);
         connect(player, &PlayerController::hasTitlesChanged,         this, &ControlListFilter::invalidateFilter);
+        connect(player, &PlayerController::hasProgramsChanged,       this, &ControlListFilter::invalidateFilter);
+        connect(player, &PlayerController::isInteractiveChanged,     this, &ControlListFilter::invalidateFilter);
     }
 
     invalidate();
@@ -126,5 +128,6 @@ void ControlListFilter::setCtx(MainCtx* ctx)
     if (m_ctx == ctx)
         return;
     m_ctx = ctx;
+    invalidate();
     emit ctxChanged();
 }

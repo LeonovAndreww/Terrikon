@@ -1417,6 +1417,9 @@ void SPrefsPanel::changeStyle()
 
 void SPrefsPanel::langChanged( int i )
 {
+    /* -1: nothing chosen, as with a language of the registry that is not in the list */
+    if( i < 0 || (size_t)i >= ARRAY_SIZE( language_map ) )
+        return;
     free( lang );
     lang = strdup( language_map[i].iso );
 }

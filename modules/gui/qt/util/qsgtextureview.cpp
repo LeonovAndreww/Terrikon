@@ -267,7 +267,7 @@ bool QSGTextureView::resetState()
 
     if (const auto newVWrapMode = m_texture->verticalWrapMode(); verticalWrapMode() != newVWrapMode)
     {
-        setHorizontalWrapMode(newVWrapMode);
+        setVerticalWrapMode(newVWrapMode);
         changeMade = true;
     }
 

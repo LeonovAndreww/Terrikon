@@ -33,6 +33,7 @@
 #include <QSGGeometryNode>
 #include <QSGVertexColorMaterial>
 #include <QImage>
+#include <QImageReader>
 #include <QColorDialog>
 #include <QtMath>
 
@@ -262,7 +263,16 @@ void Visualizer::readCoverColor()
     m_coverUrl = url;
     QColor found;
     QImage image;
-    if (url.isLocalFile() && image.load(url.toLocalFile()))
+    if (url.isLocalFile())
+    {
+        /* read small from the start: a large cover is not decoded whole on
+         * the interface thread */
+        QImageReader reader(url.toLocalFile());
+        if (reader.size().isValid())
+            reader.setScaledSize(QSize(24, 24));
+        image = reader.read();
+    }
+    if (!image.isNull())
     {
         const QImage small = image.scaled(24, 24, Qt::IgnoreAspectRatio, Qt::SmoothTransformation)
                                   .convertToFormat(QImage::Format_RGB32);

@@ -203,12 +203,14 @@ ListView {
             const promise = acceptDrop(targetIndex, drop)
             if (view) {
                 MainCtx.setCursor(view, Qt.BusyCursor)
-                promise.then(() => {
+                const done = () => {
                     // NOTE: check view again for the unlikely case it is
                     //       gone by the time the promise is resolved:
                     if (view)
                         MainCtx.unsetCursor(view)
-                })
+                }
+                // also when the drop is refused
+                promise.then(done, done)
             }
         }
 
@@ -356,8 +358,8 @@ ListView {
                         targetIndex = (root.model.mapToSource(root.model.index(root.count - 1, 0))?.row ?? 0) + 1
                     else
                         targetIndex = root.count
-                    root.acceptDropFunc(targetIndex, drop)
-                        .then(() => { dropOperationOngoing = false })
+                    const done = () => { dropOperationOngoing = false }
+                    root.acceptDropFunc(targetIndex, drop).then(done, done)
                 }
             }
         }

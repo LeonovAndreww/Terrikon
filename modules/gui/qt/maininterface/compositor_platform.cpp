@@ -138,7 +138,7 @@ bool CompositorPlatform::setupVoutWindow(vlc_window_t *p_wnd, VoutDestroyCb dest
 
     commonSetupVoutWindow(p_wnd, destroyCb);
 
-#ifdef __WIN32
+#ifdef _WIN32
     p_wnd->type = VLC_WINDOW_TYPE_HWND;
     p_wnd->handle.hwnd = reinterpret_cast<void*>(m_videoWindow->winId());
 
