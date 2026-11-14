@@ -1786,7 +1786,7 @@ static inline size_t vlc_ml_count_show_episodes( vlc_medialibrary_t* p_ml, const
 {
     vlc_assert( p_ml != NULL );
     size_t count;
-    if ( vlc_ml_list( p_ml, VLC_ML_COUNT_GENRE_ALBUMS, params, i_show_id, &count ) != VLC_SUCCESS )
+    if ( vlc_ml_list( p_ml, VLC_ML_COUNT_SHOW_EPISODES, params, i_show_id, &count ) != VLC_SUCCESS )
         return 0;
     return count;
 }
@@ -1804,7 +1804,7 @@ static inline size_t vlc_ml_count_media_labels( vlc_medialibrary_t* p_ml, const 
 {
     vlc_assert( p_ml != NULL );
     size_t count;
-    if ( vlc_ml_list( p_ml, VLC_ML_LIST_MEDIA_LABELS, params, i_media_id, &count ) != VLC_SUCCESS )
+    if ( vlc_ml_list( p_ml, VLC_ML_COUNT_MEDIA_LABELS, params, i_media_id, &count ) != VLC_SUCCESS )
         return 0;
     return count;
 }
