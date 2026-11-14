@@ -28,9 +28,16 @@
 
 #include <vlc_common.h>
 
-static vlc_object_t* g_intf = nullptr;
-static bool g_logQtMessages = false;
-static QtMessageHandler g_defaultMessageHandler = nullptr;
+#include <atomic>
+#include <thread>
+
+// Qt messages come from any thread, also while the interface closes: the
+// handler counts itself in before it reads these, and the cleanup waits for
+// the count after it has cleared them
+static std::atomic<vlc_object_t*> g_intf{nullptr};
+static std::atomic<bool> g_logQtMessages{false};
+static std::atomic<QtMessageHandler> g_defaultMessageHandler{nullptr};
+static std::atomic<int> g_handlersRunning{0};
 
 static void vlcQtMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
@@ -39,6 +46,16 @@ static void vlcQtMessageHandler(QtMsgType type, const QMessageLogContext &contex
     //"default" is for qDebug(), most of our code logs using msg_Dbg but some parts will use qDebug,
     //usually when they don't have access to the vlc_object. Qt itself uses categorised logger so it
     //should be safe to assume that the default logger is only used by us.
+    struct Running
+    {
+        Running() { ++g_handlersRunning; }
+        ~Running() { --g_handlersRunning; }
+    } running;
+    vlc_object_t* const intf = g_intf.load();
+    const QtMessageHandler defaultMessageHandler = g_defaultMessageHandler.load();
+    if (!intf)
+        return;
+
     if (g_logQtMessages
         || qstrcmp(context.category, "default") == 0
         || qstrcmp(context.category, "qml") == 0
@@ -67,11 +84,11 @@ static void vlcQtMessageHandler(QtMsgType type, const QMessageLogContext &contex
             vlcLogLevel = VLC_MSG_DBG;
         }
 
-        vlc_object_Log(g_intf, vlcLogLevel, vlc_module_name, file, context.line, function, "(%s) %s", context.category,  msg.toUtf8().constData());
+        vlc_object_Log(intf, vlcLogLevel, vlc_module_name, file, context.line, function, "(%s) %s", context.category,  msg.toUtf8().constData());
     }
-    else
+    else if (defaultMessageHandler)
     {
-        g_defaultMessageHandler(type, context, msg);
+        defaultMessageHandler(type, context, msg);
     }
 };
 
@@ -110,4 +127,6 @@ void cleanupVlcQtMessageHandler()
     qInstallMessageHandler(nullptr);
     g_defaultMessageHandler = nullptr;
     g_intf = nullptr;
+    while (g_handlersRunning.load() > 0)
+        std::this_thread::yield();
 }

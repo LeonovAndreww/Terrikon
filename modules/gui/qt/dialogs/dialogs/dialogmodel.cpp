@@ -250,8 +250,12 @@ VLCDialogModel::VLCDialogModel(qt_intf_t* intf, QObject* parent)
 
 VLCDialogModel::~VLCDialogModel()
 {
-    m_shuttingDown = true;
-    m_providerWait.wakeAll();
+    {
+        // under the lock the waiting callbacks test it with: no wake up lost
+        QMutexLocker lock(&m_lock);
+        m_shuttingDown = true;
+        m_providerWait.wakeAll();
+    }
     vlc_dialog_provider_set_callbacks(m_intf, nullptr, nullptr);
 
     //ensure that we are not destroying ourselve before
@@ -275,7 +279,10 @@ void VLCDialogModel::setProvider(VLCDialog* provider)
     {
         disconnect(m_provider, nullptr, this, nullptr);
     }
-    m_provider = provider;
+    {
+        QMutexLocker lock(&m_lock);
+        m_provider = provider;
+    }
     if (m_provider)
     {
         connect(m_provider, &VLCDialog::post_login,
@@ -297,7 +304,10 @@ void VLCDialogModel::setProvider(VLCDialog* provider)
                 });
 
     }
-    m_providerWait.wakeAll();
+    {
+        QMutexLocker lock(&m_lock);
+        m_providerWait.wakeAll();
+    }
     emit providerChanged();
 }
 

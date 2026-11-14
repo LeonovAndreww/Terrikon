@@ -59,7 +59,11 @@
 
 namespace terrikon {
 
-static Diagnostics *s_instance = nullptr;
+/* Qt messages come from any thread, also while the interface closes: the
+ * handler counts itself in before it reads the instance, and the destructor
+ * waits for the count after it has cleared it */
+static std::atomic<Diagnostics *> s_instance{nullptr};
+static std::atomic<int> s_handlersRunning{0};
 static QtMessageHandler s_previousHandler = nullptr;
 
 struct Diagnostics::Private
@@ -98,10 +102,15 @@ static qint64 nowMs()
 
 static void messageHandler(QtMsgType type, const QMessageLogContext &context, const QString &message)
 {
-    if (s_instance && type != QtDebugMsg && type != QtInfoMsg)
+    if (type != QtDebugMsg && type != QtInfoMsg)
     {
-        static const char *const names[] = { "debug", "warning", "critical", "fatal", "info" };
-        s_instance->note(QStringLiteral("qt %1: %2").arg(QLatin1String(names[qBound(0, int(type), 4)]), message));
+        ++s_handlersRunning;
+        if (Diagnostics *instance = s_instance.load())
+        {
+            static const char *const names[] = { "debug", "warning", "critical", "fatal", "info" };
+            instance->note(QStringLiteral("qt %1: %2").arg(QLatin1String(names[qBound(0, int(type), 4)]), message));
+        }
+        --s_handlersRunning;
     }
     if (s_previousHandler)
         s_previousHandler(type, context, message);
@@ -160,8 +169,10 @@ Diagnostics::~Diagnostics()
     if (d->watchdog.joinable())
         d->watchdog.join();
     d->write(QStringLiteral("closed"));
-    if (s_instance == this)
-        s_instance = nullptr;
+    Diagnostics *self = this;
+    if (s_instance.compare_exchange_strong(self, nullptr))
+        while (s_handlersRunning.load() > 0)
+            std::this_thread::yield();
     delete d;
 }
 

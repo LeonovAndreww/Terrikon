@@ -1194,7 +1194,8 @@ static void *Thread( void *obj )
             //some part of the probing needs to be executed on the GUI thread and some part will be ran in a background thread,
             //so we defer the execution of this once the app is started. We can't start the task directly as qApp isn't set yet
             //and there are scenarios where the main loop will never be run.
-            QMetaObject::invokeMethod(&app, [&](){
+            // called after this block has ended: what is local to it is copied
+            QMetaObject::invokeMethod(&app, [&, graphicsApiValue, enableRhiSoftwareRenderer](){
                 // A cached (by then) valid graphics api is found, use it:
                 QQuickWindow::setGraphicsApi(static_cast<QSGRendererInterface::GraphicsApi>(graphicsApiValue.value<int>()));
                 if (p_intf->mainSettings->value(graphicsApiRhiSoftwareKey).value<bool>())
