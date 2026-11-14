@@ -3441,7 +3441,8 @@ static void EsOutDelLocked(es_out_sys_t *p_sys, es_out_id_t *es)
             {
                 if (EsIsSelected(other))
                 {
-                    EsOutSendEsEvent(p_sys, es, VLC_INPUT_ES_SELECTED, false, VLC_VOUT_ORDER_PRIMARY);
+                    /* the one still selected, not the one deleted */
+                    EsOutSendEsEvent(p_sys, other, VLC_INPUT_ES_SELECTED, false, VLC_VOUT_ORDER_PRIMARY);
                     if( p_esprops->p_main_es == NULL )
                         p_esprops->p_main_es = other;
                 }
