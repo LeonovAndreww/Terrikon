@@ -118,6 +118,7 @@ typedef struct aout_stream_sys
 
     uint8_t chans_table[AOUT_CHAN_MAX];
     uint8_t chans_to_reorder;
+    bool partial; /**< the block played next is the rest of the last one */
 
     vlc_fourcc_t format; /**< Sample format */
     unsigned rate; /**< Sample rate */
@@ -219,6 +220,10 @@ static HRESULT Play(aout_stream_t *s, block_t *block, vlc_tick_t date)
     aout_stream_sys_t *sys = s->sys;
     void *pv;
     HRESULT hr;
+    /* The rest of a block comes back as it was left: its channels are
+     * already in the order of the device. */
+    const bool rest = sys->partial;
+    sys->partial = false;
 
     if (unlikely(sys->started_state == STARTED_STATE_ERROR))
     {
@@ -236,7 +241,7 @@ static HRESULT Play(aout_stream_t *s, block_t *block, vlc_tick_t date)
     if (sys->first_pts == VLC_TICK_INVALID)
         sys->first_pts = block->i_pts;
 
-    if (sys->chans_to_reorder)
+    if (sys->chans_to_reorder && !rest)
         aout_ChannelReorder(block->p_buffer, block->i_buffer,
                           sys->chans_to_reorder, sys->chans_table, sys->format);
 
@@ -310,6 +315,7 @@ static HRESULT Play(aout_stream_t *s, block_t *block, vlc_tick_t date)
         block->i_length -= vlc_tick_from_samples(frames, sys->rate);
         /* Out of buffer space, keep the block and notify the owner */
         IAudioRenderClient_Release(render);
+        sys->partial = true;
         return S_FALSE;
     }
     IAudioRenderClient_Release(render);
@@ -360,6 +366,7 @@ static HRESULT Flush(aout_stream_t *s)
         hr = S_OK;
 
     sys->first_pts = VLC_TICK_INVALID;
+    sys->partial = false;
     if (SUCCEEDED(hr))
     {
         msg_Dbg(s, "reset");
@@ -946,6 +953,7 @@ static HRESULT Start(aout_stream_t *s, audio_sample_format_t *restrict pfmt,
     *pfmt = fmt;
     sys->written = 0;
     sys->first_pts = VLC_TICK_INVALID;
+    sys->partial = false;
     s->sys = sys;
     s->play = Play;
     s->pause = Pause;
