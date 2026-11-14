@@ -147,6 +147,8 @@ static bool cookie_path_matches( const http_cookie_t * cookie, const char *uripa
 
     size_t path_len = strlen( uripath );
     size_t prefix_len = strlen( cookie->psz_path );
+    if( prefix_len == 0 ) /* "Path=" with nothing: no path matches */
+        return false;
     return ( path_len > prefix_len ) &&
         ( strncmp(uripath, cookie->psz_path, prefix_len) == 0 ) &&
         ( uripath[prefix_len - 1] == '/' || uripath[prefix_len] == '/' );

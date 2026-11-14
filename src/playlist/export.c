@@ -75,7 +75,7 @@ vlc_playlist_Export(struct vlc_playlist *playlist, const char *filename,
     {
         msg_Err(export, "Could not create playlist file %s, %s",
                 filename, vlc_strerror_c(errno));
-        goto close_file;
+        goto out; /* nothing to close */
     }
 
     // this will actually export

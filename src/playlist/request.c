@@ -220,7 +220,7 @@ vlc_playlist_RequestMove(vlc_playlist_t *playlist,
         size_t size = vlc_playlist_Count(playlist);
         assert(size >= move_count);
         /* move at most to the end of the list */
-        if (target + move_count > size)
+        if (target > size - move_count) /* no sum: it could wrap */
             target = size - move_count;
 
         /* keep the items in the same order as the request (do not sort them) */
