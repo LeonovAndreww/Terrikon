@@ -161,6 +161,10 @@ static int Open( vlc_object_t *p_this )
     filter_sys_t *p_sys;
     vlc_object_t *p_aout = vlc_object_parent(p_filter);
 
+    /* two channels of each frame are written */
+    if( aout_FormatNbChannels( &p_filter->fmt_in.audio ) < 2 )
+        return VLC_EGENERIC;
+
      /* Allocate structure */
     p_filter->p_sys = p_sys = (filter_sys_t*)malloc( sizeof( *p_sys ) );
     if( !p_sys )

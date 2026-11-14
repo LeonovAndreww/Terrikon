@@ -340,7 +340,8 @@ static int OpenFilter( vlc_object_t *p_this )
     filter_t * p_filter = (filter_t *)p_this;
     filter_sys_t *p_sys = NULL;
 
-    if( aout_FormatNbChannels( &(p_filter->fmt_in.audio) ) == 1 )
+    /* stereo only: the samples are taken two by two */
+    if( aout_FormatNbChannels( &(p_filter->fmt_in.audio) ) != 2 )
     {
         /*msg_Dbg( p_filter, "filter discarded (incompatible format)" );*/
         return VLC_EGENERIC;

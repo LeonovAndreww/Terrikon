@@ -43,6 +43,7 @@
 static int  Open( vlc_object_t * );
 static void Close( filter_t * );
 static block_t *DoWork( filter_t *, block_t * );
+static void Flush( filter_t * );
 
 #ifdef PITCH_SHIFTER
 static int  OpenPitch( vlc_object_t * );
@@ -445,7 +446,7 @@ static int Open( vlc_object_t *p_this )
     p_filter->fmt_out.audio = p_filter->fmt_in.audio;
     static const struct vlc_filter_operations filter_ops =
     {
-        .filter_audio = DoWork, .close = Close,
+        .filter_audio = DoWork, .flush = Flush, .close = Close,
     };
     p_filter->ops = &filter_ops;
 
@@ -511,17 +512,30 @@ static int OpenPitch( vlc_object_t *p_this )
 
     p_sys->resampler = ResamplerCreate(p_filter);
     if( !p_sys->resampler )
+    {
+        var_DelCallback( p_aout, "pitch-shift", PitchCallback, p_sys );
+        var_Destroy( p_aout, "pitch-shift" );
+        Close( p_filter );
         return VLC_EGENERIC;
+    }
 
     static const struct vlc_filter_operations filter_ops =
     {
-        .filter_audio = DoPitchWork, .close = ClosePitch,
+        .filter_audio = DoPitchWork, .flush = Flush, .close = ClosePitch,
     };
     p_filter->ops = &filter_ops;
 
     return VLC_SUCCESS;
 }
 #endif
+
+/* After a seek, the sound kept from before it is not played */
+static void Flush( filter_t *p_filter )
+{
+    filter_sys_t *p_sys = p_filter->p_sys;
+    p_sys->bytes_queued = 0;
+    p_sys->bytes_to_slide = 0;
+}
 
 static void Close( filter_t *p_filter )
 {
@@ -554,7 +568,12 @@ static block_t *DoWork( filter_t * p_filter, block_t * p_in_buf )
     filter_sys_t *p = p_filter->p_sys;
 
     if( p_filter->fmt_in.audio.i_rate == p->sample_rate )
+    {
+        /* what was kept at another speed is not played later */
+        p->bytes_queued = 0;
+        p->bytes_to_slide = 0;
         return p_in_buf;
+    }
 
     double scale = p_filter->fmt_in.audio.i_rate / (double)p->sample_rate;
     if( scale != p->scale ) {

@@ -255,7 +255,10 @@ SoXR_Resample( filter_t *p_filter, soxr_t soxr, block_t *p_in, size_t i_olen )
     const size_t i_ilen = p_in ? p_in->i_nb_samples : 0;
 
     block_t *p_out;
-    if( i_ilen >= i_olen )
+    /* In place only when a frame out is no larger than a frame in: the
+     * formats may differ, and the block was sized for its input */
+    if( i_ilen >= i_olen
+     && i_oframesize <= p_filter->fmt_in.audio.i_bytes_per_frame )
     {
         i_olen = i_ilen;
         p_out = p_in;

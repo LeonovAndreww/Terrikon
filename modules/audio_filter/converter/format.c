@@ -219,7 +219,7 @@ static block_t *S16toFl64(filter_t *filter, block_t *bsrc)
 
     block_CopyProperties(bdst, bsrc);
     int16_t *src = (int16_t *)bsrc->p_buffer;
-    float   *dst = (float *)bdst->p_buffer;
+    double  *dst = (double *)bdst->p_buffer;
     for (size_t i = bsrc->i_buffer / 2; i--;)
         *dst++ = (double)*src++ / 32768.;
 out:

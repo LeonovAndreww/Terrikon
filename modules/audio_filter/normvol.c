@@ -107,6 +107,7 @@ static int Open( vlc_object_t *p_this )
                                        "norm-max-level" );
 
     if( p_sys->f_max <= 0 ) p_sys->f_max = MIN_FMAX;
+    if( p_sys->i_nb < 1 ) p_sys->i_nb = 1; /* the history has a length */
 
     /* We need to store (nb_buffers+1)*nb_channels floats */
     p_sys->p_last = calloc( i_channels * (p_sys->i_nb + 2), sizeof(float) );

@@ -494,10 +494,12 @@ static int PresetCallback( vlc_object_t *p_aout, char const *psz_cmd,
     {
         char *psz;
 
-        lldiv_t d = lldiv( lroundf(preset->f_amp[i] * 10000000.f), 10000000 );
+        /* the sign apart: the remainder of a negative level is negative */
+        const long long level = llroundf(preset->f_amp[i] * 10000000.f);
+        lldiv_t d = lldiv( llabs(level), 10000000 );
 
-        if( asprintf( &psz, "%s %lld.%07llu", i ? bands : "",
-                      d.quot, d.rem ) == -1 )
+        if( asprintf( &psz, "%s %s%lld.%07lld", i ? bands : "",
+                      level < 0 ? "-" : "", d.quot, d.rem ) == -1 )
             psz = NULL;
 
         free( bands );
