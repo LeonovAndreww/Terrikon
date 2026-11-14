@@ -80,6 +80,21 @@ build, or by reading when the path is taken.
 | Media library | Home: moving through the favourites left the scrolling animation on for good | `HomePage.qml` |
 | Toolbar editor | Removing profiles removed one less than asked (none for one) though the views were told | `controlbar_profile_model.cpp` |
 | Preferences | A language in the registry that is not in the list: the list was read at -1 | `simple_preferences.cpp` |
+| Video output | HDR10: the metadata were given to DXGI with the size of a pointer, not of the metadata; the screen was told nothing, or part of it | `dxgi_swapchain.cpp`: the size of the structure |
+| Video output | Direct3D11: a first pixel shader that failed was hidden by the second one succeeding; the staging textures were lost when their views could not be made | `d3d11_shaders.cpp`, `direct3d11.cpp` |
+| Player | Deleting the main track while another of its kind stays selected (two audio tracks at once): the "selected" event named the deleted track | `es_out.c`: the one that stays |
+| Audio filters | The 16 bit to 64 bit float converter wrote 32 bit floats: noise | `format.c` |
+| Audio filters | Equalizer presets with negative levels that are not whole (Dance, Classical, Headphones...): the part after the point was printed as a huge unsigned number | `equalizer.c`: the sign apart |
+| Audio filters | SoXR worked in place when the frames out are larger than the frames in: written past the block | `soxr.c` |
+| Audio filters | Scaletempo kept its queue through a seek and through normal speed: a bit of the old sound later; its pitch variant left its callback behind when the resampler failed | `scaletempo.c`: a flush, the queue dropped at speed 1 |
+| Audio filters | Mono with more than two channels, the spatializer with one: written past the block; the volume normalizer with a history of 0: a move of a huge size | `mono.c`, `spatializer.cpp`, `normvol.c`: refused or bounded |
+| Demuxers, packetizers | Read or written out of bounds, or a crash, on what a file says: FLAC (a block size cut short, extradata under 4 bytes), PNG (a text key under 17 bytes), H.264 (sizes that wrap to a division by zero), H.266 (a fragment freed then queued), AV1 (the OBUs of the configuration written one over the other), Matroska (a chapter script whose uid is no number: an exception nobody caught), SCTE-27 in TS (a short section), AVI (the palette loop counted the wrong variable), a plane copy that never ended when a line is larger than the cache | `flac.h`, `flac.c`, `png.c`, `h264_nal.c`, `h266.c`, `av1_obu.c`, `chapter_command_script.cpp`, `ts_scte.c`, `bitmapinfoheader.h`, `copy.c` |
+| Core | Exporting a playlist to a file that cannot be made: `fclose(NULL)`; a cookie with an empty `Path=` read the byte before the path; moving playlist items with a target that wraps passed the bound | `export.c`, `httpcookies.c`, `request.c` |
+| LibVLC | `libvlc_media_player_get_abloop` read times that were never set when there is no loop; the interpolated time was given even when the interpolation failed | `media_player.c` |
+| Interface | The taskbar buttons: COM was left once more than entered (a temporary holder copied) | `mainctx_win32.cpp`: made in place |
+| Interface | The renderers' model read at row -1; a media library list that failed was gone through anyway (covers of genres and folders) | `renderer_manager.cpp`, `mlhelper.hpp` |
+| Interface | Going back with no history yet took an entry out of an empty list | `navigation_history.cpp` |
+| Interface | The subtitles' frame rate box listened to the delay of the second subtitles and divided where it should multiply; the audio tracks of a video's information showed its video tracks; the teletext buttons called a method colors do not have; the switch named a `control` that does not exist for the screen readers; an extension's menu was read one past the list; the blur divided by zero on an image one pixel wide | `TracksPageSubtitle.qml`, `VideoInfoExpandPanel.qml`, `TeletextWidget.qml`, `CheckButton.qml`, `extensions_manager.cpp`, `fast_gaussian_blur_template.h` |
 
 ## 2. VLC 4's bugs brought out by Terrikon
 
@@ -141,6 +156,7 @@ build, or by reading when the path is taken.
 | A large cover was decoded whole on the interface thread for the visualizer's colour | read at 24 pixels from the start |
 | A folder chip of Home with "#" or "?" in its name opened another path | its URL is encoded part by part |
 | Coming back from the player to an opened folder of Videos: "Cannot assign to non-existent property initialIndex", and the place in the folder was lost | the page remembered its place in the history as the other video pages do, but had no property to take it back |
+| Holding the button for 2x: the speed stayed at 2x when the release never came (the window left with the button down, the video ended meanwhile) | the hold only ended on the release; it now also ends when the playback stops or the application is left |
 
 ## Known upstream issues, not fixed yet
 
