@@ -132,7 +132,10 @@ void system_Configure( libvlc_int_t *p_this, int i_argc, const char *const ppsz_
                 }
 
                 p_data = malloc( i_data );
-                p_data->argc = i_argc;
+                if( unlikely(p_data == NULL) )
+                    i_argc = 0; /* nothing is sent */
+                else
+                    p_data->argc = i_argc;
                 p_data->enqueue = var_InheritBool( p_this, "playlist-enqueue" );
                 i_data = 0;
                 for( i_opt = 0; i_opt < i_argc; i_opt++ )
@@ -146,10 +149,14 @@ void system_Configure( libvlc_int_t *p_this, int i_argc, const char *const ppsz_
                 i_data += sizeof (*p_data);
 
                 /* Send our playlist items to the 1st instance */
-                wm_data.dwData = 0;
-                wm_data.cbData = i_data;
-                wm_data.lpData = p_data;
-                SendMessage( ipcwindow, WM_COPYDATA, 0, (LPARAM)&wm_data );
+                if( p_data != NULL )
+                {
+                    wm_data.dwData = 0;
+                    wm_data.cbData = i_data;
+                    wm_data.lpData = p_data;
+                    SendMessage( ipcwindow, WM_COPYDATA, 0, (LPARAM)&wm_data );
+                    free( p_data );
+                }
             }
 
             /* Initialization done.

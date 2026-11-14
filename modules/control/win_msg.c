@@ -86,20 +86,39 @@ static LRESULT CALLBACK WMCOPYWNDPROC(HWND hwnd, UINT uMsg,
             return 0; /* XXX: is this even possible? */
 
         /* Add files to the playlist */
-        if( pwm_data->lpData )
+        if( pwm_data->lpData && pwm_data->cbData >= sizeof(vlc_ipc_data_t) )
         {
             char **ppsz_argv;
             vlc_ipc_data_t *p_data = (vlc_ipc_data_t *)pwm_data->lpData;
+            /* any window of the session may send this: nothing is read
+             * beyond the cbData bytes that came */
+            const size_t i_size = pwm_data->cbData - sizeof(vlc_ipc_data_t);
             size_t i_data = 0;
             size_t i_len;
             int i_argc = p_data->argc, i_opt, i_options;
 
+            if( i_argc <= 0 || (size_t)i_argc > i_size / (sizeof(size_t) + 1) )
+                return 0;
             ppsz_argv = vlc_alloc( i_argc, sizeof(char *) );
+            if( unlikely(ppsz_argv == NULL) )
+                return 0;
             for( i_opt = 0; i_opt < i_argc; i_opt++ )
             {
+                if( i_size - i_data < sizeof(size_t) )
+                    break;
                 memcpy( &i_len, &p_data->data[i_data], sizeof(size_t) );
-                ppsz_argv[i_opt] = &p_data->data[i_data] + sizeof(size_t);
-                i_data += sizeof(size_t) + i_len;
+                i_data += sizeof(size_t);
+                /* a string with its end, all within the message */
+                if( i_len == 0 || i_len > i_size - i_data
+                 || p_data->data[i_data + i_len - 1] != '\0' )
+                    break;
+                ppsz_argv[i_opt] = &p_data->data[i_data];
+                i_data += i_len;
+            }
+            if( i_opt < i_argc )
+            {
+                free( ppsz_argv );
+                return 0;
             }
 
             for( i_opt = 0; i_opt < i_argc; i_opt++ )

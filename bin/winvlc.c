@@ -252,9 +252,17 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
                 == ERROR_SUCCESS )
         {
             WCHAR szData[256];
-            DWORD len = 256;
-            if( RegQueryValueEx( h_key, TEXT("Lang"), NULL, NULL, (LPBYTE) &szData, &len ) == ERROR_SUCCESS )
+            /* in bytes, room left for the end of the string: the registry
+             * does not promise one */
+            DWORD len = sizeof(szData) - sizeof(WCHAR);
+            DWORD type = REG_NONE;
+            if( RegQueryValueEx( h_key, TEXT("Lang"), NULL, &type, (LPBYTE) &szData, &len ) == ERROR_SUCCESS
+             && type == REG_SZ )
+            {
+                szData[len / sizeof(WCHAR)] = L'\0';
                 lang = _wcsdup( szData );
+            }
+            RegCloseKey( h_key );
         }
     }
 
@@ -277,11 +285,17 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
         libvlc_set_app_id (vlc, "org.VideoLAN.VLC", PACKAGE_VERSION,
                            PACKAGE_NAME);
         libvlc_set_user_agent (vlc, "VLC media player", "VLC/"PACKAGE_VERSION);
-        libvlc_InternalAddIntf (vlc->p_libvlc_int, NULL);
-        libvlc_InternalPlay (vlc->p_libvlc_int);
-
-        WaitForSingleObject(sem, INFINITE);
-        CloseHandle(sem);
+        /* without an interface nothing would ever ask to leave */
+        if (libvlc_InternalAddIntf (vlc->p_libvlc_int, NULL) == 0 && sem != NULL)
+        {
+            libvlc_InternalPlay (vlc->p_libvlc_int);
+            WaitForSingleObject(sem, INFINITE);
+        }
+        else
+            MessageBox(NULL, TEXT("The interface could not be started."),
+                       TEXT("Terrikon"), MB_OK|MB_ICONERROR);
+        if (sem != NULL)
+            CloseHandle(sem);
 
         libvlc_release (vlc);
 
