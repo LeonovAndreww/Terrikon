@@ -301,7 +301,8 @@ int vlc_http_auth_ParseAuthenticationInfoHeader(
 
     if ( psz_cnonce )
     {
-        if ( strcmp( psz_cnonce, p_auth->psz_cnonce ) != 0 )
+        if ( p_auth->psz_cnonce == NULL
+          || strcmp( psz_cnonce, p_auth->psz_cnonce ) != 0 )
         {
             msg_Err( p_this, "HTTP Digest Access Authentication: server "
                              "replied with a different client nonce value." );
@@ -336,7 +337,8 @@ int vlc_http_auth_ParseAuthenticationInfoHeader(
          */
         psz_digest = AuthDigest( p_this, p_auth, psz_method, psz_path,
                                  psz_username, psz_password );
-        if( psz_digest == NULL || strcmp( psz_digest, psz_rspauth ) != 0 )
+        if( psz_digest == NULL || psz_rspauth == NULL
+         || strcmp( psz_digest, psz_rspauth ) != 0 )
         {
             msg_Err( p_this, "HTTP Digest Access Authentication: server "
                              "replied with an invalid response digest "
