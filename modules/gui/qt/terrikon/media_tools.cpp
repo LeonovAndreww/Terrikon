@@ -48,6 +48,7 @@
 #include <QUrl>
 
 #include <algorithm>
+#include <mutex>
 #include <cmath>
 
 #ifdef _WIN32
@@ -82,25 +83,26 @@ QString findTool(const QString &name)
 static const QStringList &ffmpegEncoders()
 {
     static QStringList encoders;
-    static bool asked = false;
-    if (asked)
-        return encoders;
-    asked = true;
-    const QString ffmpeg = findTool(QStringLiteral("ffmpeg"));
-    if (ffmpeg.isEmpty())
-        return encoders;
-    QProcess process;
-    process.start(ffmpeg, { QStringLiteral("-hide_banner"), QStringLiteral("-encoders") });
-    if (!process.waitForFinished(5000))
-    {
-        process.kill();
-        process.waitForFinished(1000);
-        return encoders;
-    }
-    static const QRegularExpression line(QStringLiteral("^\\s*V\\S*\\s+(\\S+)"));
-    for (const QString &text : QString::fromUtf8(process.readAllStandardOutput()).split(QLatin1Char('\n')))
-        if (const auto match = line.match(text); match.hasMatch())
-            encoders << match.captured(1);
+    /* asked from the interface (what the popover offers) and from the
+     * thread planning an export: once, whoever comes first */
+    static std::once_flag asked;
+    std::call_once(asked, [] {
+        const QString ffmpeg = findTool(QStringLiteral("ffmpeg"));
+        if (ffmpeg.isEmpty())
+            return;
+        QProcess process;
+        process.start(ffmpeg, { QStringLiteral("-hide_banner"), QStringLiteral("-encoders") });
+        if (!process.waitForFinished(5000))
+        {
+            process.kill();
+            process.waitForFinished(1000);
+            return;
+        }
+        static const QRegularExpression line(QStringLiteral("^\\s*V\\S*\\s+(\\S+)"));
+        for (const QString &text : QString::fromUtf8(process.readAllStandardOutput()).split(QLatin1Char('\n')))
+            if (const auto match = line.match(text); match.hasMatch())
+                encoders << match.captured(1);
+    });
     return encoders;
 }
 
@@ -204,6 +206,9 @@ static QString seconds(double value)
 ClipExporter::ClipExporter(QObject *parent)
     : QObject(parent)
 {
+    /* ffmpeg is asked for its encoders now, aside: the popover showing them
+     * then need not wait for it on the interface thread */
+    offThread(this, [] { ffmpegEncoders(); return 0; }, [](int) {});
 }
 
 ClipExporter::~ClipExporter()
