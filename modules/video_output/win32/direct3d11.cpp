@@ -430,6 +430,9 @@ static int UpdateStaging(vout_display_t *vd, const video_format_t *fmt)
                                 textures, 0, sys->stagingSys.renderSrc))
     {
         msg_Err(vd, "Failed to allocate the staging shader view");
+        for (unsigned plane = 0; plane < DXGI_MAX_SHADER_VIEW; plane++)
+            if (textures[plane])
+                textures[plane]->Release();
         return VLC_EGENERIC;
     }
 

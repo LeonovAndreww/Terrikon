@@ -80,6 +80,14 @@ HRESULT D3D11_SetQuadPixelShader(vlc_object_t *o, d3d11_device_t *d3d_dev,
 
     D3D_ShaderBlobRelease(&pPSBlob[0]);
 
+    if (FAILED(hr))
+    {
+        /* not hidden by the second one succeeding */
+        msg_Err(o, "Could not Create the D3d11 Pixel Shader. (hr=0x%lX)", hr);
+        D3D_ShaderBlobRelease(&pPSBlob[1]);
+        return hr;
+    }
+
     if (pPSBlob[1].buffer)
     {
         hr = d3d_dev->d3ddevice->CreatePixelShader(
