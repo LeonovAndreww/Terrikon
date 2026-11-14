@@ -534,7 +534,8 @@ static int stream_CheckReady (vlc_aout_stream *stream)
                 aout_OutputDelete (aout);
                 stream->mixer_format.i_format = 0;
             }
-            aout_FiltersSetClockDelay(stream->filters, stream->sync.delay);
+            else
+                aout_FiltersSetClockDelay(stream->filters, stream->sync.delay);
         }
 
         vlc_audio_meter_Reset(&owner->meter,
@@ -585,6 +586,9 @@ static void stream_Silence (vlc_aout_stream *stream, vlc_tick_t length, vlc_tick
     const audio_sample_format_t *fmt = &stream->mixer_format;
     size_t frames = samples_from_vlc_tick(length, fmt->i_rate);
     size_t size = frames * fmt->i_bytes_per_frame / fmt->i_frame_length;
+
+    if (size == 0)
+        return; /* less than a sample: the outputs take no empty block */
 
     block_t *block = block_Alloc (size);
     if (unlikely(block == NULL))
