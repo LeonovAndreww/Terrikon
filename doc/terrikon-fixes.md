@@ -46,6 +46,40 @@ build, or by reading when the path is taken.
 | Services | The podcasts page, empty until a feed is added, said "Nothing to see here, go back"; the dialog to add one was only behind a right click on the service | it says how, and its button opens the dialog |
 | Services | Clicking a service: "Cannot call method 'forceActiveFocus' of undefined" (the grid has no current item) | the call is skipped then |
 | Services | Sorted by their modules' names ("fmc", "jamendo", "podcast"...), not by the names shown; two items placed first each came before the other, not a strict order | by the shown name, in the language's alphabet; a strict order |
+| Audio output | WASAPI, a device whose channels are in another order (5.1, 7.1): a block that did not fit at once was kept, and the channels of its rest were put in order a second time; sound from the wrong speakers, clicks | `wasapi.c`: the rest of a block is played as it was left |
+| Audio output | Changing the audio filters when the new chain could not be made: the clock delay was set on no chain, a crash | `dec.c`: set only on a chain |
+| Audio output | A silence shorter than one sample made an empty block, which the outputs do not take (an assertion) | `dec.c`: no block then |
+| Player | Setting the renderer that is already set released it before holding it: freed while in use when the player was its only owner | `player.c`: held first |
+| Player | A track's delay waited in the input's queue without holding the track; the track could be gone when the input came to it | `player.c`, `input.c`: held until done or dropped |
+| Core, Windows | When no interface could be started, the process waited forever with no window | `winvlc.c`: it says so and leaves |
+| Core, Windows | The language of the registry was read without its type or the end of its string | `winvlc.c`: both checked, the key closed |
+| Core, Windows | One instance: the message with the files to open was read with no regard to its size (any window may send one), and its memory was neither checked nor freed by the sender | `win_msg.c`, `specific.c`: every length is checked against what came |
+| Network | The old HTTP access: an answer with `cnonce` when none was sent, or without `rspauth`, was compared with nothing: a crash a server could cause | `http_auth.c`: refused |
+| Media library | `vlc_ml_count_show_episodes` counted the albums of a genre; `vlc_ml_count_media_labels` asked for the list and gave its address as the count, the list lost | `vlc_media_library.h`: the right queries |
+| Interface | Messages of Qt come from any thread; while closing, the handler read what was being cleared | `vlcqtmessagehandler.cpp`: the handlers running are counted and waited for |
+| Interface | At start, the test of the graphics API put off for later used variables of a block that had ended by then | `qt.cpp`: they are copied |
+| Interface | A cover fetched: the cover's state was changed from the fetcher's thread; and closing with a fetch still waiting locked the player twice, the program never left | `player_controller.cpp`: done on the interface thread, nothing locked in the callback |
+| Interface | The timed lyrics of a media without any read an empty value (undefined behaviour) | `player_controller.cpp`: an empty list |
+| Interface | Dialogs: a question asked just as the interface closed could miss the wake up and wait forever | `dialogmodel.cpp`: the state is changed under the lock it is waited with |
+| Interface | With the mouse wheel over the speed button before its slider exists: "event is not defined" | `PlaybackSpeedButton.qml` |
+| Interface | The buttons of the bar that depend on programs or on a menu being shown did not follow them | `control_list_filter.cpp`: listens to both |
+| Interface | The entries under a nested entry of the navigation were those of its parent | `navigationmodel.cpp` |
+| Interface | The light theme's secondary background was the color "#lightGrey400", which is none | `systempalette.cpp` |
+| Interface | A texture's vertical wrap mode was set as its horizontal one | `qsgtextureview.cpp` |
+| Interface | The luminance of an image counted blue as 0.144, not 0.114 | `imageluminanceextractor.cpp` |
+| Interface | The Windows guard of the platform compositor was `__WIN32` | `_WIN32` |
+| Interface | After a drop that was refused, the busy cursor stayed | `ListViewExt.qml` |
+| Playlist | While searching, a tap or the keyboard played another item: the row shown was taken for the row of the playlist | `PlaylistDelegate.qml`, `PlaylistPane.qml`: mapped to the source |
+| Playlist | The total length stayed as it was when the lengths became known; a change of the current item's title or cover was not told | `playlist_model.cpp`, `playlist_controller.cpp` |
+| Playlist | The copy kept to recover the playlist after a crash: its name went through Latin-1 (wrong in a folder with other letters, as a Cyrillic user name), and the last good copy was deleted before the new one was in place | `model_recovery_agent.hpp`: QString and QFile all the way, the old copy kept until the new one is there |
+| Network views | The folders of the user were sorted with an order that is not strict (undefined behaviour of `std::sort`) | `standardpathmodel.cpp` |
+| Network views | The children of a node were read after the tree was unlocked; an item removed was looked up by name, so that another of the same name could go; a device was kept when its last source left, and removed while it still had some | `networkmediamodel.cpp`, `networkdevicemodel.cpp` |
+| Media library | A media gone since its list was made came as an empty media to the playlist (a crash); a callback asking for the same items again was lost; a group whose list failed was read anyway | `medialib.cpp`, `mlvideogroupsmodel.cpp` |
+| Media library | Bookmarks: the row was remembered across the answer of the library (another bookmark changed, or a read out of the list); no player crashed; a field of the interface thread was read from the player's | `mlbookmarkmodel.cpp` |
+| Media library | An artist's page could show the answer for the artist left before; the busy mark of a playlist page was never shown; dropping a link onto the playlists used a name that does not exist | `MusicArtist.qml`, `PlaylistMediaDisplay.qml`, `PlaylistMediaList.qml` |
+| Media library | Home: moving through the favourites left the scrolling animation on for good | `HomePage.qml` |
+| Toolbar editor | Removing profiles removed one less than asked (none for one) though the views were told | `controlbar_profile_model.cpp` |
+| Preferences | A language in the registry that is not in the list: the list was read at -1 | `simple_preferences.cpp` |
 
 ## 2. VLC 4's bugs brought out by Terrikon
 
@@ -94,6 +128,19 @@ build, or by reading when the path is taken.
 | A folder chip of Home did nothing on a click, and "Open folder" showed "This PC" | the media library gives folders as `file:///c:%5CUsers%5C...`, which we passed on as they were; a usual file URL is now made of the path |
 | What an opened folder holds came after every folder, apart from its place | it was sorted with all the rest; it now keeps the folder's place |
 | The tiles of an opened folder came in with an animation each time one was made again while scrolling | only what the folder just opened brings in |
+| An update of FFmpeg or yt-dlp could leave none: the working program was deleted before the new one was in place, and of FFmpeg's two programs one could be new and one old | `components.cpp`: the old ones are moved aside and come back if anything fails |
+| "Downloading" forever when tar could not be started; yt-dlp's own update, when it could not be started, was not tried again for a day | no `finished` comes after a failed start; both now handle it |
+| The Components dialog (and the preferences opening it) stopped the interface while each program was asked its version, up to 4 s each | asked without waiting |
+| "Off" in the list of subtitles could switch another track off | the place among the streams (for ffmpeg) was used as the row of the list; the states now carry the row too |
+| The wave preview of the tracks popover did not follow the track chosen | it called a method, which tells no change; it now depends on the revision |
+| Vertical clip of a video narrower than 9:16: the frame shown was wider than the video | the frame was made from the height alone; now as ffmpeg crops |
+| Changing a clip's settings while its size was measured could stop the interface for a second | the meter was waited for after being killed |
+| Several links and files added at once did not keep their order | files were added at once and each page when yt-dlp answered; they now go in in the order asked |
+| A track's own volume: the track waited in the input's queue without being held, and the volume was remembered even when the input did not take it | `player.c`, `input.c` |
+| Qt messages while closing could reach the journal being deleted | `diagnostics.cpp`: the handlers running are counted and waited for |
+| A large cover was decoded whole on the interface thread for the visualizer's colour | read at 24 pixels from the start |
+| A folder chip of Home with "#" or "?" in its name opened another path | its URL is encoded part by part |
+| Coming back from the player to an opened folder of Videos: "Cannot assign to non-existent property initialIndex", and the place in the folder was lost | the page remembered its place in the history as the other video pages do, but had no property to take it back |
 
 ## Known upstream issues, not fixed yet
 
