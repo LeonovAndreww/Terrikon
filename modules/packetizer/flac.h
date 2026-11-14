@@ -260,6 +260,8 @@ static inline int FLAC_ParseSyncInfo(const uint8_t *p_buf, unsigned i_buf,
             return 0;
         blocksize = p_buf[i_header++];
         if (blocksize_hint == 7) {
+            if(i_header == i_buf)
+                return 0;
             blocksize <<= 8;
             blocksize |= p_buf[i_header++];
         }

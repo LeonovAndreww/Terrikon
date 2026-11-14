@@ -350,7 +350,7 @@ static inline int CreateBitmapInfoHeader( const es_format_t *fmt,
     {
         for( int i = 0; i < fmt->video.p_palette->i_entries; i++ )
         {
-            for( int j = 0; i < 3; i++ )
+            for( int j = 0; j < 3; j++ )
                 p_bmiColors[i * 4 + j] = fmt->video.p_palette->palette[i][j];
             p_bmiColors[i * 4 + 3] = 0;
         }

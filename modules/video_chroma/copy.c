@@ -501,10 +501,10 @@ SSE_InterleavePlanes(uint8_t *dst, size_t dst_pitch,
     assert(srcu_pitch == srcv_pitch);
     size_t copy_pitch = __MIN(dst_pitch / 2, srcu_pitch);
     unsigned int const  w16 = (srcu_pitch+15) & ~15;
-    unsigned int const  hstep = (cache_size) / (2*w16);
+    /* at least a line at a time, or the loop below never ends */
+    unsigned int const  hstep = __MAX((cache_size) / (2*w16), 1);
     const unsigned cacheu_width = __MIN(srcu_pitch, cache_size);
     const unsigned cachev_width = __MIN(srcv_pitch, cache_size);
-    assert(hstep > 0);
 
     for (unsigned int y = 0; y < height; y += hstep)
     {

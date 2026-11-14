@@ -198,7 +198,7 @@ static void user_warning( png_structp p_png, png_const_charp warning_msg )
 static void process_text_chunk( decoder_t *p_dec, const png_textp chunk )
 {
     if( chunk->compression != PNG_ITXT_COMPRESSION_NONE ||
-        memcmp( chunk->key, "XML:com.adobe.xmp", 17 ) ||
+        strcmp( chunk->key, "XML:com.adobe.xmp" ) ||
         chunk->itxt_length < 20 )
         return;
 

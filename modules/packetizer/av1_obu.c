@@ -654,7 +654,10 @@ size_t AV1_create_DecoderConfigurationRecord(uint8_t **pp_buffer,
     /*unsigned int (8)[] configOBUs;*/
     size_t i_offset = 4;
     for(size_t i=0; i<i_obu; i++)
+    {
         memcpy(&p_buffer[i_offset], p_obus[i], pi_obus[i]);
+        i_offset += pi_obus[i];
+    }
 
     *pp_buffer = p_buffer;
     return i_buffer;

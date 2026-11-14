@@ -527,7 +527,7 @@ static void ProcessHeader( decoder_t *p_dec )
 
     static const char header[4] = { 'f', 'L', 'a', 'C' };
 
-    if( memcmp( p_dec->fmt_in->p_extra, header, 4 ) )
+    if( i_extra < 4 || memcmp( p_dec->fmt_in->p_extra, header, 4 ) )
         i_extra += 8;
 
     p_sys->p_block = block_Alloc( i_extra );

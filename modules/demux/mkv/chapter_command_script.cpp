@@ -59,7 +59,14 @@ bool matroska_script_interpretor_c::Interpret( MatroskaChapterProcessTime time, 
         if(i+1 < j-i-1)
         {
             std::string st = sz_command.substr( i+1, j-i-1 );
-            chapter_uid i_chapter_uid = std::stoull( st );
+            chapter_uid i_chapter_uid;
+            try {
+                i_chapter_uid = std::stoull( st );
+            } catch ( const std::exception & ) {
+                // what a file says need not be a number
+                vlc_debug( l, "Invalid chapter uid in a script command" );
+                return false;
+            }
 
             virtual_segment_c *p_vsegment;
             virtual_chapter_c *p_vchapter = vm.FindVChapter( i_chapter_uid, p_vsegment );

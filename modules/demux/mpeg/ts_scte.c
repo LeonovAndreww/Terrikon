@@ -82,8 +82,11 @@ void SCTE27_Section_Callback( demux_t *p_demux,
     ts_pmt_t *p_pmt = p_pes->p_es->p_program;
     vlc_tick_t i_date = p_pmt->pcr.i_current;
 
+    /* the bytes read below are there */
+    if( unlikely(!p_pes->p_es->id) || i_sectiondata < 9 )
+        return;
     block_t *p_content = block_Alloc( i_sectiondata );
-    if( unlikely(!p_content) || unlikely(!p_pes->p_es->id) )
+    if( unlikely(!p_content) )
         return;
     memcpy( p_content->p_buffer, p_sectiondata, i_sectiondata );
 

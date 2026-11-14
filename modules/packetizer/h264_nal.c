@@ -837,7 +837,9 @@ static uint8_t h264_get_max_dpb_frames( const h264_sequence_parameter_set_t *p_s
         unsigned i_frame_height_in_mbs = ( p_sps->pic_height_in_map_units_minus1 + 1 ) *
                                          ( 2 - p_sps->frame_mbs_only_flag );
         unsigned i_den = ( p_sps->pic_width_in_mbs_minus1 + 1 ) * i_frame_height_in_mbs;
-        uint8_t i_max_dpb_frames = limits->i_max_dpb_mbs / i_den;
+        if( i_den == 0 ) /* sizes of the stream that wrap */
+            return 16;
+        unsigned i_max_dpb_frames = limits->i_max_dpb_mbs / i_den;
         if( i_max_dpb_frames < 16 )
             return i_max_dpb_frames;
     }

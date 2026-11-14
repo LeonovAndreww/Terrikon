@@ -796,19 +796,14 @@ static block_t *ParseFrameHeader(decoder_t *p_dec, uint8_t i_nal_type,
     decoder_sys_t *p_sys = p_dec->p_sys;
     block_t *p_outputchain = NULL;
 
+    /* p_frag stays the caller's, which puts it in its chain */
     if(unlikely(i_buffer < 3))
-    {
-        block_Release(p_frag); /* to be checked before */
         return NULL;
-    }
 
     bool b_new_au = !p_sys->previous.b_valid;
     const uint8_t i_layer = h266_getNALLayer(p_buffer);
     if(unlikely(i_layer >= H266_MAX_NUH_LAYER_ID))
-    {
-        block_Release(p_frag);
         return NULL;
-    }
     if(b_header)
     {
         h266_sequence_parameter_set_t *p_sps = NULL;
