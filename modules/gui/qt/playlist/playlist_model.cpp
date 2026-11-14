@@ -118,9 +118,22 @@ on_playlist_items_updated(vlc_playlist_t *playlist, size_t index,
         if (that->m_playlist != playlist)
             return;
         int count = updated.size();
+        bool durationChanged = false;
         for (int i = 0; i < count; ++i)
+        {
+            if (!(that->m_items[index + i].getDuration() == updated[i].getDuration()))
+                durationChanged = true;
             that->m_items[index + i] = updated[i]; /* sync metadata */
+        }
         that->notifyItemsChanged(index, count);
+        if (durationChanged)
+        {
+            /* a length known only now: the total follows */
+            that->m_duration = VLCDuration();
+            for (const auto& item : that->m_items)
+                that->m_duration += item.getDuration();
+            emit that->q_func()->countChanged(that->m_items.size());
+        }
     });
 }
 

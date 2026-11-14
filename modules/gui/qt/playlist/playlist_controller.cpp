@@ -31,6 +31,7 @@
 #endif
 #include "util/shared_input_item.hpp"
 #include <algorithm>
+#include <memory>
 #include <QVariant>
 #include <QDesktopServices>
 
@@ -230,8 +231,9 @@ on_playlist_items_updated(vlc_playlist_t *playlist, size_t index,
                 // Even if vlc_playlist_item_t is the same, assign unconditionally to
                 // update the data:
                 that->m_currentItem = newCurrentItem;
-                if (currentItem != newCurrentItem.raw())
-                    emit that->q_func()->currentItemChanged();
+                // its title, artwork or duration may be what has changed
+                VLC_UNUSED(currentItem);
+                emit that->q_func()->currentItemChanged();
             }
         }
     });
@@ -454,35 +456,58 @@ PlaylistController::append(const QVector<Media> &media, bool startPlaying)
      * yt-dlp for their streams; what it cannot do goes to VLC as it is.
      * Their place in the queue is where they were asked for: the others
      * are added at once, the pages when known. */
-    QVector<Media> direct;
-    QVector<Media> pages;
+    /* runs of media in the order asked: a page is one of them, known later */
+    struct Pending
+    {
+        QVector<QVector<Media>> runs;
+        QVector<bool> ready;
+        qsizetype next = 0;
+        bool play;
+    };
+    auto pending = std::make_shared<Pending>();
+    pending->play = startPlaying;
+    QVector<qsizetype> pages; /* their runs */
     for (const Media &m : media)
     {
         input_item_t *item = m.raw();
-        if (item && item->psz_uri && terrikon::isWebPage(QUrl(QString::fromUtf8(item->psz_uri))))
-            pages << m;
-        else
-            direct << m;
+        if (!item)
+            continue; /* the playlist cannot take an empty media */
+        const bool page = item->psz_uri && terrikon::isWebPage(QUrl(QString::fromUtf8(item->psz_uri)));
+        if (page || pending->runs.isEmpty() || !pending->ready.last())
+        {
+            pending->runs.append(QVector<Media>{});
+            pending->ready.append(!page);
+            if (page)
+                pages.append(pending->runs.size() - 1);
+        }
+        pending->runs.last() << m;
     }
-    if (!direct.isEmpty())
-        appendNow(direct, startPlaying);
-
-    bool play = startPlaying && direct.isEmpty();
-    for (const Media &page : pages)
+    /* what is known goes in, up to the first page still asked: the first
+     * run plays, the others are queued */
+    auto flush = [this, pending]() {
+        while (pending->next < pending->runs.size() && pending->ready[pending->next])
+        {
+            appendNow(pending->runs[pending->next], pending->play && pending->next == 0);
+            ++pending->next;
+        }
+    };
+    for (qsizetype run : pages)
     {
+        const Media page = pending->runs[run].first();
         const QUrl url(QString::fromUtf8(page.raw()->psz_uri));
-        terrikon::resolveLink(this, url, [this, page, url, play](const terrikon::ResolvedLink &link) {
+        terrikon::resolveLink(this, url, [pending, flush, run, url](const terrikon::ResolvedLink &link) {
             if (!link.error.isEmpty())
-            {
                 qWarning("Terrikon: %s: %s", qUtf8Printable(url.toString()), qUtf8Printable(link.error));
-                appendNow(QVector<Media>{ page }, play);
-                return;
+            else
+            {
+                const QString name = link.title.isEmpty() ? url.toString() : link.title;
+                pending->runs[run] = QVector<Media>{ Media(link.mrl, name, link.options) };
             }
-            const QString name = link.title.isEmpty() ? url.toString() : link.title;
-            appendNow(QVector<Media>{ Media(link.mrl, name, link.options) }, play);
+            pending->ready[run] = true;
+            flush();
         });
-        play = false; /* the first one plays, the others are queued */
     }
+    flush();
 }
 
 /* Terrikon: a file on a network drive (a share, a mapped drive) is read

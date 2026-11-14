@@ -691,6 +691,10 @@ T.Pane {
                 if (index < 0)
                     return
 
+                // while searching, the rows shown are not those of the playlist
+                if (listView.model instanceof AbstractProxyModel)
+                    index = listView.model.mapToSource(listView.model.index(index, 0)).row
+
                 MainPlaylistController.goTo(index, true)
             }
 

@@ -390,7 +390,7 @@ T.Control {
 
         onSingleTapped: (eventPoint, button) => {
             // initial action is handled in `DelegateTouchTapHandler`
-            MainPlaylistController.goTo(delegate.index, true)
+            MainPlaylistController.goTo(delegate.mappedIndex(), true)
         }
 
         onDoubleTapped: (eventPoint, button) => {
