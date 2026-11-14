@@ -747,8 +747,8 @@ size_t MLListCacheLoader::loadItemByIdTask(MLItemId itemId, std::function<void (
         },
         //UI thread
         [cb](qint64 taskId, Ctx& ctx) {
-            if (!ctx.item)
-                return;
+            // also when nothing was found: the caller's promise is rejected
+            // then, not left waiting for ever
             cb(taskId, std::move(ctx.item));
         });
 }
