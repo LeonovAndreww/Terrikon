@@ -164,21 +164,25 @@ private:
 
             assert(!m_recoveryFileName.isEmpty());
 
-            const QByteArray tmpFileName = (m_recoveryFileName + QStringLiteral(".part")).toLatin1();
-            const QByteArray recoveryFileName = m_recoveryFileName.toLatin1();
+            // QString all the way: a folder of the user may have any letters in its name
+            const QString tmpFileName = m_recoveryFileName + QStringLiteral(".part");
+            const QString oldFileName = m_recoveryFileName + QStringLiteral(".old");
 
             if (model->isEmpty())
             {
-                remove(recoveryFileName.constData());
+                QFile::remove(m_recoveryFileName);
                 return;
             }
 
-            if (model->serialize(tmpFileName.constData()) != VLC_SUCCESS)
+            if (model->serialize(tmpFileName) != VLC_SUCCESS)
                 return;
 
-            remove(recoveryFileName.constData());
-            if (!rename(tmpFileName.constData(), recoveryFileName.constData()))
+            // the last good copy is kept until the new one is in place
+            QFile::remove(oldFileName);
+            const bool hadOld = QFile::rename(m_recoveryFileName, oldFileName);
+            if (QFile::rename(tmpFileName, m_recoveryFileName))
             {
+                QFile::remove(oldFileName);
                 assert(m_settings);
                 m_settings->sync();
                 if (!m_settings->contains(m_key))
@@ -192,6 +196,8 @@ private:
                     m_timer.stop();
                 }
             }
+            else if (hadOld)
+                QFile::rename(oldFileName, m_recoveryFileName);
         });
 
         QObject::connect(model, &T::itemsReset, &m_timer, QOverload<>::of(&QTimer::start));
