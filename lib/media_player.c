@@ -1596,7 +1596,8 @@ libvlc_media_player_get_abloop( libvlc_media_player_t *p_mi,
     vlc_player_t *player = p_mi->player;
     vlc_player_Lock(player);
 
-    vlc_tick_t a_ticks, b_ticks;
+    /* left as they are when there is no loop, or only its start */
+    vlc_tick_t a_ticks = VLC_TICK_INVALID, b_ticks = VLC_TICK_INVALID;
     int ret = vlc_player_GetAtoBLoop(player, &a_ticks, a_pos, &b_ticks, b_pos);
 
     vlc_player_Unlock(player);
@@ -2578,7 +2579,8 @@ libvlc_media_player_time_point_interpolate(const libvlc_media_player_time_point_
     int ret = vlc_player_timer_point_Interpolate(&point,
                                                  VLC_TICK_FROM_US(system_now_us),
                                                  &out_ts, out_pos);
-    *out_ts_us = US_FROM_VLC_TICK(out_ts);
+    if (ret == VLC_SUCCESS)
+        *out_ts_us = US_FROM_VLC_TICK(out_ts);
     return ret;
 }
 
