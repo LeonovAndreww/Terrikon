@@ -30,6 +30,8 @@ Widgets.PageExt {
     id: root
 
     property alias currentIndex: videoAll.currentIndex
+    // where it was, given back by the history as to the other video pages
+    property alias initialIndex: videoAll.initialIndex
     property alias parentId: folderModel.parentId
 
     signal showList(var model, int reason)
