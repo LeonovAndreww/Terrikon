@@ -141,6 +141,8 @@ Widgets.PageExt {
                 id: visibilityTimer
 
                 interval: VLCStyle.duration_humanMoment
+
+                onTriggered: progressIndicator.visible = true
             }
         }
 

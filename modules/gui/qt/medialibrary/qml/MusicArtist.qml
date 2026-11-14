@@ -485,9 +485,12 @@ FocusScope {
         if (artistModel.loading)
             return
 
-        artistModel.getDataById(artistId)
+        const asked = artistId
+        artistModel.getDataById(asked)
             .then((artistData) => {
-                root._artist = artistData
+                // an answer for an artist left meanwhile is not shown
+                if (root.artistId === asked)
+                    root._artist = artistData
             })
     }
 

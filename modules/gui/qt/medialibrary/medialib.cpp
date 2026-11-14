@@ -84,11 +84,13 @@ static void convertMLItemToPlaylistMedias(vlc_medialibrary_t* ml, const MLItemId
         if (media_list == nullptr || media_list->i_nb_items == 0)
             return;
 
-        auto mediaRange = ml_range_iterate<vlc_ml_media_t>( media_list );
-        std::transform(mediaRange.begin(), mediaRange.end(), std::back_inserter(medias), [&](vlc_ml_media_t& m) {
+        for (vlc_ml_media_t& m : ml_range_iterate<vlc_ml_media_t>( media_list ))
+        {
             SharedInputItem item(vlc_ml_get_input_item( ml, m.i_id ), false);
-            return vlc::playlist::Media(item.get(), options);
-        });
+            // gone since the list was made: the playlist cannot take an empty media
+            if (item)
+                medias.push_back(vlc::playlist::Media(item.get(), options));
+        }
     }
 }
 
@@ -449,8 +451,11 @@ void MediaLib::mlInputItem(const QVector<MLItemId>& itemIdVector, QJSValue callb
         }
     },
     //UI thread
-    [this, it](quint64, Ctx& ctx) mutable
+    [this, itemIdVector](quint64, Ctx& ctx)
     {
+        // taken out first: a callback may ask for the same items again
+        const QVector<QJSValue> callbacks = m_inputItemQuery.take(itemIdVector);
+
         auto jsEngine = qjsEngine(this);
         if (!jsEngine)
             return;
@@ -464,12 +469,10 @@ void MediaLib::mlInputItem(const QVector<MLItemId>& itemIdVector, QJSValue callb
             i++;
         }
 
-        for (const auto& cb : std::as_const(it.value()))
+        for (const auto& cb : callbacks)
         {
             cb.call({jsArray});
         }
-
-        m_inputItemQuery.erase(it);
     });
 }
 

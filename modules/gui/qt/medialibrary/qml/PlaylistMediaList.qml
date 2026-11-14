@@ -168,7 +168,7 @@ MainViewLoader {
             for (let url in drop.urls)
                 urlList.push(drop.urls[url])
             if (index === undefined)
-                DialogsProvider.playlistsDialog(inputItems, (root.model as MLPlaylistListModel).playlistType)
+                DialogsProvider.playlistsDialog(urlList, (root.model as MLPlaylistListModel).playlistType)
             else
                 root.model.append(root.model.getItemId(index), urlList)
         } else {

@@ -239,7 +239,7 @@ MLVideoGroupsModel::Loader::load(vlc_medialibrary_t* ml,
                                                                             &query, group.i_id));
 
             // NOTE: Do we really need to check 'i_nb_items' here ?
-            if (list->i_nb_items == 1)
+            if (list && list->i_nb_items == 1)
             {
                 result.emplace_back(std::make_unique<MLVideo>(&(list->p_items[0])));
 

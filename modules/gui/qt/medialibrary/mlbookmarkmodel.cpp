@@ -116,13 +116,20 @@ bool MLBookmarkModel::setData(const QModelIndex &index, const QVariant &value, i
         ctx.updateSucceed = (ret == VLC_SUCCESS);
     },
     //UI thread
-    [this, updateName, mediaId = m_currentMediaId, row, str]
+    [this, updateName, mediaId = m_currentMediaId, bookmarkTime = b.i_time, str]
     (quint64, Ctx& ctx)
     {
         if (!ctx.updateSucceed)
             return;
 
-        if (m_currentMediaId != mediaId)
+        if (m_currentMediaId != mediaId || !m_bookmarks)
+            return;
+
+        // the list may have changed meanwhile: the bookmark is found again
+        size_t row = 0;
+        while (row < m_bookmarks->i_nb_items && m_bookmarks->p_items[row].i_time != bookmarkTime)
+            ++row;
+        if (row == m_bookmarks->i_nb_items)
             return;
 
         auto& b = m_bookmarks->p_items[row];
@@ -369,10 +376,10 @@ void MLBookmarkModel::onPlaybackStateChanged( vlc_player_t *, vlc_player_state s
 {
     auto self = static_cast<MLBookmarkModel*>( data );
 
-    if(self->m_currentMediaId == 0)
-        return;
-
+    // m_currentMediaId belongs to the interface thread: read there
     QMetaObject::invokeMethod(self, [self, state](){
+        if (self->m_currentMediaId == 0)
+            return;
         if ( state == VLC_PLAYER_STATE_STARTED )
             self->refresh( MLBOOKMARKMODEL_REFRESH );
         else if ( state == VLC_PLAYER_STATE_STOPPING )
@@ -500,6 +507,12 @@ void MLBookmarkModel::setPlayer(PlayerController * player)
         disconnect(m_player_controller, nullptr, this, nullptr);
 
     m_player_controller = player;
+
+    if (!player)
+    {
+        setPlayer(static_cast<vlc_player_t*>(nullptr));
+        return;
+    }
 
     connect(m_player_controller, &PlayerController::lengthChanged, this, &MLBookmarkModel::playerLengthChanged);
 

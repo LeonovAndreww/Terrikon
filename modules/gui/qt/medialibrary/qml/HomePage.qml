@@ -338,7 +338,10 @@ Widgets.PageExt {
                         readonly property string _name: _path.replace(/[\\\/]+$/, "").split(/[\\\/]/).pop()
                         // the library gives "file:///c:%5CUsers%5C...": a usual
                         // file URL, as Windows and the library's look up take it
-                        readonly property string _url: "file:///" + _path.replace(/\\/g, "/")
+                        // (each part encoded again: a "#" or a "?" in a name
+                        // would end the path there)
+                        readonly property string _url: "file:///" + _path.split(/[\\\/]/).map((part, i) =>
+                            i === 0 && /^[A-Za-z]:$/.test(part) ? part : encodeURIComponent(part)).join("/")
 
                         height: VLCStyle.dp(30, VLCStyle.scale)
                         width: chipRow.implicitWidth + 2 * VLCStyle.margin_small
@@ -701,7 +704,7 @@ Widgets.PageExt {
                         if (item) {
                             contentYBehavior.enabled = true
                             Helpers.positionFlickableToContainItem(flickable, item)
-                            contentYBehavior.enabled = true
+                            contentYBehavior.enabled = false
                         }
                     }
                 }
