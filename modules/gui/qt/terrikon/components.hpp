@@ -25,6 +25,7 @@
 #include <QHash>
 #include <QObject>
 #include <QPointer>
+#include <QSet>
 #include <QString>
 
 class QDialog;
@@ -81,6 +82,7 @@ private:
     QHash<QString, double> m_progress;
     QHash<QString, QString> m_progressText;
     mutable QHash<QString, QString> m_versions;
+    mutable QSet<QString> m_probing; /* versions being asked */
     QPointer<QDialog> m_dialog;
     QHash<QString, bool> m_offered; /* once per run */
     static Components *s_instance;

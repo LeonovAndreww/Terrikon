@@ -150,21 +150,87 @@ QString Components::version(const QString &id) const
     if (m_versions.contains(id))
         return m_versions.value(id);
     const QString tool = findTool(id);
-    if (tool.isEmpty())
+    if (tool.isEmpty() || m_probing.contains(id))
         return {};
-    QProcess process;
-    process.start(tool, { id == QLatin1String("yt-dlp") ? QStringLiteral("--version")
+    /* asked without waiting: a slow disk or a scanner must not stop the
+     * interface; changed() tells when the answer is there */
+    m_probing.insert(id);
+    auto self = const_cast<Components *>(this);
+    auto process = new QProcess(self);
+    auto done = [self, id, process](const QString &out) {
+        if (!self->m_probing.remove(id))
+            return;
+        QString text = out.section(QLatin1Char('\n'), 0, 0).trimmed();
+        /* "ffmpeg version 8.0-essentials_build-www.gyan.dev Copyright..." */
+        if (text.startsWith(QLatin1String("ffmpeg version ")))
+            text = text.mid(15).section(QLatin1Char(' '), 0, 0).section(QLatin1Char('-'), 0, 0);
+        self->m_versions.insert(id, text);
+        process->deleteLater();
+        emit self->changed(id);
+    };
+    connect(process, &QProcess::finished, self, [process, done] {
+        done(QString::fromUtf8(process->readAllStandardOutput()));
+    });
+    connect(process, &QProcess::errorOccurred, self, [done](QProcess::ProcessError e) {
+        if (e == QProcess::FailedToStart)
+            done(QString());
+    });
+    QTimer::singleShot(4000, process, [process, done] {
+        process->kill();
+        done(QString());
+    });
+    process->start(tool, { id == QLatin1String("yt-dlp") ? QStringLiteral("--version")
                                                           : QStringLiteral("-version") });
-    QString text;
-    if (process.waitForFinished(4000))
-        text = QString::fromUtf8(process.readAllStandardOutput()).section(QLatin1Char('\n'), 0, 0).trimmed();
-    else
-        process.kill();
-    /* "ffmpeg version 8.0-essentials_build-www.gyan.dev Copyright..." */
-    if (text.startsWith(QLatin1String("ffmpeg version ")))
-        text = text.mid(15).section(QLatin1Char(' '), 0, 0).section(QLatin1Char('-'), 0, 0);
-    m_versions.insert(id, text);
-    return text;
+    return {};
+}
+
+/* Puts new files in place of old ones, all or none: the old ones are moved
+ * aside first and come back if anything fails. */
+static bool replaceFiles(const QList<QPair<QString, QString>> &fromTo)
+{
+    QList<QPair<QString, QString>> aside; /* target, where it waits */
+    QStringList placed;
+    bool ok = true;
+    for (const auto &pair : fromTo)
+    {
+        const QString &target = pair.second;
+        if (!QFileInfo::exists(target))
+            continue;
+        QString old;
+        for (int n = 0; n < 10 && old.isEmpty(); ++n)
+        {
+            /* a copy still running cannot be deleted, only renamed */
+            const QString name = QStringLiteral("%1.old%2").arg(target).arg(n);
+            if (!QFileInfo::exists(name) || QFile::remove(name))
+                old = name;
+        }
+        if (old.isEmpty() || !QFile::rename(target, old))
+        {
+            ok = false;
+            break;
+        }
+        aside.append({ target, old });
+    }
+    for (const auto &pair : fromTo)
+    {
+        if (!ok)
+            break;
+        if (QFile::rename(pair.first, pair.second))
+            placed.append(pair.second);
+        else
+            ok = false;
+    }
+    if (!ok)
+        for (const QString &target : placed)
+            QFile::remove(target);
+    for (const auto &pair : aside)
+    {
+        if (ok)
+            QFile::remove(pair.second);
+        else
+            QFile::rename(pair.second, pair.first);
+    }
+    return ok;
 }
 
 void Components::install(const QString &id)
@@ -231,8 +297,10 @@ void Components::install(const QString &id)
         {
             /* replaced only once complete: a running copy keeps working */
             const QString target = QDir(toolsDir()).filePath(spec->exes.first());
-            QFile::remove(target);
-            finish(id, QFile::rename(download, target) ? QString() : qtr("The file could not be put in place."));
+            const bool placed = replaceFiles({ { download, target } });
+            if (!placed)
+                QFile::remove(download);
+            finish(id, placed ? QString() : qtr("The file could not be put in place."));
             return;
         }
         /* a zip: unpacked aside, its programs taken from bin/ */
@@ -242,12 +310,22 @@ void Components::install(const QString &id)
         auto tar = new QProcess(this);
         tar->setProgram(systemTool("tar"));
         tar->setArguments({ QStringLiteral("-xf"), download, QStringLiteral("-C"), unpacked });
-        connect(tar, &QProcess::finished, this, [this, id, spec, tar, download, unpacked](int code, QProcess::ExitStatus) {
+        connect(tar, &QProcess::errorOccurred, this, [this, id, tar, download, unpacked](QProcess::ProcessError e) {
+            /* no finished() after this one */
+            if (e != QProcess::FailedToStart)
+                return;
+            tar->deleteLater();
+            QFile::remove(download);
+            QDir(unpacked).removeRecursively();
+            finish(id, qtr("tar, which comes with Windows, could not be started."));
+        });
+        connect(tar, &QProcess::finished, this, [this, id, spec, tar, download, unpacked](int code, QProcess::ExitStatus status) {
             tar->deleteLater();
             QFile::remove(download);
             QString error;
-            if (code != 0)
+            if (code != 0 || status != QProcess::NormalExit)
                 error = qtr("The archive could not be unpacked.");
+            QList<QPair<QString, QString>> fromTo;
             for (const QString &exe : spec->exes)
             {
                 if (!error.isEmpty())
@@ -258,11 +336,11 @@ void Components::install(const QString &id)
                     error = qtr("%1 is not in the archive.").arg(exe);
                     break;
                 }
-                const QString target = QDir(toolsDir()).filePath(exe);
-                QFile::remove(target);
-                if (!QFile::rename(it.next(), target))
-                    error = qtr("The file could not be put in place.");
+                fromTo.append({ it.next(), QDir(toolsDir()).filePath(exe) });
             }
+            /* all the programs or none: they are one release */
+            if (error.isEmpty() && !replaceFiles(fromTo))
+                error = qtr("The file could not be put in place.");
             QDir(unpacked).removeRecursively();
             finish(id, error);
         });
@@ -354,6 +432,13 @@ void Components::updateYtdlpInBackground()
         m_versions.remove(QStringLiteral("yt-dlp"));
         emit changed(QStringLiteral("yt-dlp"));
     });
+    connect(process, &QProcess::errorOccurred, this, [process](QProcess::ProcessError e) {
+        /* no finished() after this one; asked again at the next start */
+        if (e != QProcess::FailedToStart)
+            return;
+        componentSettings().remove(QStringLiteral("Components/yt-dlp-checked"));
+        process->deleteLater();
+    });
     process->start(ytdlp, { QStringLiteral("-U") });
 }
 
@@ -443,7 +528,8 @@ void Components::showDialog()
             {
                 const QString where = ownCopy(id) ? qtr("downloaded by Terrikon")
                                                   : QDir::toNativeSeparators(QFileInfo(findTool(id)).absolutePath());
-                state->setText(qtr("Version %1, %2").arg(version(id), where));
+                const QString number = version(id);
+                state->setText(number.isEmpty() ? where : qtr("Version %1, %2").arg(number, where));
                 action->setText(ownCopy(id) ? qtr("Update") : qtr("Download a copy"));
             }
             else
