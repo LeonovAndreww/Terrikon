@@ -1702,6 +1702,12 @@ static void ControlRelease( int i_type, const input_control_param_t *p_param )
     case INPUT_CONTROL_RESTART_ES:
         vlc_es_id_Release( p_param->id );
         break;
+    case INPUT_CONTROL_SET_ES_DELAY:
+        vlc_es_id_Release( p_param->es_delay.id );
+        break;
+    case INPUT_CONTROL_SET_ES_VOLUME:
+        vlc_es_id_Release( p_param->es_volume.id );
+        break;
     case INPUT_CONTROL_SET_ES_LIST:
     {
         for (size_t i = 0; ; i++)

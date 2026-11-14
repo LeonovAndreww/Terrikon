@@ -1559,9 +1559,11 @@ vlc_player_SetRenderer(vlc_player_t *player, vlc_renderer_item_t *renderer)
 {
     vlc_player_assert_locked(player);
 
-    if (player->renderer)
-        vlc_renderer_item_release(player->renderer);
+    /* held first: it may be the one already set, with no other owner */
+    vlc_renderer_item_t *previous = player->renderer;
     player->renderer = renderer ? vlc_renderer_item_hold(renderer) : NULL;
+    if (previous)
+        vlc_renderer_item_release(previous);
 
     vlc_player_foreach_inputs(input)
     {
@@ -1900,7 +1902,9 @@ vlc_player_SetEsIdDelay(vlc_player_t *player, vlc_es_id_t *es_id,
         delay = trackpriv->delay;
     }
 
-    const input_control_param_t param = { .es_delay = { es_id, delay } };
+    const input_control_param_t param = {
+        .es_delay = { vlc_es_id_Hold(es_id), delay }
+    };
     int ret = input_ControlPush(input->thread, INPUT_CONTROL_SET_ES_DELAY,
                                 &param);
     if (ret == VLC_SUCCESS)
@@ -1944,14 +1948,21 @@ vlc_player_SetEsIdVolume(vlc_player_t *player, vlc_es_id_t *es_id,
         volume = 0.f;
     else if (volume > 2.f)
         volume = 2.f;
-    trackpriv->volume = volume;
 
-    const input_control_param_t param = { .es_volume = { es_id, volume } };
+    /* held until the input has done it (or dropped it): the track may be
+     * gone by then */
+    const input_control_param_t param = {
+        .es_volume = { vlc_es_id_Hold(es_id), volume }
+    };
     int ret = input_ControlPush(input->thread, INPUT_CONTROL_SET_ES_VOLUME,
                                 &param);
     if (ret == VLC_SUCCESS)
+    {
+        /* only what the input was told is remembered */
+        trackpriv->volume = volume;
         vlc_player_osd_Message(player, _("%s volume: %d%%"),
                                trackpriv->t.name, (int)(volume * 100.f + .5f));
+    }
     return ret;
 }
 
