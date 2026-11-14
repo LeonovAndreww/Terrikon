@@ -272,8 +272,9 @@ PlayerControllerPrivate::syltLyrics() const
                     VLC_TICK_FROM_MS( entry.first( sep ).toLongLong() );
                 lyrics.push_back( TimedText( entry.sliced( sep + 1 ).toString(), VLCTime( time ) ) );
             }
-            m_syltLyrics = std::move( lyrics );
         }
+        /* set even with nothing to read: it is returned below */
+        m_syltLyrics = std::move( lyrics );
     }
     return *m_syltLyrics;
 }
@@ -2203,21 +2204,24 @@ void PlayerController::requestArtUpdate( input_item_t *p_item )
 
 void PlayerControllerPrivate::onArtFetchEnded(input_item_t *p_item, bool)
 {
-    Q_Q(PlayerController);
-
-    {
-        vlc_player_locker lock{ m_player };
-        /* No input will signal the cover art to update,
-         * let's do it ourself. UpdateArt() stays under the lock: it is also
-         * called from player callbacks, and this runs on the preparser
-         * thread. */
-        if ( p_item == vlc_player_GetCurrentMedia( m_player ) )
+    /* This runs on the preparser thread, or on the thread deleting the
+     * preparser, which holds the player lock: nothing is locked or changed
+     * here, the rest is done on the interface thread. */
+    SharedInputItem item{ p_item };
+    callAsync([this, item]() {
+        Q_Q(PlayerController);
+        bool current;
         {
-            UpdateArt( p_item );
-            return;
+            vlc_player_locker lock{ m_player };
+            current = item.get() == vlc_player_GetCurrentMedia( m_player );
         }
-    }
-    emit q->artChanged( p_item );
+        /* No input will signal the cover art to update,
+         * let's do it ourself. */
+        if ( current )
+            UpdateArt( item.get() );
+        else
+            emit q->artChanged( item.get() );
+    });
 }
 
 const QString PlayerController::decodeArtURL( input_item_t *p_item )
