@@ -390,7 +390,7 @@ void DXGI_LocalSwapchainSetMetadata( dxgi_swapchain *display, libvlc_video_metad
         {
             memcpy(&display->hdr10, &hdr10, sizeof(hdr10));
             dxgiswapChain4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10,
-                                            sizeof( &display->hdr10 ), &display->hdr10 );
+                                            sizeof( display->hdr10 ), &display->hdr10 );
         }
     }
 }
