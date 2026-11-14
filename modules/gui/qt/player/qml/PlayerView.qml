@@ -603,12 +603,7 @@ FocusScope {
                     onMouseReleased: (button) => {
                         if (button !== 0)
                             return
-                        holdTimer.stop()
-                        if (rootPlayer._heldRate > 0) {
-                            rootPlayer._holdEndedAt = Date.now()
-                            Player.rate = rootPlayer._heldRate
-                            rootPlayer._heldRate = 0
-                        }
+                        holdTimer.endHold()
                     }
                     // A double click is a full screen toggle, not a hold
                     onMouseDblClicked: holdTimer.stop()
@@ -616,9 +611,37 @@ FocusScope {
                     Timer {
                         id: holdTimer
                         interval: 400
+
+                        function endHold() {
+                            stop()
+                            if (rootPlayer._heldRate > 0) {
+                                rootPlayer._holdEndedAt = Date.now()
+                                Player.rate = rootPlayer._heldRate
+                                rootPlayer._heldRate = 0
+                            }
+                        }
+
                         onTriggered: {
                             rootPlayer._heldRate = Player.rate
                             Player.rate = 2
+                        }
+                    }
+
+                    // The release does not always come (the window left with
+                    // the button down, the video ended meanwhile): the speed
+                    // would stay at 2x
+                    Connections {
+                        target: Player
+                        function onPlayingStateChanged() {
+                            if (Player.playingState !== Player.PLAYING_STATE_PLAYING)
+                                holdTimer.endHold()
+                        }
+                    }
+                    Connections {
+                        target: Qt.application
+                        function onStateChanged() {
+                            if (Qt.application.state !== Qt.ApplicationActive)
+                                holdTimer.endHold()
                         }
                     }
 
