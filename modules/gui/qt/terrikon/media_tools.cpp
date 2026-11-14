@@ -625,11 +625,21 @@ void ClipExporter::stopMeasuring()
 {
     if (!m_meter)
         return;
-    m_meter->disconnect(this);
-    m_meter->kill();
-    m_meter->waitForFinished(1000);
-    m_meter->deleteLater();
+    /* not waited for: it goes away by itself once it has ended */
+    QProcess *meter = m_meter;
     m_meter = nullptr;
+    meter->disconnect(this);
+    if (meter->state() == QProcess::NotRunning)
+    {
+        meter->deleteLater();
+        return;
+    }
+    connect(meter, &QProcess::finished, meter, &QObject::deleteLater);
+    connect(meter, &QProcess::errorOccurred, meter, [meter](QProcess::ProcessError e) {
+        if (e == QProcess::FailedToStart)
+            meter->deleteLater();
+    });
+    meter->kill();
 }
 
 static void lowPriority(QProcess *process)

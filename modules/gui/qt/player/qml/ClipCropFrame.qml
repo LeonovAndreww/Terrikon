@@ -51,8 +51,10 @@ Item {
     }
 
     // The crop window in this item's coordinates
-    readonly property real _frameH: _video.height / ClipSelection.cropZoom
-    readonly property real _frameW: _frameH * 9 / 16
+    // (as ffmpeg is asked for it: full height, or the full width of a video
+    // narrower than 9:16)
+    readonly property real _frameW: Math.min(_video.width, _video.height * 9 / 16) / ClipSelection.cropZoom
+    readonly property real _frameH: _frameW * 16 / 9
     readonly property real _frameX: _video.x + (_video.width - _frameW) * ClipSelection.cropX
     readonly property real _frameY: _video.y + (_video.height - _frameH) * ClipSelection.cropY
 
