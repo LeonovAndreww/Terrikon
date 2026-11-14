@@ -153,7 +153,10 @@ public:
         for (auto p_item : itemsList)
         {
             QUrl itemUri = QUrl::fromEncoded(p_item->psz_uri);
-            auto it = std::find_if(
+            // the items are kept by their uri: two of them may share a name
+            auto it = m_items.find(QString(p_item->psz_uri));
+            if (it == m_items.end())
+                it = std::find_if(
                 m_items.begin(), m_items.end(),
                 [&](const NetworkMediaItemPtr& i) {
                     return QString::compare( qfu(p_item->psz_name), i->name, Qt::CaseInsensitive ) == 0 &&
@@ -1016,18 +1019,19 @@ void NetworkMediaModelPrivate::ListenerCb::onItemCleared( MediaTreePtr tree, inp
         input_item_node_t *parent;
         // XXX is tree == m_treeItem.tree?
 
+        std::vector<SharedInputItem> itemList;
         {
+            // the node is only ours while the tree is locked
             MediaTreeLocker lock{ d->m_treeItem.tree };
             bool found = vlc_media_tree_Find( d->m_treeItem.tree.get(), d->m_treeItem.media.get(),
                                              &res, &parent );
             if (!found)
                 return;
-        }
 
-        std::vector<SharedInputItem> itemList;
-        itemList.reserve( static_cast<size_t>(res->i_children) );
-        for (int i = 0; i < res->i_children; i++)
-            itemList.emplace_back(res->pp_children[i]->p_item);
+            itemList.reserve( static_cast<size_t>(res->i_children) );
+            for (int i = 0; i < res->i_children; i++)
+                itemList.emplace_back(res->pp_children[i]->p_item);
+        }
 
         model->d_func()->refreshMediaList(  d->m_treeItem, std::move( itemList ), true );
     }, Qt::QueuedConnection);

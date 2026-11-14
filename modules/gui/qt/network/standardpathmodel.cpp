@@ -61,25 +61,25 @@ bool itemMatchPattern(const StandardPathItemPtr& a, const QString& pattern)
 bool ascendingName(const StandardPathItemPtr& a,
                    const StandardPathItemPtr& b)
 {
-    return (QString::compare(a->name, b->name, Qt::CaseInsensitive) <= 0);
+    return (QString::compare(a->name, b->name, Qt::CaseInsensitive) < 0);
 }
 
 bool ascendingMrl(const StandardPathItemPtr& a,
                    const StandardPathItemPtr& b)
 {
-    return (QString::compare(a->mainMrl.toString(), b->mainMrl.toString(), Qt::CaseInsensitive) <= 0);
+    return (QString::compare(a->mainMrl.toString(), b->mainMrl.toString(), Qt::CaseInsensitive) < 0);
 }
 
 bool descendingName(const StandardPathItemPtr& a,
                    const StandardPathItemPtr& b)
 {
-    return (QString::compare(a->name, b->name, Qt::CaseInsensitive) >= 0);
+    return (QString::compare(a->name, b->name, Qt::CaseInsensitive) > 0);
 }
 
 bool descendingMrl(const StandardPathItemPtr& a,
                    const StandardPathItemPtr& b)
 {
-    return (QString::compare(a->mainMrl.toString(), b->mainMrl.toString(), Qt::CaseInsensitive) >= 0);
+    return (QString::compare(a->mainMrl.toString(), b->mainMrl.toString(), Qt::CaseInsensitive) > 0);
 }
 
 }
