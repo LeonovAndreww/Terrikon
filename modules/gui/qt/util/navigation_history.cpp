@@ -136,7 +136,8 @@ void NavigationHistory::update(QStringList path, const QVariantMap& properties)
 
 void NavigationHistory::previous(Qt::FocusReason reason)
 {
-    if (m_history.size() == 1)
+    // nothing before: one place, or none yet
+    if (m_history.size() <= 1)
         return;
 
     m_history.pop_back();

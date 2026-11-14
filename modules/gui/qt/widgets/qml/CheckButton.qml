@@ -65,8 +65,8 @@ T.Switch {
 
     // Accessible
 
-    Accessible.onPressAction: control.clicked()
-    Accessible.onToggleAction: control.toggle()
+    Accessible.onPressAction: root.clicked()
+    Accessible.onToggleAction: root.toggle()
 
     // Events
 

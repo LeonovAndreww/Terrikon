@@ -43,7 +43,7 @@ T.Pane {
     function _teletextButtonColor(item : Item, base : color) : color
     {
         if (!item.enabled)
-            return base.alpha(0.2)
+            return Qt.alpha(base, 0.2)
         else if (item.hovered && !item.down)
             return Qt.lighter(base)
         else

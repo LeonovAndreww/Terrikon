@@ -356,6 +356,8 @@ struct Index
             return index;
 
         const int length = end-begin, last = end-1, slength = length-1;
+        if(slength <= 0) // one pixel wide: it is its own mirror
+            return begin;
         const int pindex = index < begin ? last-index+slength : index-begin;
         const int repeat = pindex / slength;
         const int mod = pindex % slength;

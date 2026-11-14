@@ -372,10 +372,10 @@ TracksPage {
                 Connections {
                     target: Player
 
-                    function onSecondarySubtitleDelayChanged() {
+                    function onSubtitleFPSChanged() {
                         spinBoxC.update = false
 
-                        value = Player.subtitleFPS / 10
+                        value = Player.subtitleFPS * 10
 
                         spinBoxC.update = true
                     }

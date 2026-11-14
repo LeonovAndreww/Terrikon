@@ -289,7 +289,7 @@ FocusScope {
                     DescriptionList {
                         title: qsTr("Audio track")
 
-                        sourceModel: root.model.videoDesc
+                        sourceModel: root.model.audioDesc
 
                         delegateModel:  [
                             {text: qsTr("Codec:"), role: "codec" },
