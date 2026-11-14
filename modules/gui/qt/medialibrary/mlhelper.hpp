@@ -71,6 +71,9 @@ private:
 template<typename T, typename L>
 MLListRange<T> ml_range_iterate(L& list)
 {
+    // a query that failed gives no list: nothing to go through
+    if (!list)
+        return MLListRange<T>{ nullptr, nullptr };
     return MLListRange<T>{ list->p_items, list->p_items + list->i_nb_items };
 }
 

@@ -614,7 +614,8 @@ void WinTaskbarWidget::createTaskBarButtons()
 
     try
     {
-        m_comHolder = ComHolder();
+        // made in place: a temporary would leave COM as it is destroyed
+        m_comHolder.emplace();
     }
     catch( const std::exception& exception )
     {

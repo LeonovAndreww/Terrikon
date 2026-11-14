@@ -241,7 +241,7 @@ void RendererManager::disableRenderer()
 QVariant RendererManager::data(const QModelIndex &index, int role) const
 {
     Q_D(const RendererManager);
-    if (index.row() >= d->m_itemsIndex.size())
+    if (index.row() < 0 || index.row() >= d->m_itemsIndex.size())
         return {};
 
     const ItemEntry& entry = d->m_items.value(d->m_itemsIndex[index.row()]);
@@ -283,7 +283,7 @@ QVariant RendererManager::data(const QModelIndex &index, int role) const
 bool RendererManager::setData(const QModelIndex &index, const QVariant &value, int role)
 {
     Q_D(RendererManager);
-    if (index.row() >= d->m_itemsIndex.size())
+    if (index.row() < 0 || index.row() >= d->m_itemsIndex.size())
         return false;
 
     QString sout = d->m_itemsIndex[index.row()];
