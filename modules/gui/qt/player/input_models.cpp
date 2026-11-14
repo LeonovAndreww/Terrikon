@@ -151,6 +151,7 @@ QVariantList TrackListModel::trackStates() const
             rank = int(std::count_if(ids.begin(), ids.end(), [&](int id) { return id >= 0 && id < ids[i]; }));
         states.append(QVariantMap{
             { QStringLiteral("index"), rank },
+            { QStringLiteral("row"), int(i) },
             { QStringLiteral("title"), m_data[i].m_title },
             { QStringLiteral("enabled"), m_data[i].m_selected && !m_data[i].m_muted },
             { QStringLiteral("volume"), double(m_data[i].m_volume) },

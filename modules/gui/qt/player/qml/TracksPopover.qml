@@ -76,7 +76,7 @@ T.Popup {
     function _switchOff(model) {
         for (const t of model.trackStates())
             if (t.enabled)
-                model.setData(model.index(t.index, 0), false, Qt.CheckStateRole)
+                model.setData(model.index(t.row, 0), false, Qt.CheckStateRole)
     }
 
     property int _revision: 0
@@ -373,8 +373,11 @@ T.Popup {
                             Layout.fillWidth: true
                             implicitHeight: VLCStyle.dp(choice.modelData.id === "split" ? 40 : 30, VLCStyle.scale)
 
-                            readonly property var _tracks: Player.audioTracks.trackStates()
-                                                               .filter(t => t.enabled).map(t => t.index)
+                            readonly property var _tracks: {
+                                void root._revision // a method, not a property: asked again on a change
+                                return Player.audioTracks.trackStates()
+                                             .filter(t => t.enabled).map(t => t.index)
+                            }
 
                             WaveformView {
                                 anchors.left: parent.left
