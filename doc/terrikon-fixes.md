@@ -95,6 +95,7 @@ build, or by reading when the path is taken.
 | Interface | The renderers' model read at row -1; a media library list that failed was gone through anyway (covers of genres and folders) | `renderer_manager.cpp`, `mlhelper.hpp` |
 | Interface | Going back with no history yet took an entry out of an empty list | `navigation_history.cpp` |
 | Interface | The subtitles' frame rate box listened to the delay of the second subtitles and divided where it should multiply; the audio tracks of a video's information showed its video tracks; the teletext buttons called a method colors do not have; the switch named a `control` that does not exist for the screen readers; an extension's menu was read one past the list; the blur divided by zero on an image one pixel wide | `TracksPageSubtitle.qml`, `VideoInfoExpandPanel.qml`, `TeletextWidget.qml`, `CheckButton.qml`, `extensions_manager.cpp`, `fast_gaussian_blur_template.h` |
+| Media library | `getDataById` for an item that is not there (deleted meanwhile) left its promise waiting for ever: the rejection was never reached | `mlbasemodel.cpp`: the answer is passed on also when empty |
 
 ## 2. VLC 4's bugs brought out by Terrikon
 
@@ -157,6 +158,7 @@ build, or by reading when the path is taken.
 | A folder chip of Home with "#" or "?" in its name opened another path | its URL is encoded part by part |
 | Coming back from the player to an opened folder of Videos: "Cannot assign to non-existent property initialIndex", and the place in the folder was lost | the page remembered its place in the history as the other video pages do, but had no property to take it back |
 | Holding the button for 2x: the speed stayed at 2x when the release never came (the window left with the button down, the video ended meanwhile) | the hold only ended on the release; it now also ends when the playback stops or the application is left |
+| The clip popover could stop the interface for up to 5 s the first time: ffmpeg was asked for its encoders on the interface thread; the list was also read and filled from two threads | asked aside when the clip panel is made, once (`std::call_once`) |
 
 ## Known upstream issues, not fixed yet
 
