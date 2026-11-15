@@ -63,4 +63,10 @@ T.Button {
         implicitWidth: 10
         implicitHeight: 10
     }
+
+    // Terrikon: like the other buttons, the hand shows it can be clicked
+    HoverHandler {
+        enabled: control.enabled
+        cursorShape: VLCStyle.pointerCursor
+    }
 }

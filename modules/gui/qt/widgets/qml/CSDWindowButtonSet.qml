@@ -31,7 +31,10 @@ Row {
     width: implicitWidth
 
     property color color: theme.fg.primary
-    property color hoverColor: theme.bg.primary.alpha(0.5)
+    // Terrikon: the text colour, faint, as Windows does: the background's
+    // one, half seen, was lost on a dark bar (minimize and maximize did not
+    // seem to react)
+    property color hoverColor: theme.fg.primary.alpha(0.12)
 
     readonly property bool useWinIcons: ((MainCtx.osName === MainCtx.Windows)&&(MainCtx.osVersion >= 10))
 

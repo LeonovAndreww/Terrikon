@@ -38,6 +38,11 @@ Image {
 
     focus: false
 
+    HoverHandler {
+        enabled: root.leadsHome
+        cursorShape: VLCStyle.pointerCursor
+    }
+
     TapHandler {
         enabled: root.leadsHome
         onTapped: {
