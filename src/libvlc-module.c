@@ -2186,6 +2186,12 @@ vlc_module_begin ()
     add_bool( "started-from-file", false, STARTEDFROMFILE_TEXT,
               STARTEDFROMFILE_LONGTEXT )
         change_volatile ()
+    /* Terrikon: given by the player's own executable only: the other
+     * programs on libvlc (the preparser, several at once) are left out of
+     * the single player logic */
+    add_bool( "terrikon-player", false, NULL, NULL )
+        change_volatile ()
+        change_private ()
     add_bool( "one-instance-when-started-from-file", true,
               ONEINSTANCEWHENSTARTEDFROMFILE_TEXT, NULL )
     add_bool( "playlist-enqueue", false, PLAYLISTENQUEUE_TEXT,

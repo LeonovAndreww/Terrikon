@@ -188,13 +188,14 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
     if (wargv == NULL)
         return 1;
 
-    char *argv[argc + 3];
+    char *argv[argc + 4];
     BOOL crash_handling = TRUE;
     int j = 0;
     WCHAR *lang = NULL;
 
     argv[j++] = strdup("--media-library");
     argv[j++] = strdup("--no-ignore-config");
+    argv[j++] = strdup("--terrikon-player");
     for (int i = 1; i < argc; i++)
     {
         if(!wcscmp(wargv[i], L"--no-crashdump"))

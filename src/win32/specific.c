@@ -99,6 +99,11 @@ void system_Configure( libvlc_int_t *p_this, int i_argc, const char *const ppsz_
     const bool pass_files = var_InheritBool( p_this, "one-instance" )
      || ( var_InheritBool( p_this, "one-instance-when-started-from-file" )
        && var_InheritBool( p_this, "started-from-file" ) );
+    /* Only the player: the preparser runs several processes on libvlc, and
+     * each after the first, taken for a second start, went away (folders
+     * could no longer be read: the media library dropped them) */
+    if( !var_InheritBool( p_this, "terrikon-player" ) && !pass_files )
+        return;
     {
         HANDLE hmutex;
         wchar_t name[64];
