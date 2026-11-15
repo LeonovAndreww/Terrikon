@@ -19,6 +19,8 @@ import QtQuick
 
 import VLC.MainInterface
 import VLC.Dialogs
+import VLC.Player
+import VLC.Terrikon
 
 Item {
 
@@ -27,7 +29,16 @@ Item {
     ShortcutExt{ context: Qt.WindowShortcut; sequence:"Ctrl+F"; onActivated: DialogsProvider.PLOpenDir(); }
     ShortcutExt{ sequence:"Ctrl+D"; onActivated: DialogsProvider.openDiscDialog(); }
     ShortcutExt{ sequence:"Ctrl+N"; onActivated: DialogsProvider.openNetDialog(); }
-    ShortcutExt{ sequence:"Ctrl+C"; onActivated: DialogsProvider.openCaptureDialog(); }
+    // Terrikon: Ctrl+C copies the file playing, to paste it in a folder or
+    // a chat; the capture device moves to Ctrl+Shift+C
+    ShortcutExt{
+        sequence: "Ctrl+C"
+        onActivated: {
+            if (MediaFolders.copyFiles([Player.url]))
+                TerrikonActions.osd(qsTr("File copied"))
+        }
+    }
+    ShortcutExt{ sequence:"Ctrl+Shift+C"; onActivated: DialogsProvider.openCaptureDialog(); }
     ShortcutExt{ sequences: [StandardKey.Paste]; onActivated: MainCtx.pasteFromClipboard(); }
     ShortcutExt{ context: Qt.WindowShortcut; sequence:"Ctrl+Y"; onActivated: DialogsProvider.savePlayingToPlaylist(); }
     ShortcutExt{ sequence:"Ctrl+R"; onActivated: DialogsProvider.openAndTranscodingDialogs(); }
