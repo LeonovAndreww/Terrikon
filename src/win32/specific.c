@@ -33,6 +33,7 @@
 #include "../lib/libvlc_internal.h"
 
 #include <winsock2.h>
+#include <wctype.h>
 
 static int system_InitWSA(int hi, int lo)
 {
@@ -61,6 +62,23 @@ void system_Init(void)
  * system_Configure: check for system specific configuration options.
  *****************************************************************************/
 
+/* The name of the mutex and of the window: one per installation, so that a
+ * copy elsewhere (a test, a portable one) is a player of its own.
+ * Must be same as in modules/control/win_msg.c */
+static void ipc_name(wchar_t *name, size_t size)
+{
+    wchar_t exe[MAX_PATH];
+    DWORD len = GetModuleFileNameW(NULL, exe, MAX_PATH);
+    uint32_t hash = 2166136261u; /* FNV-1a of the lower case path */
+    for (DWORD i = 0; i < len; i++)
+    {
+        hash ^= (uint32_t)towlower(exe[i]);
+        hash *= 16777619u;
+    }
+    _snwprintf(name, size, L"Terrikon ipc " TEXT(VERSION) L" %08x", hash);
+    name[size - 1] = L'\0';
+}
+
 /* Must be same as in modules/control/win_msg.c */
 typedef struct
 {
@@ -72,16 +90,22 @@ typedef struct
 void system_Configure( libvlc_int_t *p_this, int i_argc, const char *const ppsz_argv[] )
 {
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-    if( var_InheritBool( p_this, "one-instance" )
+    /* Every instance takes the files of the next ones: a player started on
+     * its own, then a file opened from the explorer, gave two players, the
+     * second without its media library (its base is the first's). Files
+     * are passed as before, when asked to; a start without any is always
+     * passed: it brings the player that runs to the front instead of
+     * opening a second one. */
+    const bool pass_files = var_InheritBool( p_this, "one-instance" )
      || ( var_InheritBool( p_this, "one-instance-when-started-from-file" )
-       && var_InheritBool( p_this, "started-from-file" ) ) )
+       && var_InheritBool( p_this, "started-from-file" ) );
     {
         HANDLE hmutex;
-
-        msg_Info( p_this, "one instance mode ENABLED");
+        wchar_t name[64];
+        ipc_name( name, ARRAY_SIZE(name) );
 
         /* Use a named mutex to check if another instance is already running */
-        if( !( hmutex = CreateMutex( 0, TRUE, L"Terrikon ipc " TEXT(VERSION) ) ) )
+        if( !( hmutex = CreateMutex( 0, TRUE, name ) ) )
         {
             /* Failed for some reason. Just ignore the option and go on as
              * normal. */
@@ -97,6 +121,11 @@ void system_Configure( libvlc_int_t *p_this, int i_argc, const char *const ppsz_
              * Release the mutex to unblock other instances */
             ReleaseMutex( hmutex );
         }
+        else if( !pass_files && i_argc > 0 )
+        {
+            /* files for a player of their own */
+            CloseHandle( hmutex );
+        }
         else
         {
             /* Another instance is running */
@@ -108,7 +137,7 @@ void system_Configure( libvlc_int_t *p_this, int i_argc, const char *const ppsz_
 
             /* Locate the window created by the IPC helper thread of the
              * 1st instance */
-            if( !( ipcwindow = FindWindow( 0, L"Terrikon ipc " TEXT(VERSION) ) ) )
+            if( !( ipcwindow = FindWindow( 0, name ) ) )
             {
                 msg_Err( p_this, "one instance mode DISABLED "
                          "(couldn't find 1st instance of program)" );
@@ -116,9 +145,24 @@ void system_Configure( libvlc_int_t *p_this, int i_argc, const char *const ppsz_
                 return;
             }
 
+            /* That player may come to the front: this one was started by
+             * the user, it may let another take the foreground. */
+            DWORD first_pid;
+            if( GetWindowThreadProcessId( ipcwindow, &first_pid ) )
+                AllowSetForegroundWindow( first_pid );
+
             /* We assume that the remaining parameters are filenames
              * and their input options */
-            if( i_argc > 0 )
+            if( i_argc == 0 )
+            {
+                /* nothing to open: only show the player */
+                vlc_ipc_data_t show = { .argc = 0, .enqueue = 0 };
+                COPYDATASTRUCT wm_data = {
+                    .dwData = 0, .cbData = sizeof (show), .lpData = &show,
+                };
+                SendMessage( ipcwindow, WM_COPYDATA, 0, (LPARAM)&wm_data );
+            }
+            else
             {
                 COPYDATASTRUCT wm_data;
                 int i_opt;

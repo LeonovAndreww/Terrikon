@@ -34,6 +34,7 @@
 #include <vlc_input_item.h>
 
 #include <windows.h>
+#include <wctype.h>
 
 struct intf_sys_t
 {
@@ -41,6 +42,23 @@ struct intf_sys_t
     HANDLE ready;
     vlc_thread_t thread;
 };
+
+/* The name of the mutex and of the window: one per installation, so that a
+ * copy elsewhere (a test, a portable one) is a player of its own.
+ * Must be same as in src/win32/specific.c */
+static void ipc_name(wchar_t *name, size_t size)
+{
+    wchar_t exe[MAX_PATH];
+    DWORD len = GetModuleFileNameW(NULL, exe, MAX_PATH);
+    uint32_t hash = 2166136261u; /* FNV-1a of the lower case path */
+    for (DWORD i = 0; i < len; i++)
+    {
+        hash ^= (uint32_t)towlower(exe[i]);
+        hash *= 16777619u;
+    }
+    _snwprintf(name, size, L"Terrikon ipc " TEXT(VERSION) L" %08x", hash);
+    name[size - 1] = L'\0';
+}
 
 /* Must be same as in src/win32/specific.c */
 typedef struct
@@ -69,6 +87,47 @@ static void add_to_playlist(intf_thread_t *intf, const char *uri,
     input_item_Release(media);
 }
 
+/* Brings the player's main window to the front: the biggest visible window
+ * of this process that no other owns (the picture in picture one when it
+ * is all that is shown). */
+struct front_search
+{
+    HWND best;
+    LONG area;
+};
+
+static BOOL CALLBACK FindFrontWindow(HWND hwnd, LPARAM data)
+{
+    struct front_search *search = (struct front_search *)data;
+    DWORD pid;
+    GetWindowThreadProcessId(hwnd, &pid);
+    if (pid != GetCurrentProcessId() || GetWindow(hwnd, GW_OWNER) != NULL
+     || !IsWindowVisible(hwnd))
+        return TRUE;
+    RECT rect;
+    if (!GetWindowRect(hwnd, &rect))
+        return TRUE;
+    LONG area = (rect.right - rect.left) * (rect.bottom - rect.top);
+    if (area > search->area)
+    {
+        search->best = hwnd;
+        search->area = area;
+    }
+    return TRUE;
+}
+
+static void BringToFront(void)
+{
+    struct front_search search = { NULL, 0 };
+    EnumWindows(FindFrontWindow, (LPARAM)&search);
+    if (search.best == NULL)
+        return;
+    /* asynchronous: the window is the interface thread's */
+    if (IsIconic(search.best))
+        ShowWindowAsync(search.best, SW_RESTORE);
+    SetForegroundWindow(search.best);
+}
+
 static LRESULT CALLBACK WMCOPYWNDPROC(HWND hwnd, UINT uMsg,
                                       WPARAM wParam, LPARAM lParam)
 {
@@ -84,6 +143,10 @@ static LRESULT CALLBACK WMCOPYWNDPROC(HWND hwnd, UINT uMsg,
             GetWindowLongPtr( hwnd, GWLP_USERDATA );
         if( intf == NULL )
             return 0; /* XXX: is this even possible? */
+
+        /* Another start of the player: it comes to the front, with the
+         * files it was given if any */
+        BringToFront();
 
         /* Add files to the playlist */
         if( pwm_data->lpData && pwm_data->cbData >= sizeof(vlc_ipc_data_t) )
@@ -159,9 +222,11 @@ static void *HelperThread(void *data)
 
     vlc_thread_set_name("vlc-ctrl-win");
 
+    wchar_t name[64];
+    ipc_name(name, ARRAY_SIZE(name));
     HWND ipcwindow =
         CreateWindow(L"STATIC",                      /* name of window class */
-                  L"Terrikon ipc " TEXT(VERSION),        /* window title bar text */
+                  name,                              /* window title bar text */
                   0,                                         /* window style */
                   0,                                 /* default X coordinate */
                   0,                                 /* default Y coordinate */
