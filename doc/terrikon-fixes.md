@@ -108,6 +108,8 @@ build, or by reading when the path is taken.
 | Window buttons: minimize and maximize did not light up on hovering | Their hover colour was the background's, half seen: on a dark bar, nothing showed (close has red of its own) | `CSDWindowButtonSet.qml`: the text colour, faint, as Windows does |
 | Icon buttons (the video in the library's corner, ...) kept the arrow cursor | `IconButton` had no cursor of its own, unlike the other buttons | `IconButton.qml`: the hand on hovering |
 | Volume past 100% lost at each start (Windows) | The audio session keeps up to 100%; mmdevice applied the rest as a gain it did not keep | `mmdevice.c`: the gain kept in the settings (`mmdevice-boost`) and given back at opening |
+| Playback stopped for good after seeking: pause and seeks went unanswered (seen after a long pause, a jump to the end, then seeks) | The hardware decoder waited for a free surface with no time limit; with all of them held by pictures waiting for a clock that waited for that decoder (the input buffering after the seek), nothing moved again. VLC 3 gave up after a second | `va_surface.c`: the wait ends after 1 s, the frame is lost instead |
+| After a long pause, playback jumped to the end of the file (a USB drive) | Windows powers a USB drive down after 20 minutes idle; the first reads after it fail, and any read error was taken for the end of the file | `file.c`: on a read error the file is opened again where it was, for some 10 s, until the input stops (not reproduced at will: the drive must sleep) |
 ## 2. VLC 4's bugs brought out by Terrikon
 
 | Bug seen | VLC 4's cause | What brought it out | Fix |
