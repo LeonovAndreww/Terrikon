@@ -309,6 +309,8 @@ static ssize_t Read (stream_t *p_access, void *p_buffer, size_t i_len)
     access_sys_t *p_sys = p_access->p_sys;
     int fd = p_sys->fd;
 
+    /* where the read starts, to go on from there with the file opened again */
+    const off_t pos = lseek (fd, 0, SEEK_CUR);
     ssize_t val = vlc_read_i11e (fd, p_buffer, i_len);
     if (val < 0)
     {
@@ -320,6 +322,38 @@ static ssize_t Read (stream_t *p_access, void *p_buffer, size_t i_len)
         }
 
         msg_Err (p_access, "read error: %s", vlc_strerror_c(errno));
+
+        /* A drive powered down by Windows after a long pause (a USB disk
+         * after 20 minutes) or plugged back in gives errors for a moment:
+         * taken for the end, the player went to the end of the file. The
+         * file is opened again from where it was, for some 10 s (until the
+         * input is stopped), before giving up. */
+        if (p_access->psz_filepath != NULL && pos != (off_t)-1)
+        {
+            for (int tries = 0; tries < 20; tries++)
+            {
+                if (vlc_msleep_i11e (VLC_TICK_FROM_MS(500)))
+                    return -1; /* stopped meanwhile */
+                int nfd = vlc_open (p_access->psz_filepath, O_RDONLY | O_NONBLOCK);
+                if (nfd == -1)
+                    continue;
+                if (lseek (nfd, pos, SEEK_SET) != pos)
+                {
+                    vlc_close (nfd);
+                    continue;
+                }
+                val = vlc_read_i11e (nfd, p_buffer, i_len);
+                if (val < 0)
+                {
+                    vlc_close (nfd);
+                    continue;
+                }
+                msg_Warn (p_access, "file read again after %d tries", tries + 1);
+                vlc_close (p_sys->fd);
+                p_sys->fd = nfd;
+                return val;
+            }
+        }
         val = 0;
     }
 
