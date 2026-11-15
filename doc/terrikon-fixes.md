@@ -103,7 +103,7 @@ build, or by reading when the path is taken.
 | Input (Windows) | Stopping a file of a network drive or host that does not answer took about 40 s, and the next file asked for meanwhile started only then: while an input is opened, each access and demux module tried asks the disk (libdvdcss, libbluray and the C runtime among them), each question waits as long as Windows tries, and the input's interruption reaches none of them | `input.c`: from the stop until the opening ends, the input thread is made to give up its synchronous requests (`CancelSynchronousIo`, every 50 ms). `filesystem.c`: `vlc_open()`, `vlc_stat()` and `vlc_opendir()` are given up on the interruption of their thread's context (new `vlc_interrupt_watch_start/stop()`), or 2 s after it was killed. Measured after: stopped in 0.27 s, the next file playing 15 ms after it was asked |
 | Audio effects: stereo widener | Moving the delay while playing read the audio output as a filter (a wrong sample rate for the new buffer) and reallocated the buffer under the audio thread's feet (use after free); the crossfeed slider changed the feedback instead | `stereo_widen.c`: a lock between the audio thread and the callbacks, the rate kept at opening, crossfeed set (AU-17, AU-18) |
 | Audio effects: delay (chorus/flanger) | Moving the delay or the sweep depth while playing reallocated the delay line under the audio thread's feet, and the write pointer stayed in the old buffer (or past the end of a shorter one) | `chorus_flanger.c`: a lock between the audio thread and the callbacks, the write pointer put back at the start of the new buffer (AU-21, AU-22) |
-
+| Media library: files opened directly stay in the history after they are deleted | A file played before its folder was in the library is kept as an external media, which no rescan looks at: once deleted, it stayed in "Continue watching" for ever, without a thumbnail, and failed to open | `medialibrary.cpp`: after each discovery, a thread of its own forgets the external media whose local file is gone while its folder is still there (a folder gone may be a drive unplugged; shares and drive letters given to them are not asked) |
 ## 2. VLC 4's bugs brought out by Terrikon
 
 | Bug seen | VLC 4's cause | What brought it out | Fix |
@@ -167,7 +167,7 @@ build, or by reading when the path is taken.
 | Holding the button for 2x: the speed stayed at 2x when the release never came (the window left with the button down, the video ended meanwhile) | the hold only ended on the release; it now also ends when the playback stops or the application is left |
 | The clip popover could stop the interface for up to 5 s the first time: ffmpeg was asked for its encoders on the interface thread; the list was also read and filled from two threads | asked aside when the clip panel is made, once (`std::call_once`) |
 | A thread left looking at a media file (`offThread`) could come back to code that was gone: VLC unloads its plugins on the way out, a drive that does not answer keeps such a thread for tens of seconds | the plugin is kept in memory once such a thread is started (`keepPluginLoaded`) |
-
+| Hovering a library tile whose file is gone showed "Your media can't be opened" on the screen, once per hover | the preview's player reported its errors like the main one; it is now silent (`no_interact`): a tile without a preview tells enough |
 ## Known upstream issues, not fixed yet
 
 - `ListViewExt.qml`: the footer's height depends on its own position ("Binding loop detected for property implicitHeight"). Harmless.
