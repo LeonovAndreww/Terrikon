@@ -44604,3 +44604,19 @@ msgstr "Диск не отвечает"
 #: modules/access/file.c
 msgid "Reading the file again as soon as the drive answers..."
 msgstr "Файл продолжит читаться, как только диск ответит…"
+
+#: modules/gui/qt/menus/qml/GlobalShortcuts.qml
+msgid "File copied"
+msgstr "Файл скопирован"
+
+#: modules/gui/qt/medialibrary/qml
+msgid "Collapse all into %1"
+msgstr "Свернуть всё в «%1»"
+
+#: modules/gui/qt/player/qml/PlayerView.qml
+msgid "No lyrics in the file: find them on the web"
+msgstr "В файле нет текста: найти в интернете"
+
+#: modules/gui/qt/player/qml/PlayerView.qml
+msgid "lyrics"
+msgstr "текст песни"
