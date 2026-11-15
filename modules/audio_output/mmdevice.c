@@ -40,6 +40,7 @@ DEFINE_PROPERTYKEY(PKEY_Device_FriendlyName, 0xa45c254e, 0xdf1c, 0x4efd,
 #include <vlc_common.h>
 #include <vlc_arrays.h>
 #include <vlc_plugin.h>
+#include <vlc_configuration.h>
 #include <vlc_aout.h>
 #include <vlc_charset.h>
 #include <vlc_modules.h>
@@ -195,9 +196,14 @@ static int VolumeSet(audio_output_t *aout, float vol)
 
     vlc_mutex_lock(&sys->lock);
     int ret = VolumeSetLocked(aout, vol);
-    aout_GainRequest(aout, sys->gain);
+    const float gain = sys->gain;
+    aout_GainRequest(aout, gain);
     vlc_mutex_unlock(&sys->lock);
     SetEvent(sys->work_event);
+    /* The session keeps the volume up to 100% only: what is past it is kept
+     * here, or the next start of the player is back to 100% */
+    if (var_InheritBool(aout, "volume-save"))
+        config_PutFloat("mmdevice-boost", gain);
     return ret;
 }
 
@@ -1368,6 +1374,14 @@ static int Open(vlc_object_t *obj)
 
     if (!var_CreateGetBool(aout, "volume-save"))
         VolumeSetLocked(aout, var_InheritFloat(aout, "mmdevice-volume"));
+    else
+    {
+        /* the boost past 100% the session does not keep (the gain is the
+         * volume cubed: 200% at most, 8) */
+        const float boost = var_InheritFloat(aout, "mmdevice-boost");
+        if (boost > 1.f && boost <= 8.f)
+            sys->gain = boost;
+    }
 
     vlc_sem_init(&sys->init_passed, 0);
     vlc_mutex_init(&sys->lock);
@@ -1588,4 +1602,6 @@ vlc_module_begin()
     add_string("mmdevice-audio-device", NULL, DEVICE_TEXT, DEVICE_LONGTEXT)
     add_float("mmdevice-volume", 1.f, VOLUME_TEXT, VOLUME_LONGTEXT)
         change_float_range( 0.f, 1.25f )
+    add_float("mmdevice-boost", 1.f, NULL, NULL)
+        change_private()
 vlc_module_end()
