@@ -130,7 +130,12 @@ void MLFoldersBaseModel::onMlEvent( void* data , const vlc_ml_event_t* event )
 void MLFoldersBaseModel::updateImpl(vlc_ml_folder_list_t* (*folderListFunc)( vlc_medialibrary_t* p_ml, const vlc_ml_query_params_t* params ))
 {
     if (m_updatePending)
+    {
+        /* the list on its way may predate the change: a folder added right
+         * after another one stayed out of the list */
+        m_updateAgain = true;
         return;
+    }
 
     m_updatePending = true;
     struct Ctx {
@@ -149,12 +154,17 @@ void MLFoldersBaseModel::updateImpl(vlc_ml_folder_list_t* (*folderListFunc)( vlc
         }
     },
     //UI thread
-    [this](quint64, Ctx& ctx)
+    [this, folderListFunc](quint64, Ctx& ctx)
     {
         beginResetModel();
         m_mrls = std::move(ctx.r);
         m_updatePending = false;
         endResetModel();
+        if (m_updateAgain)
+        {
+            m_updateAgain = false;
+            updateImpl(folderListFunc);
+        }
     });
 }
 

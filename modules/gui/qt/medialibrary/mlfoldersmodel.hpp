@@ -103,6 +103,8 @@ protected:
     MainCtx* m_ctx = nullptr;
     EventCallbackPtr m_ml_event_handle;
     bool m_updatePending = false;
+    /* asked again while a list was on its way: listed once more after it */
+    bool m_updateAgain = false;
 };
 
 class MLFoldersModel : public MLFoldersBaseModel
