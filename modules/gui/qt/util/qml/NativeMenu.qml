@@ -91,7 +91,9 @@ QtObject {
                     || (typeof action.visible === "boolean" && action.visible)
                     || (typeof action.visible === "function" && action.visible(_dataList, _options, _indexes))) {
                 _effectiveActions.push(action)
-                textStrings.push(action.text)
+                // Terrikon: with its icon when it has one
+                textStrings.push(action.icon ? { "text": action.text, "icon_svg": action.icon }
+                                             : action.text)
             }
         }
 

@@ -970,6 +970,21 @@ libqt_plugin_la_RES = \
 	pixmaps/menu/ic_fluent_skip_forward_10.svg \
 	pixmaps/menu/ic_fluent_arrow_shuffle.svg \
 	pixmaps/menu/ic_fluent_stop.svg \
+	pixmaps/menu/ic_fluent_add_square_20_regular.svg \
+	pixmaps/menu/ic_fluent_chevron_double_up_20_regular.svg \
+	pixmaps/menu/ic_fluent_chevron_down_20_regular.svg \
+	pixmaps/menu/ic_fluent_chevron_up_20_regular.svg \
+	pixmaps/menu/ic_fluent_copy_20_regular.svg \
+	pixmaps/menu/ic_fluent_delete_20_regular.svg \
+	pixmaps/menu/ic_fluent_eye_20_regular.svg \
+	pixmaps/menu/ic_fluent_eye_off_20_regular.svg \
+	pixmaps/menu/ic_fluent_folder_open_20_regular.svg \
+	pixmaps/menu/ic_fluent_info_20_regular.svg \
+	pixmaps/menu/ic_fluent_music_note_2_20_regular.svg \
+	pixmaps/menu/ic_fluent_play_20_regular.svg \
+	pixmaps/menu/ic_fluent_star_20_regular.svg \
+	pixmaps/menu/ic_fluent_star_off_20_regular.svg \
+	pixmaps/menu/ic_fluent_text_bullet_list_add_20_regular.svg \
 	pixmaps/menu/stream.svg \
 	pixmaps/menu/sync.svg \
 	pixmaps/menu/update.svg \
