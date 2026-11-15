@@ -58,6 +58,14 @@
 #include <vlc_renderer_discovery.h>
 #include <vlc_hash.h>
 
+#ifdef _WIN32
+# include <windows.h>
+# include <winapifamily.h>
+# if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+#  define INPUT_OPENING_GIVE_UP
+# endif
+#endif
+
 /*****************************************************************************
  * Local prototypes
  *****************************************************************************/
@@ -140,6 +148,74 @@ int input_Start( input_thread_t *p_input )
     return VLC_SUCCESS;
 }
 
+/*
+ * Opening an input asks the disks many questions: each access and demux
+ * module tried looks at the file, often through a library of its own
+ * (libdvdcss, libbluray) and the C runtime. On a network drive whose host
+ * does not answer, each of them keeps the thread for as long as Windows
+ * tries (20 s and more), and the interruption of the input does not reach
+ * them: a stopped input stayed for most of a minute, and with it the player,
+ * which opens the next media only once the last one is gone.
+ *
+ * While the input is being opened and once it is stopped, its thread is
+ * made to give up its synchronous requests, until Init() returns. Nothing
+ * that was opened is worth finishing then.
+ */
+#ifdef INPUT_OPENING_GIVE_UP
+static VOID CALLBACK OpeningGiveUp( PVOID thread, BOOLEAN fired )
+{
+    (void) fired;
+    CancelSynchronousIo( thread );
+}
+
+/* lock_control held */
+static void OpeningGiveUpStart( input_thread_private_t *priv )
+{
+    if( priv->opening_thread == NULL || priv->opening_timer != NULL )
+        return;
+
+    HANDLE timer;
+    if( CreateTimerQueueTimer( &timer, NULL, OpeningGiveUp,
+                               priv->opening_thread, 0, 50, WT_EXECUTEDEFAULT ) )
+        priv->opening_timer = timer;
+}
+
+static void OpeningBegin( input_thread_private_t *priv )
+{
+    HANDLE thread;
+    if( !DuplicateHandle( GetCurrentProcess(), GetCurrentThread(),
+                          GetCurrentProcess(), &thread, 0, FALSE,
+                          DUPLICATE_SAME_ACCESS ) )
+        return;
+
+    vlc_mutex_lock( &priv->lock_control );
+    priv->opening_thread = thread;
+    if( priv->is_stopped )
+        OpeningGiveUpStart( priv );
+    vlc_mutex_unlock( &priv->lock_control );
+}
+
+static void OpeningEnd( input_thread_private_t *priv )
+{
+    vlc_mutex_lock( &priv->lock_control );
+    HANDLE thread = priv->opening_thread;
+    HANDLE timer = priv->opening_timer;
+    priv->opening_thread = NULL;
+    priv->opening_timer = NULL;
+    vlc_mutex_unlock( &priv->lock_control );
+
+    /* waits for OpeningGiveUp() if it is running */
+    if( timer != NULL )
+        DeleteTimerQueueTimer( NULL, timer, INVALID_HANDLE_VALUE );
+    if( thread != NULL )
+        CloseHandle( thread );
+}
+#else
+# define OpeningGiveUpStart( priv ) ((void)(priv))
+# define OpeningBegin( priv ) ((void)(priv))
+# define OpeningEnd( priv ) ((void)(priv))
+#endif
+
 /**
  * Request a running input thread to stop and die
  *
@@ -158,6 +234,7 @@ void input_Stop( input_thread_t *p_input )
     }
     sys->i_control = 0;
     sys->is_stopped = true;
+    OpeningGiveUpStart( sys );
     vlc_cond_signal( &sys->wait_control );
     vlc_mutex_unlock( &sys->lock_control );
     vlc_interrupt_kill( &sys->interrupt );
@@ -274,6 +351,10 @@ input_thread_t * input_Create( vlc_object_t *p_parent, input_item_t *p_item,
     priv->i_state = INIT_S;
     priv->is_running = false;
     priv->is_stopped = false;
+#ifdef _WIN32
+    priv->opening_thread = NULL;
+    priv->opening_timer = NULL;
+#endif
     priv->b_recording = false;
     priv->b_pause_after_buffering = false;
     priv->rate = 1.f;
@@ -413,7 +494,11 @@ static void *Run( void *data )
 
     vlc_interrupt_set(&priv->interrupt);
 
-    if( !Init( p_input ) )
+    OpeningBegin( priv );
+    const int opened = Init( p_input );
+    OpeningEnd( priv );
+
+    if( !opened )
     {
         MainLoop( p_input, true ); /* FIXME it can be wrong (like with VLM) */
 
@@ -434,7 +519,11 @@ static void *Preparse( void *data )
 
     vlc_interrupt_set(&priv->interrupt);
 
-    if( !Init( p_input ) )
+    OpeningBegin( priv );
+    const int opened = Init( p_input );
+    OpeningEnd( priv );
+
+    if( !opened )
     {   /* if the demux is a playlist, call Mainloop that will call
          * demux_Demux in order to fetch sub items */
         if( priv->preparse_subitems

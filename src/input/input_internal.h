@@ -574,6 +574,14 @@ typedef struct input_thread_private_t
     vlc_thread_t thread;
     vlc_interrupt_t interrupt;
 
+#ifdef _WIN32
+    /* The thread while it opens the input, and the timer that makes it give
+     * up what it asks of the disks once stopped (see OpeningBegin());
+     * under lock_control */
+    void *opening_thread;
+    void *opening_timer;
+#endif
+
     struct {
         vlc_tick_t last_pts;
         bool enabled;
