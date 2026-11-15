@@ -29,6 +29,27 @@
 void vlc_interrupt_init(vlc_interrupt_t *);
 void vlc_interrupt_deinit(vlc_interrupt_t *);
 
+/**
+ * Has a callback run if the calling thread's context is interrupted, for a
+ * system call that another thread can make give up.
+ *
+ * Unlike vlc_interrupt_register(), this may be used where a callback could
+ * already be registered (it then does nothing), it does not run the callback
+ * for an interruption that was already pending, and
+ * vlc_interrupt_watch_stop() leaves the interruption to the wait it is
+ * meant for.
+ *
+ * @return true if the callback was set: vlc_interrupt_watch_stop() must
+ * then be called
+ */
+bool vlc_interrupt_watch_start(void (*cb)(void *), void *opaque);
+
+/**
+ * Removes the callback set by vlc_interrupt_watch_start(), once it has
+ * returned if it is running.
+ */
+void vlc_interrupt_watch_stop(void);
+
 struct vlc_interrupt
 {
     vlc_mutex_t lock;

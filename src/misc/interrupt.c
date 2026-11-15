@@ -165,6 +165,35 @@ static int vlc_interrupt_finish(vlc_interrupt_t *ctx)
     return ret;
 }
 
+bool vlc_interrupt_watch_start(void (*cb)(void *), void *opaque)
+{
+    vlc_interrupt_t *ctx = vlc_interrupt_var;
+    if (ctx == NULL)
+        return false;
+
+    bool set = false;
+    vlc_mutex_lock(&ctx->lock);
+    if (ctx->callback == NULL)
+    {
+        ctx->callback = cb;
+        ctx->data = opaque;
+        set = true;
+    }
+    vlc_mutex_unlock(&ctx->lock);
+    return set;
+}
+
+void vlc_interrupt_watch_stop(void)
+{
+    vlc_interrupt_t *ctx = vlc_interrupt_var;
+    assert(ctx != NULL);
+
+    /* Wait for pending callbacks to prevent access by other threads. */
+    vlc_mutex_lock(&ctx->lock);
+    ctx->callback = NULL;
+    vlc_mutex_unlock(&ctx->lock);
+}
+
 void vlc_interrupt_register(void (*cb)(void *), void *opaque)
 {
     vlc_interrupt_t *ctx = vlc_interrupt_var;
