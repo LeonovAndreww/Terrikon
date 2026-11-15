@@ -1222,8 +1222,20 @@ FocusScope {
                                                  .color1(MainCtx.lyricsMode ? lyricsButton.colorContext.accent
                                                                             : lyricsButton.colorContext.fg.primary).uri()
                                 checked: MainCtx.lyricsMode && Player.hasLyrics
-                                onClicked: if (Player.hasLyrics) MainCtx.lyricsMode = !MainCtx.lyricsMode
-                                description: Player.hasLyrics ? qsTr("Lyrics") : qsTr("No lyrics for this song")
+                                // none in the file: looked for on the web, by the
+                                // artist and the title
+                                onClicked: {
+                                    if (Player.hasLyrics) {
+                                        MainCtx.lyricsMode = !MainCtx.lyricsMode
+                                        return
+                                    }
+                                    const song = [Player.artist, Player.title || Player.name]
+                                        .filter((part) => part && part !== "").join(" ")
+                                    Qt.openUrlExternally("https://www.google.com/search?q="
+                                        + encodeURIComponent(song + " " + qsTr("lyrics")))
+                                }
+                                description: Player.hasLyrics ? qsTr("Lyrics")
+                                                              : qsTr("No lyrics in the file: find them on the web")
 
                                 Accessible.role: Accessible.Button
                                 Accessible.name: qsTr("Toggle lyrics view")
