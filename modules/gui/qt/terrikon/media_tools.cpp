@@ -350,7 +350,11 @@ ClipExporter::Plan ClipExporter::plan(const QVariantMap &params, const QString &
 
     struct Track { int index; double volume; };
     QVector<Track> tracks;
-    bool audioChanged = false;
+    /* The player's boost: the Windows output takes the volume cubed, past
+     * 100% as a gain on every track (mmdevice) */
+    const double boost = std::clamp(params.value(QStringLiteral("boost"), 1.).toDouble(), 1., 2.);
+    const double boostGain = boost * boost * boost;
+    bool audioChanged = boostGain > 1.001;
     const QVariantList trackList = params.value(QStringLiteral("tracks")).toList();
     for (const QVariant &value : trackList)
     {
@@ -360,7 +364,8 @@ ClipExporter::Plan ClipExporter::plan(const QVariantMap &params, const QString &
             audioChanged = true;
             continue;
         }
-        const double volume = std::clamp(track.value(QStringLiteral("volume"), 1.).toDouble(), 0., 2.);
+        const double volume = std::clamp(track.value(QStringLiteral("volume"), 1.).toDouble(), 0., 2.)
+                              * boostGain;
         if (std::abs(volume - 1.) > 0.001)
             audioChanged = true;
         tracks.push_back({ track.value(QStringLiteral("index")).toInt(), volume });
@@ -782,7 +787,8 @@ void ClipExporter::measure(const QVariantMap &params)
         const QVariantList trackList = params.value(QStringLiteral("tracks")).toList();
         if (!trackList.isEmpty())
         {
-            bool changed = params.value(QStringLiteral("merge")).toBool();
+            bool changed = params.value(QStringLiteral("merge")).toBool()
+                        || params.value(QStringLiteral("boost"), 1.).toDouble() > 1.001;
             QList<int> kept;
             for (const QVariant &value : trackList)
             {

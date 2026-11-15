@@ -43,6 +43,8 @@ FocusScope {
     // The clip's audio: starts as the player plays it, then edited here
     // without touching playback. [{ index, title, enabled, volume }]
     property var tracks: []
+    // The boost past 100%, as the player plays it: the clip sounds as heard
+    property real boost: 1
     property bool mix: true
     readonly property int _includedTracks: tracks.filter(t => t.enabled).length
 
@@ -79,6 +81,7 @@ FocusScope {
             end: ClipSelection.end,
             mediaLength: ClipSelection.mediaLength,
             tracks: tracks.map(t => ({ index: t.index, enabled: t.enabled, volume: t.volume })),
+            boost: boost,
             merge: mix && _includedTracks > 1,
             preset: _preset,
             codec: codec,
@@ -168,6 +171,7 @@ FocusScope {
             if (!ClipSelection.active)
                 return
             root.tracks = Player.audioTracks.trackStates()
+            root.boost = Math.max(1, Player.volume)
             root._resultPath = ""
             root._error = ""
             // Show the range from its start; it then plays in a loop
@@ -311,6 +315,37 @@ FocusScope {
                     color: theme.fg.secondary
                     font.pixelSize: VLCStyle.fontSize_small
                 }
+            }
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            visible: root._includedTracks > 0
+            spacing: VLCStyle.margin_small
+
+            Text {
+                Layout.preferredWidth: VLCStyle.dp(170, VLCStyle.scale)
+                text: qsTr("Boost")
+                color: theme.fg.primary
+                font.pixelSize: VLCStyle.fontSize_normal
+            }
+
+            Widgets.SliderExt {
+                Layout.fillWidth: true
+                from: 1
+                to: 2
+                stepSize: 0.05
+                value: root.boost
+                enabled: !root._running
+                onMoved: root.boost = value
+            }
+
+            Text {
+                Layout.preferredWidth: VLCStyle.dp(44, VLCStyle.scale)
+                horizontalAlignment: Text.AlignRight
+                text: Math.round(root.boost * 100) + "%"
+                color: root.boost > 1 ? theme.fg.negative : theme.fg.secondary
+                font.pixelSize: VLCStyle.fontSize_small
             }
         }
 
