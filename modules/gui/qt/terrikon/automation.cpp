@@ -497,13 +497,21 @@ private:
         int used = 0;
         if (!point(args, w, p, used))
             return error(QStringLiteral("X Y or ref:N"));
-        send(w, QEvent::MouseMove, p, Qt::NoButton, Qt::NoButton);
+        /* a move between press and release drags: the button stays held */
+        static Qt::MouseButtons held = Qt::NoButton;
+        send(w, QEvent::MouseMove, p, Qt::NoButton, held);
         Qt::MouseButton button = what == QLatin1String("rclick") ? Qt::RightButton
                                : what == QLatin1String("mclick") ? Qt::MiddleButton : Qt::LeftButton;
         if (what == QLatin1String("press"))
+        {
             send(w, QEvent::MouseButtonPress, p, button, button);
+            held = button;
+        }
         else if (what == QLatin1String("release"))
+        {
             send(w, QEvent::MouseButtonRelease, p, button, Qt::NoButton);
+            held = Qt::NoButton;
+        }
         else if (what != QLatin1String("move"))
         {
             send(w, QEvent::MouseButtonPress, p, button, button);
