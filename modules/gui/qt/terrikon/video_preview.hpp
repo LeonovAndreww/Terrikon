@@ -22,6 +22,7 @@
 
 #include "qt.hpp"
 
+#include <QElapsedTimer>
 #include <QQuickItem>
 #include <QTimer>
 #include <QUrl>
@@ -47,10 +48,15 @@ class VideoPreview : public QQuickItem
     Q_PROPERTY(double startTime MEMBER m_startTime FINAL)
     /* Shared by every preview and remembered, as on video sites */
     Q_PROPERTY(bool muted READ muted WRITE setMuted NOTIFY mutedChanged FINAL)
+    /* As the player's (Player.volume): the preview sounds as the video will */
+    Q_PROPERTY(double volume READ volume WRITE setVolume NOTIFY volumeChanged FINAL)
     Q_PROPERTY(double position READ position NOTIFY progressChanged FINAL)
     Q_PROPERTY(double time READ time NOTIFY progressChanged FINAL)
     Q_PROPERTY(double length READ length NOTIFY progressChanged FINAL)
     Q_PROPERTY(bool hasFrame READ hasFrame NOTIFY hasFrameChanged FINAL)
+    /* Why there is no preview, said to the user ("" while none is known):
+     * the file gone, its drive not plugged in, the share not answering */
+    Q_PROPERTY(QString problem READ problem NOTIFY problemChanged FINAL)
 
 public:
     explicit VideoPreview(QQuickItem *parent = nullptr);
@@ -65,10 +71,18 @@ public:
     void setSource(const QUrl &source);
     bool muted() const;
     void setMuted(bool muted);
+    double volume() const { return m_volume; }
+    void setVolume(double volume);
     double position() const { return m_position; }
     double time() const { return m_time; }
     double length() const { return m_length; }
     bool hasFrame() const { return m_hasFrame; }
+    QString problem() const { return m_problem; }
+
+    /* What keeps a media from opening, from its location ("" when it is
+     * there and the player did not fail); may wait for a drive: never on
+     * the interface thread */
+    static QString diagnose(const QUrl &source, bool failed);
 
     /* 0..1 */
     Q_INVOKABLE void seek(double position);
@@ -76,8 +90,10 @@ public:
 signals:
     void sourceChanged();
     void mutedChanged();
+    void volumeChanged();
     void progressChanged();
     void hasFrameChanged();
+    void problemChanged();
 
 protected:
     QSGNode *updatePaintNode(QSGNode *old, UpdatePaintNodeData *) override;
@@ -96,6 +112,10 @@ private:
     QTimer m_poll;
     double m_position = 0., m_time = 0., m_length = 0.;
     bool m_hasFrame = false;
+    double m_volume = 1.;
+    QString m_problem;
+    bool m_problemAsked = false;
+    QElapsedTimer m_started;
     static qt_intf_t *s_intf;
 };
 

@@ -19,6 +19,7 @@ import QtQuick
 
 import VLC.MainInterface
 import VLC.MediaLibrary
+import VLC.Player
 import VLC.Terrikon
 
 import VLC.Widgets as Widgets
@@ -245,7 +246,9 @@ Widgets.GridItem {
 
                 onOpacityChanged: previewLoader.parent._previewVisible = opacity > 0
 
-                readonly property bool showing: video.hasFrame && previewDelay.armed
+                // a reason told is shown as well (the file gone, a drive out)
+                readonly property bool showing: (video.hasFrame || video.problem !== "")
+                                                && previewDelay.armed
                 opacity: showing ? 1 : 0
                 Behavior on opacity {
                     NumberAnimation { duration: 260; easing.type: Easing.InOutQuad }
@@ -284,10 +287,36 @@ Widgets.GridItem {
                     id: video
                     anchors.fill: parent
                     source: model.mrl
+                    volume: Player.volume
+                }
+
+                // why there is no preview
+                Rectangle {
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    height: problemText.implicitHeight + VLCStyle.margin_small * 2
+                    visible: video.problem !== "" && !video.hasFrame
+                    color: Qt.rgba(0, 0, 0, 0.75)
+                    bottomLeftRadius: root.pictureRadius
+                    bottomRightRadius: root.pictureRadius
+
+                    Text {
+                        id: problemText
+                        anchors.fill: parent
+                        anchors.margins: VLCStyle.margin_small
+                        verticalAlignment: Text.AlignVCenter
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: Text.Wrap
+                        text: video.problem
+                        color: "white"
+                        font.pixelSize: VLCStyle.fontSize_normal
+                    }
                 }
 
                 // sound on / off, remembered for every preview
                 Rectangle {
+                    id: muteButton
                     anchors.top: parent.top
                     anchors.right: parent.right
                     anchors.margins: VLCStyle.margin_xsmall
@@ -312,6 +341,111 @@ Widgets.GridItem {
                         gesturePolicy: TapHandler.WithinBounds
                         grabPermissions: PointerHandler.CanTakeOverFromAnything
                         onTapped: video.muted = !video.muted
+                    }
+                }
+
+                // The volume under the speaker, on hovering it: the player's
+                // own (the video opened plays as heard here, 0 included);
+                // the speaker only silences the previews
+                Rectangle {
+                    id: volumeBar
+
+                    readonly property bool wanted: muteHover.hovered || volumeHover.hovered
+                                                   || volumeDrag.active
+                    readonly property real _top: VLCStyle.dp(8, VLCStyle.scale)
+                    readonly property real _span: height - 2 * _top
+
+                    function _setFrom(y) {
+                        const v = 1 - (y - _top) / _span
+                        Player.volume = Math.round(Math.max(0, Math.min(1, v)) * 20) / 20
+                        if (Player.volume > 0)
+                            video.muted = false
+                    }
+
+                    anchors.top: muteButton.bottom
+                    anchors.topMargin: VLCStyle.dp(2, VLCStyle.scale)
+                    anchors.horizontalCenter: muteButton.horizontalCenter
+                    width: muteButton.width
+                    height: Math.min(VLCStyle.dp(84, VLCStyle.scale),
+                                     parent.height - muteButton.height - 3 * VLCStyle.margin_xsmall)
+                    radius: width / 2
+                    color: Qt.rgba(0, 0, 0, 0.6)
+                    visible: video.hasFrame && opacity > 0
+                    opacity: (wanted || hideDelay.running) ? 1 : 0
+                    Behavior on opacity { NumberAnimation { duration: VLCStyle.duration_short } }
+
+                    onWantedChanged: if (!wanted) hideDelay.restart()
+                    Timer { id: hideDelay; interval: 400 }
+
+                    // the track, the level (past 100% is the popover's boost)
+                    Rectangle {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        y: volumeBar._top
+                        width: VLCStyle.dp(3, VLCStyle.scale)
+                        height: volumeBar._span
+                        radius: width / 2
+                        color: Qt.rgba(1, 1, 1, 0.3)
+
+                        Rectangle {
+                            anchors.bottom: parent.bottom
+                            width: parent.width
+                            radius: width / 2
+                            height: parent.height * Math.min(1, Player.volume)
+                            color: "white"
+                        }
+                    }
+
+                    Rectangle {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        width: VLCStyle.dp(10, VLCStyle.scale)
+                        height: width
+                        radius: width / 2
+                        color: "white"
+                        y: volumeBar._top + volumeBar._span * (1 - Math.min(1, Player.volume)) - height / 2
+                    }
+
+                    HoverHandler { id: volumeHover; cursorShape: VLCStyle.pointerCursor }
+                    // taken over from the tile's handlers, which open the video
+                    TapHandler {
+                        gesturePolicy: TapHandler.WithinBounds
+                        grabPermissions: PointerHandler.CanTakeOverFromAnything
+                        onTapped: (point) => volumeBar._setFrom(point.position.y)
+                    }
+                    DragHandler {
+                        id: volumeDrag
+                        target: null
+                        xAxis.enabled: false
+                        grabPermissions: PointerHandler.CanTakeOverFromAnything
+                        onCentroidChanged: if (active) volumeBar._setFrom(centroid.position.y)
+                    }
+                    // the wheel too, a step of 5%
+                    WheelHandler {
+                        onWheel: (event) => {
+                            const v = Player.volume + (event.angleDelta.y > 0 ? 0.05 : -0.05)
+                            Player.volume = Math.max(0, Math.min(1, Math.round(v * 20) / 20))
+                            if (Player.volume > 0)
+                                video.muted = false
+                        }
+                    }
+
+                    // the percent, left of the bar
+                    Rectangle {
+                        anchors.right: parent.left
+                        anchors.rightMargin: VLCStyle.margin_xxsmall
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: percent.implicitWidth + VLCStyle.margin_xsmall * 2
+                        height: percent.implicitHeight + VLCStyle.margin_xxxsmall * 2
+                        radius: VLCStyle.dp(3, VLCStyle.scale)
+                        color: Qt.rgba(0, 0, 0, 0.7)
+                        visible: volumeBar.wanted
+
+                        Text {
+                            id: percent
+                            anchors.centerIn: parent
+                            text: Math.round(Player.volume * 100) + "%"
+                            color: "white"
+                            font.pixelSize: VLCStyle.fontSize_small
+                        }
                     }
                 }
 

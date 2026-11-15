@@ -22,12 +22,16 @@
 #endif
 
 #include "video_preview.hpp"
+#include "media_tools.hpp"
+#include "qt.hpp"
 
 #include <vlc_common.h>
 #include <vlc_player.h>
 #include <vlc_input_item.h>
 #include <vlc_variables.h>
 
+#include <QDir>
+#include <QFileInfo>
 #include <QHash>
 #include <QImage>
 #include <QQuickWindow>
@@ -35,6 +39,9 @@
 #include <QSettings>
 
 #include <algorithm>
+#ifdef _WIN32
+# include <windows.h>
+#endif
 #include <cstring>
 #include <mutex>
 #include <thread>
@@ -155,6 +162,20 @@ void VideoPreview::setMuted(bool muted)
     emit mutedChanged();
 }
 
+void VideoPreview::setVolume(double volume)
+{
+    if (qFuzzyCompare(volume, m_volume))
+        return;
+    m_volume = volume;
+    if (m_player)
+    {
+        vlc_player_Lock(m_player);
+        vlc_player_aout_SetVolume(m_player, float(m_volume));
+        vlc_player_Unlock(m_player);
+    }
+    emit volumeChanged();
+}
+
 void VideoPreview::setSource(const QUrl &source)
 {
     if (source == m_source)
@@ -162,6 +183,12 @@ void VideoPreview::setSource(const QUrl &source)
     stop();
     m_source = source;
     m_startTime = 0.;
+    m_problemAsked = false;
+    if (!m_problem.isEmpty())
+    {
+        m_problem.clear();
+        emit problemChanged();
+    }
     if (!m_source.isEmpty())
         start();
     emit sourceChanged();
@@ -251,12 +278,14 @@ void VideoPreview::start()
 
     vlc_player_Lock(player);
     vlc_player_aout_Mute(player, muted());
+    vlc_player_aout_SetVolume(player, float(m_volume));
     vlc_player_SetCurrentMedia(player, item);
     vlc_player_Start(player);
     vlc_player_Unlock(player);
     input_item_Release(item);
 
     m_player = player;
+    m_started.start();
     m_poll.start();
 }
 
@@ -319,6 +348,62 @@ void VideoPreview::seek(double position)
     poll();
 }
 
+QString VideoPreview::diagnose(const QUrl &source, bool failed)
+{
+    const QString fallback = failed ? qtr("This video can't be played") : QString();
+    if (!source.isLocalFile())
+        return failed ? qtr("This stream can't be opened") : QString();
+    const QString path = QDir::toNativeSeparators(source.toLocalFile());
+#ifdef _WIN32
+    const std::wstring wpath = path.toStdWString();
+    if (GetFileAttributesW(wpath.c_str()) != INVALID_FILE_ATTRIBUTES)
+        return fallback; /* there, but not playable */
+    const DWORD error = GetLastError();
+
+    /* where it lives: a drive letter, or a share */
+    QString drive;
+    UINT type = DRIVE_UNKNOWN;
+    if (path.size() > 2 && path[1] == QLatin1Char(':'))
+    {
+        drive = path.left(2).toUpper();
+        type = GetDriveTypeW(QString(drive + QLatin1Char('\\')).toStdWString().c_str());
+        if (type == DRIVE_NO_ROOT_DIR)
+            return qtr("Drive %1 is not connected").arg(drive);
+    }
+    const bool network = path.startsWith(QLatin1String("\\\\")) || type == DRIVE_REMOTE;
+    switch (error)
+    {
+        case ERROR_BAD_NETPATH:
+        case ERROR_BAD_NET_NAME:
+        case ERROR_NETWORK_UNREACHABLE:
+        case ERROR_HOST_UNREACHABLE:
+        case ERROR_SEM_TIMEOUT:
+        case ERROR_UNEXP_NET_ERR:
+        case ERROR_NETNAME_DELETED:
+        case ERROR_CONNECTION_UNAVAIL:
+            return qtr("The network folder does not answer");
+        case ERROR_ACCESS_DENIED:
+            return qtr("No access to the file");
+        case ERROR_NOT_READY:
+            return qtr("Drive %1 is not ready").arg(drive);
+        case ERROR_FILE_NOT_FOUND:
+            return qtr("The file was deleted or moved");
+        case ERROR_PATH_NOT_FOUND:
+            if (type == DRIVE_REMOVABLE)
+                return qtr("Not on the drive in %1: another one is plugged in?").arg(drive);
+            return network ? qtr("The network folder does not answer")
+                           : qtr("Its folder was deleted or moved");
+        default:
+            return fallback;
+    }
+#else
+    if (QFileInfo::exists(path))
+        return fallback;
+    return QFileInfo::exists(QFileInfo(path).absolutePath())
+           ? qtr("The file was deleted or moved") : qtr("Its folder was deleted or moved");
+#endif
+}
+
 void VideoPreview::poll()
 {
     if (!m_player)
@@ -327,7 +412,21 @@ void VideoPreview::poll()
     const double position = vlc_player_GetPosition(m_player);
     const vlc_tick_t time = vlc_player_GetTime(m_player);
     const vlc_tick_t length = vlc_player_GetLength(m_player);
+    const bool failed = vlc_player_GetError(m_player) != VLC_PLAYER_ERROR_NONE;
     vlc_player_Unlock(m_player);
+    /* no picture yet, a while after the start, or the player failed: the
+     * player may stop without telling of an error */
+    if (!m_hasFrame && !m_problemAsked && (failed || m_started.elapsed() > 1500))
+    {
+        /* the drive may not answer for a while: asked aside */
+        m_problemAsked = true;
+        const QUrl source = m_source;
+        offThread(this, [source, failed] { return diagnose(source, failed); },
+                  [this](const QString &problem) {
+            m_problem = problem;
+            emit problemChanged();
+        });
+    }
     m_position = position >= 0. ? position : 0.;
     m_time = time != VLC_TICK_INVALID ? secf_from_vlc_tick(time) : 0.;
     if (length != VLC_TICK_INVALID && length > 0)

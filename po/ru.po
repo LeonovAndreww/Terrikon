@@ -44560,3 +44560,39 @@ msgstr "Добавить подкасты…"
 #: terrikon
 msgid "Network drive"
 msgstr "Сетевой диск"
+
+#: modules/gui/qt/terrikon/video_preview.cpp
+msgid "This video can't be played"
+msgstr "Не удаётся воспроизвести это видео"
+
+#: modules/gui/qt/terrikon/video_preview.cpp
+msgid "This stream can't be opened"
+msgstr "Не удаётся открыть этот поток"
+
+#: modules/gui/qt/terrikon/video_preview.cpp
+msgid "Drive %1 is not connected"
+msgstr "Диск %1 не подключён"
+
+#: modules/gui/qt/terrikon/video_preview.cpp
+msgid "The network folder does not answer"
+msgstr "Сетевая папка не отвечает"
+
+#: modules/gui/qt/terrikon/video_preview.cpp
+msgid "No access to the file"
+msgstr "Нет доступа к файлу"
+
+#: modules/gui/qt/terrikon/video_preview.cpp
+msgid "Drive %1 is not ready"
+msgstr "Диск %1 не готов"
+
+#: modules/gui/qt/terrikon/video_preview.cpp
+msgid "The file was deleted or moved"
+msgstr "Файл удалён или перемещён"
+
+#: modules/gui/qt/terrikon/video_preview.cpp
+msgid "Not on the drive in %1: another one is plugged in?"
+msgstr "Нет на диске %1: подключён другой?"
+
+#: modules/gui/qt/terrikon/video_preview.cpp
+msgid "Its folder was deleted or moved"
+msgstr "Папка файла удалена или перемещена"
