@@ -18512,9 +18512,9 @@ msgid "Select All"
 msgstr "Выделить всё"
 
 #: modules/gui/macosx/menus/VLCMainMenu.m:383
-#, fuzzy
+#: modules/gui/qt/player/qml/PlayerView.qml
 msgid "Find"
-msgstr "Найти: %s"
+msgstr "Найти"
 
 #: modules/gui/macosx/menus/VLCMainMenu.m:385
 msgid "View"
@@ -44614,9 +44614,21 @@ msgid "Collapse all into %1"
 msgstr "Свернуть всё в «%1»"
 
 #: modules/gui/qt/player/qml/PlayerView.qml
-msgid "No lyrics in the file: find them on the web"
-msgstr "В файле нет текста: найти в интернете"
+msgid "Looking for the lyrics…"
+msgstr "Ищу текст песни…"
 
 #: modules/gui/qt/player/qml/PlayerView.qml
-msgid "lyrics"
-msgstr "текст песни"
+msgid "No lyrics found for this song"
+msgstr "Текст этой песни не найден"
+
+#: modules/gui/qt/player/qml/PlayerView.qml
+msgid "LRCLIB does not answer."
+msgstr "LRCLIB не отвечает."
+
+#: modules/gui/qt/player/qml/PlayerView.qml
+msgid "Try again"
+msgstr "Ещё раз"
+
+#: modules/gui/qt/player/qml/PlayerView.qml
+msgid "No lyrics in the file."
+msgstr "В файле нет текста песни."
