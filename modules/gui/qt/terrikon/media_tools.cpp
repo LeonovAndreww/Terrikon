@@ -44,11 +44,16 @@
 #include <QStandardPaths>
 #include <QTemporaryDir>
 #include <QElapsedTimer>
+#include <QDeadlineTimer>
+#include <QMutex>
+#include <QWaitCondition>
 #include <QTextStream>
 #include <QUrl>
 
 #include <algorithm>
+#include <memory>
 #include <mutex>
+#include <thread>
 #include <cmath>
 
 #ifdef _WIN32
@@ -176,6 +181,92 @@ static QString videoEncoder(const QString &codec)
             return name;
     /* Asking failed: try the usual one rather than nothing */
     return encoders.isEmpty() ? wanted.first() : QString();
+}
+
+void keepPluginLoaded()
+{
+#ifdef _WIN32
+    static std::once_flag once;
+    std::call_once(once, [] {
+        HMODULE self;
+        GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_PIN,
+                           reinterpret_cast<LPCWSTR>(&keepPluginLoaded), &self);
+    });
+#endif
+}
+
+namespace {
+
+/* What writableSoon() knows and is waiting for; shared with its threads,
+ * which may outlive everything else here */
+struct WritableState
+{
+    struct Answer { bool writable; qint64 at; };
+    struct Asked { QString drive; qint64 at; };
+    QMutex lock;
+    QWaitCondition answered;
+    QElapsedTimer clock;
+    QHash<QString, Answer> known;
+    QHash<QString, Asked> asked;
+    WritableState() { clock.start(); }
+};
+
+/* "W:" or "//host/share": what stops answering as a whole */
+QString driveOf(const QString &path)
+{
+    const QString clean = QDir::fromNativeSeparators(path);
+    if (clean.startsWith(QLatin1String("//")))
+    {
+        const qsizetype host = clean.indexOf(QLatin1Char('/'), 2);
+        const qsizetype share = host < 0 ? -1 : clean.indexOf(QLatin1Char('/'), host + 1);
+        return (share < 0 ? clean : clean.left(share)).toLower();
+    }
+    return clean.left(2).toLower();
+}
+
+}
+
+bool writableSoon(const QString &file, const QString &folder)
+{
+    /* a drive that is there answers in well under this */
+    static const int WAIT_MS = 150;
+    /* an answer is used for this long: rights change seldom, and a menu is
+     * built from several questions in a row */
+    static const int FRESH_MS = 5000;
+    static const std::shared_ptr<WritableState> state = std::make_shared<WritableState>();
+
+    const QString drive = driveOf(file);
+    QMutexLocker locker(&state->lock);
+    const qint64 now = state->clock.elapsed();
+    const auto known = state->known.constFind(file);
+    if (known != state->known.constEnd() && now - known->at < FRESH_MS)
+        return known->writable;
+    if (state->asked.contains(file))
+        return false;
+    /* a drive that keeps a question waiting is not asked more: each
+     * question is a thread that stays for as long as Windows tries */
+    for (const WritableState::Asked &other : std::as_const(state->asked))
+        if (other.drive == drive && now - other.at >= WAIT_MS)
+            return false;
+
+    state->asked.insert(file, { drive, now });
+    keepPluginLoaded();
+    std::thread([s = state, file, folder] {
+        const bool writable = (QFile::permissions(file) & QFileDevice::WriteUser)
+                           && (QFile::permissions(folder) & QFileDevice::WriteUser);
+        QMutexLocker locker(&s->lock);
+        if (s->known.size() >= 1024)
+            s->known.clear();
+        s->known.insert(file, { writable, s->clock.elapsed() });
+        s->asked.remove(file);
+        s->answered.wakeAll();
+    }).detach();
+
+    const QDeadlineTimer deadline(WAIT_MS);
+    while (state->asked.contains(file))
+        if (!state->answered.wait(&state->lock, deadline))
+            return false;
+    return state->known.value(file).writable;
 }
 
 QString cacheDirFor(const QString &mediaPath, const QString &kind)

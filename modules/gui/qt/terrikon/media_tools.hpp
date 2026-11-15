@@ -48,6 +48,17 @@ QString findTool(const QString &name);
  * modification time so an edited file gets fresh data. Created on demand. */
 QString cacheDirFor(const QString &mediaPath, const QString &kind);
 
+/* Keeps this plugin in memory until the process ends. For code that leaves
+ * a thread behind: VLC unloads its plugins on the way out, and a thread
+ * still waiting for a drive would come back to code that is gone. */
+void keepPluginLoaded();
+
+/* Whether a file and its folder can be written. Asked on a thread of its
+ * own and waited for only briefly: a network drive that does not answer
+ * keeps the asker as long as Windows tries (about 20 s). While there is no
+ * answer, this says no. */
+bool writableSoon(const QString &file, const QString &folder);
+
 /* Runs work() on a thread of its own, then done(result) back on the
  * interface thread if context still exists. For anything that looks at a
  * media file: on a network drive that does not answer, that takes as long
@@ -56,6 +67,7 @@ template<class Work, class Done>
 void offThread(QObject *context, Work work, Done done)
 {
     QPointer<QObject> ctx(context);
+    keepPluginLoaded();
     std::thread([ctx, work, done] {
         auto result = work();
         QMetaObject::invokeMethod(qApp, [ctx, done, result] {
