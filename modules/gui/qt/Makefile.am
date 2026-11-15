@@ -87,7 +87,7 @@ endif
 
 if HAVE_WIN32
 libqt_plugin_la_CXXFLAGS += $(LIBCOMCXXFLAGS)
-libqt_plugin_la_LIBADD += $(LIBCOM) -lcomctl32 -luuid -ldwmapi
+libqt_plugin_la_LIBADD += $(LIBCOM) -lcomctl32 -luuid -ldwmapi -lshell32
 endif
 if UPDATE_CHECK
 libqt_plugin_la_CPPFLAGS += -DUPDATE_CHECK
@@ -299,6 +299,8 @@ libqt_plugin_la_SOURCES = \
 	terrikon/clip_selection.cpp terrikon/clip_selection.hpp \
 	terrikon/compact_player.cpp terrikon/compact_player.hpp \
 	terrikon/media_folders.cpp terrikon/media_folders.hpp \
+	terrikon/explorer_order.cpp terrikon/explorer_order.hpp \
+	terrikon/lyrics_finder.cpp terrikon/lyrics_finder.hpp \
 	terrikon/folder_tree.cpp terrikon/folder_tree.hpp \
 	terrikon/media_tools.cpp terrikon/media_tools.hpp \
 	terrikon/moment_marks.cpp terrikon/moment_marks.hpp \
@@ -520,6 +522,7 @@ nodist_libqt_plugin_la_SOURCES = \
 	terrikon/clip_selection.moc.cpp \
 	terrikon/compact_player.moc.cpp \
 	terrikon/media_folders.moc.cpp \
+	terrikon/lyrics_finder.moc.cpp \
 	terrikon/folder_tree.moc.cpp \
 	terrikon/media_tools.moc.cpp \
 	terrikon/moment_marks.moc.cpp \

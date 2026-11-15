@@ -836,7 +836,11 @@ FocusScope {
 
                     anchors.fill: parent
                     anchors.topMargin: audioFocusScope.topPadding
-                    anchors.bottomMargin: audioFocusScope.bottomPadding
+                    // Terrikon: down to the time bar, not to the top of the
+                    // control bar
+                    anchors.bottomMargin: audioFocusScope.bottomPadding > 0
+                                          ? Math.max(0, controlBar.height - controlBar.sliderY)
+                                          : 0
 
                     style: Visualizer.style
                     visible: style !== 0 && !audioFocusScope.lyricsLayoutActive
@@ -1222,20 +1226,74 @@ FocusScope {
                                                  .color1(MainCtx.lyricsMode ? lyricsButton.colorContext.accent
                                                                             : lyricsButton.colorContext.fg.primary).uri()
                                 checked: MainCtx.lyricsMode && Player.hasLyrics
-                                // none in the file: looked for on the web, by the
-                                // artist and the title
+                                // none in the file: a note with a link to look
+                                // for them (LRCLIB), they then show here
                                 onClicked: {
                                     if (Player.hasLyrics) {
                                         MainCtx.lyricsMode = !MainCtx.lyricsMode
                                         return
                                     }
-                                    const song = [Player.artist, Player.title || Player.name]
-                                        .filter((part) => part && part !== "").join(" ")
-                                    Qt.openUrlExternally("https://www.google.com/search?q="
-                                        + encodeURIComponent(song + " " + qsTr("lyrics")))
+                                    if (lyricsNote.opened)
+                                        lyricsNote.close()
+                                    else
+                                        lyricsNote.open()
                                 }
-                                description: Player.hasLyrics ? qsTr("Lyrics")
-                                                              : qsTr("No lyrics in the file: find them on the web")
+                                description: Player.hasLyrics ? qsTr("Lyrics") : ""
+
+                                Connections {
+                                    target: LyricsFinder
+                                    function onStateChanged() {
+                                        if (LyricsFinder.state === LyricsFinder.Found && Player.hasLyrics) {
+                                            lyricsNote.close()
+                                            MainCtx.lyricsMode = true
+                                        }
+                                    }
+                                }
+
+                                T.Popup {
+                                    id: lyricsNote
+
+                                    implicitWidth: implicitContentWidth + leftPadding + rightPadding
+                                    implicitHeight: implicitContentHeight + topPadding + bottomPadding
+                                    y: - height - VLCStyle.margin_xsmall
+                                    x: (lyricsButton.width - width) / 2
+                                    padding: VLCStyle.margin_small
+                                    closePolicy: T.Popup.CloseOnEscape | T.Popup.CloseOnPressOutsideParent
+
+                                    background: Rectangle {
+                                        radius: VLCStyle.dp(8, VLCStyle.scale)
+                                        color: Qt.rgba(0.11, 0.11, 0.11, 0.96)
+                                        border.color: Qt.rgba(1, 1, 1, 0.12)
+                                        border.width: 1
+                                    }
+
+                                    contentItem: Text {
+                                        readonly property int state: LyricsFinder.state
+                                        readonly property string link: "<a href=\"find\">%1</a>"
+                                        color: "white"
+                                        linkColor: "#ffb35c"
+                                        font.pixelSize: VLCStyle.fontSize_normal
+                                        textFormat: Text.StyledText
+                                        horizontalAlignment: Text.AlignHCenter
+                                        text: {
+                                            switch (state) {
+                                            case LyricsFinder.Searching:
+                                                return qsTr("Looking for the lyrics…")
+                                            case LyricsFinder.NotFound:
+                                                return qsTr("No lyrics found for this song")
+                                            case LyricsFinder.Failed:
+                                                return qsTr("LRCLIB does not answer.") + " " + link.arg(qsTr("Try again"))
+                                            default:
+                                                return qsTr("No lyrics in the file.") + " " + link.arg(qsTr("Find"))
+                                            }
+                                        }
+                                        onLinkActivated: LyricsFinder.find()
+
+                                        HoverHandler {
+                                            cursorShape: parent.hoveredLink !== "" ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                        }
+                                    }
+                                }
 
                                 Accessible.role: Accessible.Button
                                 Accessible.name: qsTr("Toggle lyrics view")

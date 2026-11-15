@@ -435,6 +435,9 @@ public slots:
     TimedText getCurrentLyric() const;
     bool hasLyrics() const;
     QList<TimedText> getSyltLyrics() const;
+    /* Terrikon: lyrics from elsewhere than the file (a .lrc file, the web),
+     * as "ms\x1Ftext" parts apart by \x1E; kept until the media changes */
+    void setExternalLyrics(const QByteArray &raw);
     int getCurrentLyricIndex() const;
 
     //Renderer

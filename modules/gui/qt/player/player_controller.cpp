@@ -2389,6 +2389,20 @@ TimedText PlayerController::getCurrentLyric() const
     return lyrics[d->m_currentLyricIndex];
 }
 
+void PlayerController::setExternalLyrics(const QByteArray &raw)
+{
+    Q_D(PlayerController);
+    if (raw.isEmpty())
+        return;
+    d->m_syltRaw = qMakePair(raw, qHash(raw));
+    d->m_syltLyrics.reset();
+    d->m_currentLyricIndex = -1;
+    emit hasLyricsChanged(true);
+    emit syltLyricsChanged();
+    emit currentLyricIndexChanged(-1);
+    emit currentLyricChanged();
+}
+
 bool PlayerController::hasLyrics() const
 {
     Q_D(const PlayerController);
