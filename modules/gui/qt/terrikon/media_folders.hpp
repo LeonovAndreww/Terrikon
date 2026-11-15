@@ -45,6 +45,9 @@ public:
     QVariantList favourites() const;
     Q_INVOKABLE bool isFavourite(const QString &mrl) const;
     Q_INVOKABLE void toggleFavourite(const QString &name, const QString &mrl, const QString &art);
+    /* Puts local files on the clipboard as the explorer does (to paste in a
+     * folder or a chat); false when none of them is a local file */
+    Q_INVOKABLE bool copyFiles(const QList<QUrl> &urls) const;
 
 signals:
     void favouritesChanged();
@@ -82,6 +85,10 @@ public:
      * here) */
     Q_INVOKABLE int folderMenu(const QUrl &folder) const;
 };
+
+/* Name filters of the video and audio files looked for in folders */
+const QStringList &videoPatterns();
+const QStringList &audioPatterns();
 
 }
 

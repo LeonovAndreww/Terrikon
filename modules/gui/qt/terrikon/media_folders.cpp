@@ -30,6 +30,8 @@
 #include <QDir>
 #include <thread>
 #include <QGuiApplication>
+#include <QClipboard>
+#include <QMimeData>
 #include <QPointer>
 #include <QMenu>
 #include <QDirIterator>
@@ -93,12 +95,26 @@ void MediaFolders::popupCaptions(const QPoint &globalPoint)
     menu->popup(globalPoint);
 }
 
+bool MediaFolders::copyFiles(const QList<QUrl> &urls) const
+{
+    QList<QUrl> files;
+    for (const QUrl &url : urls)
+        if (url.isLocalFile() && QFileInfo::exists(url.toLocalFile()))
+            files << url;
+    if (files.isEmpty())
+        return false;
+    auto data = new QMimeData;
+    data->setUrls(files);
+    QGuiApplication::clipboard()->setMimeData(data);
+    return true;
+}
+
 QStringList MediaFolders::videoFields() const
 {
     return VideoFields::instance()->fields();
 }
 
-static const QStringList &videoPatterns()
+const QStringList &videoPatterns()
 {
     static const QStringList patterns = {
         QStringLiteral("*.mp4"), QStringLiteral("*.mkv"), QStringLiteral("*.mov"),
@@ -108,7 +124,7 @@ static const QStringList &videoPatterns()
     return patterns;
 }
 
-static const QStringList &audioPatterns()
+const QStringList &audioPatterns()
 {
     static const QStringList patterns = {
         QStringLiteral("*.mp3"), QStringLiteral("*.flac"), QStringLiteral("*.ogg"),

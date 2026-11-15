@@ -23,6 +23,7 @@
 #include "qt.hpp"
 
 #include <QObject>
+#include <vlc_playlist.h>
 #include <QSizeF>
 #include <QString>
 
@@ -77,6 +78,18 @@ private:
     QString selectedTrackName(int category) const;
     double nowSeconds() const;
     double lengthSeconds() const;
+
+    /* A single local file played (opened from the explorer, say): the other
+     * files of its folder are queued around it, in the explorer's order,
+     * so the next and previous buttons go through the folder */
+    static void onItemsAdded(vlc_playlist_t *, size_t index,
+                             vlc_playlist_item_t *const items[], size_t count,
+                             void *data);
+    /* the file given on the command line is there before the interface */
+    static void onItemsReset(vlc_playlist_t *, vlc_playlist_item_t *const items[],
+                             size_t count, void *data);
+    void queueFolderOf(const QString &mrl);
+    struct vlc_playlist_listener_id *m_playlistListener = nullptr;
 
     qt_intf_t *m_intf;
     ClipSelection *m_clip;

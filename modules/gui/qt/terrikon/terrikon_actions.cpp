@@ -27,6 +27,15 @@
 #include "compact_player.hpp"
 #include "moment_marks.hpp"
 #include "player/player_controller.hpp"
+#include "media_folders.hpp"
+#include "media_tools.hpp"
+
+#include <QCollator>
+#include <QDir>
+#include <QFileInfo>
+#include <vlc_playlist.h>
+#include <vlc_interface.h>
+#include <vlc_input_item.h>
 
 #include <QTimer>
 
@@ -62,11 +71,115 @@ TerrikonActions::TerrikonActions(qt_intf_t *intf, ClipSelection *clip, MomentMar
     , m_compact(compact)
 {
     var_AddCallback(vlc_object_instance(m_intf), "key-action", keyActionCallback, this);
+
+    static const struct vlc_playlist_callbacks cbs = [] {
+        struct vlc_playlist_callbacks c {};
+        c.on_items_added = &TerrikonActions::onItemsAdded;
+        c.on_items_reset = &TerrikonActions::onItemsReset;
+        return c;
+    }();
+    vlc_playlist_t *playlist = vlc_intf_GetMainPlaylist(m_intf->intf);
+    vlc_playlist_Lock(playlist);
+    m_playlistListener = vlc_playlist_AddListener(playlist, &cbs, this, true);
+    vlc_playlist_Unlock(playlist);
 }
 
 TerrikonActions::~TerrikonActions()
 {
     var_DelCallback(vlc_object_instance(m_intf), "key-action", keyActionCallback, this);
+    if (m_playlistListener)
+    {
+        vlc_playlist_t *playlist = vlc_intf_GetMainPlaylist(m_intf->intf);
+        vlc_playlist_Lock(playlist);
+        vlc_playlist_RemoveListener(playlist, m_playlistListener);
+        vlc_playlist_Unlock(playlist);
+    }
+}
+
+/* playlist locked, any thread */
+void TerrikonActions::onItemsAdded(vlc_playlist_t *playlist, size_t,
+                                   vlc_playlist_item_t *const items[], size_t count,
+                                   void *data)
+{
+    if (count != 1 || vlc_playlist_Count(playlist) != 1)
+        return;
+    input_item_t *media = vlc_playlist_item_GetMedia(items[0]);
+    if (!media || !media->psz_uri || strncmp(media->psz_uri, "file://", 7) != 0)
+        return;
+    const QString mrl = QString::fromUtf8(media->psz_uri);
+    auto self = static_cast<TerrikonActions *>(data);
+    QMetaObject::invokeMethod(self, [self, mrl] { self->queueFolderOf(mrl); }, Qt::QueuedConnection);
+}
+
+void TerrikonActions::onItemsReset(vlc_playlist_t *playlist, vlc_playlist_item_t *const items[],
+                                   size_t count, void *data)
+{
+    onItemsAdded(playlist, 0, items, count, data);
+}
+
+static QString localKey(const QString &mrl)
+{
+    return QDir::cleanPath(QUrl(mrl).toLocalFile()).toLower();
+}
+
+void TerrikonActions::queueFolderOf(const QString &mrl)
+{
+    struct Found { QStringList before, after; };
+    /* the folder may be on a drive slow to answer: listed aside */
+    offThread(this, [mrl] {
+        Found found;
+        const QFileInfo file(QUrl(mrl).toLocalFile());
+        if (!file.exists())
+            return found;
+        const QString suffix = QStringLiteral("*.") + file.suffix().toLower();
+        const QStringList &patterns = audioPatterns().contains(suffix) ? audioPatterns()
+                                                                       : videoPatterns();
+        if (!patterns.contains(suffix))
+            return found;
+        QStringList names = file.dir().entryList(patterns, QDir::Files | QDir::Readable);
+        if (names.size() < 2 || names.size() > 2000)
+            return found;
+        /* the explorer's order: numbers as numbers, case left aside */
+        QCollator collator;
+        collator.setNumericMode(true);
+        collator.setCaseSensitivity(Qt::CaseInsensitive);
+        std::sort(names.begin(), names.end(), collator);
+        const int at = names.indexOf(file.fileName());
+        if (at < 0)
+            return found;
+        for (int i = 0; i < names.size(); ++i)
+        {
+            if (i == at)
+                continue;
+            const QString url = QUrl::fromLocalFile(file.dir().filePath(names[i])).toString(QUrl::FullyEncoded);
+            (i < at ? found.before : found.after) << url;
+        }
+        return found;
+    }, [this, mrl](const Found &found) {
+        if (found.before.isEmpty() && found.after.isEmpty())
+            return;
+        vlc_playlist_t *playlist = vlc_intf_GetMainPlaylist(m_intf->intf);
+        vlc_playlist_Lock(playlist);
+        /* still that file alone: nothing else was asked meanwhile */
+        input_item_t *media = vlc_playlist_Count(playlist) == 1
+            ? vlc_playlist_item_GetMedia(vlc_playlist_Get(playlist, 0)) : nullptr;
+        if (media && media->psz_uri && localKey(QString::fromUtf8(media->psz_uri)) == localKey(mrl))
+        {
+            const auto insert = [playlist](size_t index, const QStringList &urls) {
+                std::vector<input_item_t *> items;
+                for (const QString &url : urls)
+                    if (input_item_t *item = input_item_New(qtu(url), nullptr))
+                        items.push_back(item);
+                if (!items.empty())
+                    vlc_playlist_Insert(playlist, index, items.data(), items.size());
+                for (input_item_t *item : items)
+                    input_item_Release(item);
+            };
+            insert(0, found.before);
+            insert(vlc_playlist_Count(playlist), found.after);
+        }
+        vlc_playlist_Unlock(playlist);
+    });
 }
 
 QString TerrikonActions::keyFor(const QString &action) const
