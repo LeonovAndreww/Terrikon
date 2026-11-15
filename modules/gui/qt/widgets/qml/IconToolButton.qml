@@ -40,6 +40,10 @@ T.ToolButton {
 
     property real radius: VLCStyle.button_radius
 
+    // Terrikon: a toggle that is on is drawn heavier (an outline of its own
+    // colour), one that is off is dimmed by its button: no strike through
+    property bool bold: false
+
     // Settings
 
     padding: 0
@@ -109,6 +113,8 @@ T.ToolButton {
         text: control.text
 
         color: control.color
+        style: control.bold ? Text.Outline : Text.Normal
+        styleColor: control.color
 
         DelayedBehavior on color {
             delayedEnabled: theme.initialized

@@ -48,17 +48,9 @@ Widgets.IconToolButton {
     description: !_has ? qsTr("Subtitles and tracks")
                        : (_on ? qsTr("Subtitles off") : qsTr("Subtitles on"))
 
-    // off: dim and struck through
+    // on: bright and heavier; off: dim (the colour says it, no strike)
     opacity: (_has && _on) ? 1.0 : 0.55
-    Rectangle {
-        visible: !(root._has && root._on)
-        anchors.centerIn: parent
-        width: parent.width * 0.62
-        height: VLCStyle.dp(1.5, VLCStyle.scale)
-        radius: height / 2
-        rotation: -45
-        color: root.color
-    }
+    bold: _has && _on
 
     onClicked: {
         if (_has)

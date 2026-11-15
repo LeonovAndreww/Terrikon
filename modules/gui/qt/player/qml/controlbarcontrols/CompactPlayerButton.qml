@@ -34,6 +34,8 @@ Widgets.ImageToolButton {
     enabled: Player.hasVideoOutput || _music
     imageSource: SVGColorImage.colorize("qrc:///icons/compact_player.svg")
                      .color1(pipBtn.colorContext.fg.primary).uri()
+    // as bright as the font icons next to it
+    opacity: enabled ? 0.72 : 0.4
     description: qsTr("Picture in picture") + TerrikonActions.hint("pip-toggle")
 
     onClicked: {

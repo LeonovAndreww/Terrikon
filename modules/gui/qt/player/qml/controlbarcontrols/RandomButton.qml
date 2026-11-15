@@ -32,17 +32,9 @@ Widgets.IconToolButton {
     description: qsTr("Random")
 
     // Terrikon: on and off told apart whatever the accent (white by default,
-    // the colour of the icons): off is dim and struck through
+    // the colour of the icons): on is bright and heavier, off is dim
     opacity: checked ? 1.0 : 0.55
-    Rectangle {
-        visible: !parent.checked
-        anchors.centerIn: parent
-        width: parent.width * 0.62
-        height: VLCStyle.dp(1.5, VLCStyle.scale)
-        radius: height / 2
-        rotation: -45
-        color: parent.color
-    }
+    bold: checked
 
     AccessibleCompat.id: "randomButton"
 }
