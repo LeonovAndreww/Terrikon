@@ -179,6 +179,10 @@ void VideoPreview::start()
     vlc_object_t *owner = static_cast<vlc_object_t *>(vlc_object_create(VLC_OBJECT(s_intf), sizeof(vlc_object_t)));
     if (!owner)
         return;
+    /* A preview asks nothing and reports nothing: a file gone or unreadable
+     * leaves the tile without a preview, not an error on the screen (the
+     * player and its input inherit this). */
+    owner->no_interact = true;
     m_frames = std::make_shared<PreviewFrames>();
     m_frames->item = this;
     var_Create(owner, "vout", VLC_VAR_STRING);
