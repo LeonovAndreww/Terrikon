@@ -48,6 +48,9 @@ typedef struct
     float f_feedback;
     float f_crossfeed;
     float f_dry_mix;
+    unsigned i_rate;
+    /* the parameters are changed from other threads than the audio's */
+    vlc_mutex_t lock;
 } filter_sys_t;
 
 #define HELP_TEXT N_("This filter enhances the stereo effect by "\
@@ -132,6 +135,10 @@ static int Open( vlc_object_t *obj )
     p_sys = p_filter->p_sys = malloc( sizeof(filter_sys_t) );
     if( unlikely(!p_sys) )
         return VLC_ENOMEM;
+    vlc_mutex_init( &p_sys->lock );
+    p_sys->i_rate = p_filter->fmt_in.audio.i_rate;
+    p_sys->pf_ringbuf = NULL;
+    p_sys->i_len = 0;
 
 #define CREATE_VAR( stor, var ) \
     p_sys->stor = var_CreateGetFloat( p_aout, var ); \
@@ -143,8 +150,6 @@ static int Open( vlc_object_t *obj )
     CREATE_VAR( f_dry_mix,   CONFIG_PREFIX "dry-mix" )
 
     /* Compute buffer length and allocate space */
-    p_sys->pf_ringbuf = NULL;
-    p_sys->i_len = 0;
     if( MakeRingBuffer( &p_sys->pf_ringbuf, &p_sys->i_len, &p_sys->pf_write,
                         p_sys->f_delay, p_filter->fmt_in.audio.i_rate ) != VLC_SUCCESS )
     {
@@ -169,6 +174,7 @@ static block_t *Filter( filter_t *p_filter, block_t *p_block )
     float *p_out = (float *)p_block->p_buffer;
     float *pf_read;
 
+    vlc_mutex_lock( &p_sys->lock );
     for (unsigned i = p_block->i_nb_samples; i > 0; i--)
     {
         pf_read = p_sys->pf_write + 2;
@@ -190,6 +196,7 @@ static block_t *Filter( filter_t *p_filter, block_t *p_block )
         if( p_sys->pf_write  == p_sys->pf_ringbuf + p_sys->i_len )
             p_sys->pf_write  =  p_sys->pf_ringbuf;
     }
+    vlc_mutex_unlock( &p_sys->lock );
 
     return p_block;
 }
@@ -223,18 +230,18 @@ static int paramCallback( vlc_object_t *p_this, char const *psz_var,
                             vlc_value_t oldval, vlc_value_t newval,
                             void *p_data )
 {
-    filter_t *p_filter = (filter_t *)p_this;
+    /* the variables are the audio output's (p_this), not the filter's */
     filter_sys_t *p_sys = p_data;
 
     VLC_UNUSED(oldval);
-    VLC_UNUSED(p_this);
 
+    vlc_mutex_lock( &p_sys->lock );
     if( !strcmp( psz_var, CONFIG_PREFIX "delay" ) )
     {
         if( MakeRingBuffer( &p_sys->pf_ringbuf, &p_sys->i_len, &p_sys->pf_write,
-                            newval.f_float, p_filter->fmt_in.audio.i_rate ) != VLC_SUCCESS )
+                            newval.f_float, p_sys->i_rate ) != VLC_SUCCESS )
         {
-            msg_Dbg( p_filter, "Couldn't allocate buffer for delay" );
+            msg_Dbg( p_this, "Couldn't allocate buffer for delay" );
         }
         else
         {
@@ -244,9 +251,10 @@ static int paramCallback( vlc_object_t *p_this, char const *psz_var,
     else if( !strcmp( psz_var, CONFIG_PREFIX "feedback" ) )
         p_sys->f_feedback = newval.f_float;
     else if( !strcmp( psz_var, CONFIG_PREFIX "crossfeed" ) )
-        p_sys->f_feedback = newval.f_float;
+        p_sys->f_crossfeed = newval.f_float;
     else if( !strcmp( psz_var, CONFIG_PREFIX "dry-mix" ) )
         p_sys->f_dry_mix = newval.f_float;
+    vlc_mutex_unlock( &p_sys->lock );
 
     return VLC_SUCCESS;
 }
