@@ -64,8 +64,11 @@ Widgets.GridItem {
         void (treeModel?.count)
         if (!_grouped || !treeModel || gridColumns <= 0 || treeRow < 0)
             return [false, false, false, false]
-        const key = _parentKey, r = treeRow, c = gridColumns, n = treeModel.count
-        const same = (row) => row >= 0 && row < n && treeModel.tintKeyAt(row) === key
+        // compared decoded: the model gives "Своё", the address "%D0%A1..."
+        // (folders with other letters than Latin ones were never joined)
+        const plain = (text) => { try { return decodeURIComponent(text) } catch (e) { return text } }
+        const key = plain(_parentKey), r = treeRow, c = gridColumns, n = treeModel.count
+        const same = (row) => row >= 0 && row < n && plain(treeModel.tintKeyAt(row)) === key
         return [r % c !== 0 && same(r - 1), r % c !== c - 1 && same(r + 1),
                 same(r - c), same(r + c)]
     }
@@ -329,7 +332,11 @@ Widgets.GridItem {
                     Widgets.IconLabel {
                         anchors.centerIn: parent
                         anchors.horizontalCenterOffset: -VLCStyle.dp(1.5, VLCStyle.scale)
-                        text: video.muted ? VLCIcons.volume_muted : VLCIcons.volume_high
+                        text: video.muted ? VLCIcons.volume_muted
+                            : Player.volume === 0 ? VLCIcons.volume_zero
+                            : Player.volume < .33 ? VLCIcons.volume_low
+                            : Player.volume <= .66 ? VLCIcons.volume_medium
+                            : VLCIcons.volume_high
                         color: "white"
                         font.pixelSize: VLCStyle.dp(20, VLCStyle.scale)
                     }
@@ -405,18 +412,16 @@ Widgets.GridItem {
                     }
 
                     HoverHandler { id: volumeHover; cursorShape: VLCStyle.pointerCursor }
-                    // taken over from the tile's handlers, which open the video
-                    TapHandler {
-                        gesturePolicy: TapHandler.WithinBounds
-                        grabPermissions: PointerHandler.CanTakeOverFromAnything
-                        onTapped: (point) => volumeBar._setFrom(point.position.y)
-                    }
-                    DragHandler {
+                    // a press and a drag set it; kept from the tile, which
+                    // would open the video or drag the tile away
+                    MouseArea {
                         id: volumeDrag
-                        target: null
-                        xAxis.enabled: false
-                        grabPermissions: PointerHandler.CanTakeOverFromAnything
-                        onCentroidChanged: if (active) volumeBar._setFrom(centroid.position.y)
+                        readonly property bool active: pressed
+                        anchors.fill: parent
+                        preventStealing: true
+                        cursorShape: VLCStyle.pointerCursor
+                        onPressed: (mouse) => { volumeBar._setFrom(mouse.y); mouse.accepted = true }
+                        onPositionChanged: (mouse) => { if (pressed) volumeBar._setFrom(mouse.y) }
                     }
                     // the wheel too, a step of 5%
                     WheelHandler {
@@ -428,11 +433,11 @@ Widgets.GridItem {
                         }
                     }
 
-                    // the percent, left of the bar
+                    // the percent, left of the bar, at the level's height
                     Rectangle {
                         anchors.right: parent.left
                         anchors.rightMargin: VLCStyle.margin_xxsmall
-                        anchors.verticalCenter: parent.verticalCenter
+                        y: volumeBar._top + volumeBar._span * (1 - Math.min(1, Player.volume)) - height / 2
                         width: percent.implicitWidth + VLCStyle.margin_xsmall * 2
                         height: percent.implicitHeight + VLCStyle.margin_xxxsmall * 2
                         radius: VLCStyle.dp(3, VLCStyle.scale)
@@ -517,6 +522,8 @@ Widgets.GridItem {
                         id: barArea
                         anchors.fill: parent
                         hoverEnabled: true
+                        // a drag seeks: kept from the tile's own drag
+                        preventStealing: true
                         cursorShape: VLCStyle.pointerCursor
                         onPressed: (mouse) => video.seek(mouse.x / width)
                         onPositionChanged: (mouse) => { if (pressed) video.seek(mouse.x / width) }
@@ -719,7 +726,7 @@ Widgets.GridItem {
                 up: true
                 twoChevrons: true
                 description: treeButtons._active && visible
-                             ? qsTr("Collapse all into %1, as when added").arg(root.treeModel.collapseAllTarget(treeButtons._index())) : ""
+                             ? qsTr("Collapse all into %1").arg(root.treeModel.collapseAllTarget(treeButtons._index())) : ""
                 onClicked: root.treeModel.collapseAllItem(treeButtons._index())
             }
         }
