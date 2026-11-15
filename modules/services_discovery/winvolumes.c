@@ -51,6 +51,45 @@ typedef struct volumes_observer_t
 
 
 /**
+ * @brief RemoteName names a network drive from its mapping, without asking
+ *        its host
+ * @param letter - drive letter
+ * @return "share (\\host) (W:)", or "Network drive (W:)" (to be freed)
+ */
+static char *RemoteName( const char letter )
+{
+    /* "\Device\LanmanRedirector\;W:000000000001f2e3\host\share" */
+    wchar_t drive[3] = L"A:", target[MAX_PATH + 1];
+    drive[0] = letter;
+
+    char *name = NULL;
+    if (QueryDosDeviceW(drive, target, ARRAY_SIZE(target)) != 0)
+    {
+        const wchar_t *p = wcsstr(target, L"\\;");
+        if (p != NULL)
+            p = wcschr(p + 2, L'\\');
+        if (p != NULL && p[1] != L'\0')
+        {
+            char *where = FromWide(p + 1);
+            char *share = where != NULL ? strchr(where, '\\') : NULL;
+            if (share != NULL && share[1] != '\0')
+            {
+                *share++ = '\0';
+                if (asprintf(&name, "%s (\\\\%s) (%c:)", share, where,
+                             letter) < 0)
+                    name = NULL;
+            }
+            free(where);
+        }
+    }
+    if (name == NULL
+     && asprintf(&name, "%s (%c:)", _("Network drive"), letter) < 0)
+        name = NULL;
+    return name;
+}
+
+
+/**
  * @brief CreateInput
  * @param letter - drive letter assosited with drive
  * @return input item for the drive
@@ -63,24 +102,37 @@ static input_item_t *CreateInput( const char letter )
     path[0] = letter;
     mrl[8] = letter;
 
-    /* The wide call: the label may be in any language */
-    if (GetVolumeInformationW(path, label, ARRAY_SIZE(label),
-                              NULL, NULL, NULL, NULL, 0) == 0)
-        return NULL;
-
-    /* As the file explorer names them: "Label (E:)", and a drive without
-     * a label is a local disk */
-    char *utf8 = FromWide(label);
+    const UINT type = GetDriveTypeW(path);
     char *name;
-    if (asprintf(&name, "%s (%c:)", (utf8 && *utf8) ? utf8 : _("Local disk"),
-                 letter) < 0)
-        name = NULL;
-    free(utf8);
+
+    if (type == DRIVE_REMOTE)
+    {
+        /* A network drive is not asked for its label: when its host does
+         * not answer, the question stays for as long as Windows tries
+         * (20 s and more). It is named from what it is mapped to, which is
+         * known here: "share (\\host) (W:)", as the file explorer does. */
+        name = RemoteName(letter);
+    }
+    else
+    {
+        /* The wide call: the label may be in any language */
+        if (GetVolumeInformationW(path, label, ARRAY_SIZE(label),
+                                  NULL, NULL, NULL, NULL, 0) == 0)
+            return NULL;
+
+        /* As the file explorer names them: "Label (E:)", and a drive
+         * without a label is a local disk */
+        char *utf8 = FromWide(label);
+        if (asprintf(&name, "%s (%c:)",
+                     (utf8 && *utf8) ? utf8 : _("Local disk"), letter) < 0)
+            name = NULL;
+        free(utf8);
+    }
     if (name == NULL)
         return NULL;
 
     input_item_t *item;
-    if (GetDriveTypeW (path) == DRIVE_CDROM)
+    if (type == DRIVE_CDROM)
         item = input_item_NewDisc( mrl, name, INPUT_DURATION_INDEFINITE );
     else
         item = input_item_NewDirectory( mrl, name, ITEM_LOCAL );
@@ -140,8 +192,11 @@ static int Add( services_discovery_t *p_sd, const uint32_t disk_mask )
         if ( !(disk_mask & mask) )
             continue;
 
+        /* no item: an empty reader, a drive with no disc in it. It is left
+         * out, and the others are still listed. */
         input_item_t *item = CreateInput( 'A' + i );
-        if (unlikely( !item )) return VLC_ENOMEM;
+        if ( !item )
+            continue;
 
         if ( p_sys->items[i] )
         {
@@ -271,6 +326,11 @@ static void *Run(void *ctx)
         return NULL;
     }
 
+    /* Here and not in Open(): the module is opened with the media sources
+     * locked, a lock the interface thread takes too, and a drive may take
+     * its time to answer. After the window: no arrival is missed. */
+    AddExistingDrives( p_sd );
+
     // window message loop
     for(;;)
     {
@@ -333,12 +393,6 @@ static int Open (vlc_object_t *obj)
 
     p_sd->p_sys = p_sys;
     p_sd->description = _("Lists volumes on host computer");
-
-    if ( AddExistingDrives( p_sd ) != VLC_SUCCESS)
-    {
-        msg_Err( p_sd, "failed to find existing drives" );
-        goto error;
-    }
 
     p_sys->quit_signal = CreateEvent(NULL, TRUE, FALSE, NULL);
     if ( p_sys->quit_signal == NULL )

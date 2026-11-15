@@ -44556,3 +44556,7 @@ msgstr "Подкастов пока нет: добавьте подкаст по
 #: terrikon
 msgid "Add podcasts…"
 msgstr "Добавить подкасты…"
+
+#: terrikon
+msgid "Network drive"
+msgstr "Сетевой диск"
