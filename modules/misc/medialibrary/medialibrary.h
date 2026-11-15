@@ -143,6 +143,7 @@ class MediaLibrary : public medialibrary::IMediaLibraryCb
 {
 public:
     static MediaLibrary* create( vlc_medialibrary_module_t* ml );
+    ~MediaLibrary();
 
     bool Init();
     int Control( int query, va_list args );
@@ -188,6 +189,17 @@ private:
     bool m_initialized = false; /* protected by m_mutex */
 
     std::atomic_flag m_started = ATOMIC_FLAG_INIT;
+
+    /* Media opened directly (external) are never rescanned: those whose
+     * local file is gone are removed once the background tasks of a reload
+     * are done (a reload of everything sends no "discovery completed"), on
+     * a thread of their own, as the disk may be slow to answer. */
+    static void* forgetGoneExternalMedia( void* data );
+    void startForgettingGone();
+    std::atomic<bool> m_goneWanted{ false };
+    vlc_thread_t m_goneThread;
+    bool m_goneStarted = false;            /* protected by m_mutex */
+    std::atomic<bool> m_goneRunning{ false };
 
     // IMediaLibraryCb interface
 public:

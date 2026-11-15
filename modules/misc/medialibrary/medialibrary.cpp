@@ -28,6 +28,10 @@
 #include <vlc_url.h>
 #include <vlc_media_library.h>
 #include <vlc_dialog.h>
+#include <vlc_fs.h>
+#ifdef _WIN32
+# include <windows.h>
+#endif
 #include "medialibrary.h"
 #include "fs/fs.h"
 #include "fs/devicelister.h"
@@ -290,6 +294,95 @@ void MediaLibrary::onDiscoveryCompleted()
     m_vlc_ml->cbs->pf_send_event( m_vlc_ml, &ev );
 }
 
+void MediaLibrary::startForgettingGone()
+{
+    vlc::threads::mutex_locker lock( m_mutex );
+    if ( m_goneRunning.load() )
+        return;
+    if ( m_goneStarted )
+    {
+        vlc_join( m_goneThread, nullptr );
+        m_goneStarted = false;
+    }
+    m_goneRunning.store( true );
+    if ( vlc_clone( &m_goneThread, forgetGoneExternalMedia, this ) != 0 )
+        m_goneRunning.store( false );
+    else
+        m_goneStarted = true;
+}
+
+void* MediaLibrary::forgetGoneExternalMedia( void* data )
+{
+    auto self = static_cast<MediaLibrary*>( data );
+    vlc_thread_set_name( "vlc-ml-gone" );
+
+    std::vector<medialibrary::MediaPtr> gone;
+    auto query = self->m_ml->history( medialibrary::HistoryType::Local );
+    if ( query != nullptr )
+    {
+        for ( const auto& media : query->all() )
+        {
+            if ( !media->isExternalMedia() )
+                continue;
+            for ( const auto& file : media->files() )
+            {
+                if ( !file->isMain() || file->isNetwork() )
+                    continue;
+                const std::string& mrl = file->mrl();
+                if ( mrl.compare( 0, 7, "file://" ) != 0 )
+                    continue;
+                char* path = vlc_uri2path( mrl.c_str() );
+                /* never a share: its host may not answer */
+                if ( path == nullptr || path[0] == '\\' || path[0] == '/' )
+                {
+                    free( path );
+                    continue;
+                }
+#ifdef _WIN32
+                /* nor a drive letter given to one; the join on closing would
+                 * wait for it too */
+                const char root[] = { path[0], ':', '\\', '\0' };
+                if ( path[1] != ':' || GetDriveTypeA( root ) == DRIVE_REMOTE )
+                {
+                    free( path );
+                    continue;
+                }
+#endif
+                struct stat st;
+                if ( vlc_stat( path, &st ) != 0 && errno == ENOENT )
+                {
+                    /* the file only: a folder gone may be a drive unplugged */
+                    char* sep = strrchr( path, '\\' );
+                    if ( sep != nullptr )
+                    {
+                        /* no separator at the end, which stat() refuses,
+                         * but for the root of the drive */
+                        sep[sep == path + 2 ? 1 : 0] = '\0';
+                        if ( vlc_stat( path, &st ) == 0 )
+                            gone.push_back( media );
+                    }
+                }
+                free( path );
+            }
+        }
+    }
+    for ( auto& media : gone )
+    {
+        msg_Dbg( self->m_vlc_ml, "forgetting %s: the file is gone",
+                 media->title().c_str() );
+        self->m_ml->removeExternalMedia( media );
+    }
+    self->m_goneRunning.store( false );
+    return nullptr;
+}
+
+MediaLibrary::~MediaLibrary()
+{
+    vlc::threads::mutex_locker lock( m_mutex );
+    if ( m_goneStarted )
+        vlc_join( m_goneThread, nullptr );
+}
+
 void MediaLibrary::onDiscoveryFailed( const std::string& entryPoint )
 {
     vlc_ml_event_t ev;
@@ -349,6 +442,9 @@ void MediaLibrary::onBackgroundTasksIdleChanged( bool idle )
     ev.i_type = VLC_ML_EVENT_BACKGROUND_IDLE_CHANGED;
     ev.background_idle_changed.b_idle = idle;
     m_vlc_ml->cbs->pf_send_event( m_vlc_ml, &ev );
+
+    if ( idle && m_goneWanted.exchange( false ) )
+        startForgettingGone();
 }
 
 void MediaLibrary::onMediaThumbnailReady( medialibrary::MediaPtr media,
@@ -592,6 +688,7 @@ int MediaLibrary::Control( int query, va_list args )
         case VLC_ML_RELOAD_FOLDER:
         {
             auto mrl = va_arg( args, const char* );
+            m_goneWanted.store( true );
             if ( mrl == nullptr )
                 m_ml->reload();
             else
