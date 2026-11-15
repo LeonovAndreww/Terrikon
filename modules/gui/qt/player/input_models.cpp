@@ -106,16 +106,21 @@ void TrackListModel::applyRemembered()
     if (!m_settings || !m_multiSelect || m_applied || m_data.isEmpty())
         return;
     const QStringList titles = m_settings->value(m_settingsKey + QStringLiteral("-on")).toStringList();
+    const QVariantMap volumes = m_settings->value(m_settingsKey + QStringLiteral("-volumes")).toMap();
     const bool matches = std::any_of(m_data.cbegin(), m_data.cend(), [&](const Data &track) {
         return titles.contains(track.m_title);
     });
     m_applied = true;
-    if (!matches)
-        return;
     QSettings *settings = m_settings;
     m_settings = nullptr; /* not saved back while applying */
     for (int i = 0; i < m_data.size(); ++i)
     {
+        /* the volume of a track of that name, the last one set */
+        const auto volume = volumes.constFind(m_data[i].m_title);
+        if (volume != volumes.constEnd() && m_data[i].m_selected)
+            setData(index(i), volume->toFloat(), VolumeRole);
+        if (!matches)
+            continue;
         const bool want = titles.contains(m_data[i].m_title);
         const bool on = m_data[i].m_selected && !m_data[i].m_muted;
         if (want != on && m_data[i].m_selected)
@@ -181,6 +186,14 @@ bool TrackListModel::setData(const QModelIndex &index, const QVariant &value, in
             m_data[row].m_volume = vlc_player_GetEsIdVolume(m_player, m_data[row].m_id.get());
         }
         emit dataChanged(index, index, { VolumeRole });
+        /* As the tracks on: by name, for the next media with the same */
+        if (m_settings && m_multiSelect && !m_data[row].m_title.isEmpty())
+        {
+            const QString key = m_settingsKey + QStringLiteral("-volumes");
+            QVariantMap volumes = m_settings->value(key).toMap();
+            volumes[m_data[row].m_title] = m_data[row].m_volume;
+            m_settings->setValue(key, volumes);
+        }
         return true;
     }
     if ( role != Qt::CheckStateRole )
