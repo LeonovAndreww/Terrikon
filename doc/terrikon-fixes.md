@@ -111,6 +111,7 @@ build, or by reading when the path is taken.
 | Playback stopped for good after seeking: pause and seeks went unanswered (seen after a long pause, a jump to the end, then seeks) | The hardware decoder waited for a free surface with no time limit; with all of them held by pictures waiting for a clock that waited for that decoder (the input buffering after the seek), nothing moved again. VLC 3 gave up after a second | `va_surface.c`: the wait ends after 1 s, the frame is lost instead |
 | After a long pause, playback jumped to the end of the file (a USB drive) | Windows powers a USB drive down after 20 minutes idle; the first reads after it fail, and any read error was taken for the end of the file | `file.c`: on a read error the file is opened again where it was, for some 10 s, until the input stops (not reproduced at will: the drive must sleep) |
 | Library folders: a folder added right after another stayed out of the list | The list was asked once at a time: a change arriving while one was on its way was dropped | `mlfoldersmodel.cpp`: listed once more after it |
+| Library context menu: "Information" and "Media Information" both shown for a video | Two entries for the same window | `MLContextMenu.qml`: the second only where the first is missing |
 ## 2. VLC 4's bugs brought out by Terrikon
 
 | Bug seen | VLC 4's cause | What brought it out | Fix |
@@ -182,6 +183,10 @@ build, or by reading when the path is taken.
 | Hovering a tile whose file is gone showed nothing at all | the tile tells why: the file deleted or moved, its folder gone, the drive not connected or another plugged in, the share not answering, no access |
 | The media library lost its folders, one replacing the other when added (builds of 2026-11-14 night) | the single player logic of that night also ran in the preparser processes: each after the first took itself for a second start and went away, folders could not be read and the library dropped them. Only the player takes part now (`--terrikon-player`, given by its executable) |
 | A drive that does not answer while reading: playback just stopped, with nothing said | a "The drive does not answer" window after a second of retries, with Cancel; it closes by itself when the reading goes on |
+| Previews: dragging along the time bar or the volume grabbed the tile instead | the tile's drag took the pointer over; both bars keep it now (`preventStealing`) |
+| Previews: the volume percent stayed in the middle of the bar, the speaker only told muted or not | the percent follows the level, the speaker shows the level as the player's does |
+| Videos: the cards of a folder with other letters than Latin ones ("Своё") were never joined | the folder's key was compared encoded on one side, decoded on the other |
+| Music mini window: the wave of the card stopped short of its sides and bottom | to the edges, cut by the rounded corners |
 ## Known upstream issues, not fixed yet
 
 - `ListViewExt.qml`: the footer's height depends on its own position ("Binding loop detected for property implicitHeight"). Harmless.
