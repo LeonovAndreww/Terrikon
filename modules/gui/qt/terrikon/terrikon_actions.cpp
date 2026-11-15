@@ -137,9 +137,7 @@ void TerrikonActions::report(int action)
     /* How far a jump goes, from the same settings the core uses */
     auto jump = [this](const char *size, int sign) {
         const int seconds = int(var_InheritInteger(vlc_object_instance(m_intf), size));
-        const QString amount = seconds % 60 == 0 ? qtr("%1 min").arg(seconds / 60)
-                                                 : qtr("%1 s").arg(seconds);
-        emit osd((sign > 0 ? QStringLiteral("+") : QStringLiteral("−")) + amount);
+        emit jumped(sign * seconds);
     };
 
     switch (action)

@@ -1737,9 +1737,97 @@ FocusScope {
         }
     }
 
+    // A jump by a key, on the side it goes, as video sites show it: arrows
+    // running that way and how far; jumps in a row add up
+    Rectangle {
+        id: seekHint
+
+        property int total: 0
+        readonly property bool forward: total > 0
+        property real phase: 0
+
+        function show(seconds) {
+            if (opacity > 0 && (seconds > 0) === (total > 0))
+                total += seconds
+            else
+                total = seconds
+            opacity = 1
+            seekHintTimer.restart()
+            seekHintRun.restart()
+        }
+
+        function _amount(seconds) {
+            const s = Math.abs(seconds)
+            return (seconds > 0 ? "+" : "−")
+                   + (s % 60 === 0 ? qsTr("%1 min").arg(s / 60) : qsTr("%1 s").arg(s))
+        }
+
+        anchors.verticalCenter: parent.verticalCenter
+        x: (forward ? parent.width * 0.8 : parent.width * 0.2) - width / 2
+
+        visible: opacity > 0 && rootPlayer._heldRate === 0
+        opacity: 0
+        Behavior on opacity { NumberAnimation { duration: VLCStyle.duration_short } }
+
+        width: seekHintRow.implicitWidth + VLCStyle.margin_normal * 2
+        height: seekHintRow.implicitHeight + VLCStyle.margin_small * 2
+        radius: height / 2
+        color: Qt.rgba(0, 0, 0, 0.5 * MainCtx.overlayOpacity)
+
+        Row {
+            id: seekHintRow
+            anchors.centerIn: parent
+            spacing: VLCStyle.margin_small
+            // the arrows on the side it goes: "+5 >>>", "<<< -5"
+            layoutDirection: seekHint.forward ? Qt.RightToLeft : Qt.LeftToRight
+
+            // three arrows lit one after the other, the way it goes
+            Row {
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: -VLCStyle.dp(2, VLCStyle.scale)
+                layoutDirection: seekHint.forward ? Qt.LeftToRight : Qt.RightToLeft
+
+                Repeater {
+                    model: 3
+                    Text {
+                        required property int index
+                        text: seekHint.forward ? "\u25B8" : "\u25C2"
+                        color: "white"
+                        font.pixelSize: VLCStyle.fontSize_xlarge * 1.5
+                        opacity: 0.25 + 0.75 * Math.max(0, 1 - Math.abs(seekHint.phase - index))
+                    }
+                }
+            }
+
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: seekHint._amount(seekHint.total)
+                color: "white"
+                font.pixelSize: VLCStyle.fontSize_large
+                font.weight: Font.DemiBold
+            }
+        }
+
+        NumberAnimation {
+            id: seekHintRun
+            target: seekHint
+            property: "phase"
+            from: -0.5
+            to: 3
+            duration: 520
+        }
+
+        Timer {
+            id: seekHintTimer
+            interval: 900
+            onTriggered: seekHint.opacity = 0
+        }
+    }
+
     Connections {
         target: TerrikonActions
         function onOsd(text) { osdToast.show(text) }
+        function onJumped(seconds) { seekHint.show(seconds) }
     }
 
     // The player sets volume and speed while starting: no message then

@@ -63,6 +63,9 @@ signals:
     /* A short message to show over the video for a key press: how far a
      * jump went, which track is on, a mark set... */
     void osd(const QString &text);
+    /* A jump by a key: shown on the side it goes, in seconds (negative
+     * backwards) */
+    void jumped(int seconds);
 
 private:
     /* Called on the thread that pressed the key */
