@@ -44596,3 +44596,11 @@ msgstr "Нет на диске %1: подключён другой?"
 #: modules/gui/qt/terrikon/video_preview.cpp
 msgid "Its folder was deleted or moved"
 msgstr "Папка файла удалена или перемещена"
+
+#: modules/access/file.c
+msgid "The drive does not answer"
+msgstr "Диск не отвечает"
+
+#: modules/access/file.c
+msgid "Reading the file again as soon as the drive answers..."
+msgstr "Файл продолжит читаться, как только диск ответит…"

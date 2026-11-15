@@ -55,6 +55,7 @@
 #include "fs.h"
 #include <vlc_access.h>
 #include <vlc_interrupt.h>
+#include <vlc_dialog.h>
 #ifdef _WIN32
 # include <vlc_charset.h>
 #endif
@@ -330,10 +331,22 @@ static ssize_t Read (stream_t *p_access, void *p_buffer, size_t i_len)
          * input is stopped), before giving up. */
         if (p_access->psz_filepath != NULL && pos != (off_t)-1)
         {
+            /* told after a second, so a quick wake-up shows nothing */
+            vlc_dialog_id *waiting = NULL;
             for (int tries = 0; tries < 20; tries++)
             {
+                if (tries == 2)
+                    waiting = vlc_dialog_display_progress (p_access, true, 0.f,
+                        _("Cancel"), _("The drive does not answer"),
+                        _("Reading the file again as soon as the drive answers..."));
+                if (waiting != NULL && vlc_dialog_is_cancelled (p_access, waiting))
+                    break;
                 if (vlc_msleep_i11e (VLC_TICK_FROM_MS(500)))
+                {
+                    if (waiting != NULL)
+                        vlc_dialog_release (p_access, waiting);
                     return -1; /* stopped meanwhile */
+                }
                 int nfd = vlc_open (p_access->psz_filepath, O_RDONLY | O_NONBLOCK);
                 if (nfd == -1)
                     continue;
@@ -349,10 +362,14 @@ static ssize_t Read (stream_t *p_access, void *p_buffer, size_t i_len)
                     continue;
                 }
                 msg_Warn (p_access, "file read again after %d tries", tries + 1);
+                if (waiting != NULL)
+                    vlc_dialog_release (p_access, waiting);
                 vlc_close (p_sys->fd);
                 p_sys->fd = nfd;
                 return val;
             }
+            if (waiting != NULL)
+                vlc_dialog_release (p_access, waiting);
         }
         val = 0;
     }
