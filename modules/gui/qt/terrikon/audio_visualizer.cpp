@@ -451,6 +451,15 @@ void AudioVisualizer::setFill(bool fill)
     update();
 }
 
+void AudioVisualizer::setBottomRadius(qreal radius)
+{
+    if (qFuzzyCompare(radius, m_bottomRadius))
+        return;
+    m_bottomRadius = radius;
+    emit bottomRadiusChanged();
+    update();
+}
+
 void AudioVisualizer::setColor(const QColor &color)
 {
     if (color == m_color)
@@ -768,6 +777,29 @@ QSGNode *AudioVisualizer::updatePaintNode(QSGNode *old, UpdatePaintNodeData *)
     }
     default:
         break;
+    }
+
+    /* Inside the rounded bottom corners: a point beyond the curve goes on it */
+    if (m_bottomRadius > 0)
+    {
+        const qreal r = std::min({ m_bottomRadius, w / 2, h });
+        for (Vertex &p : mesh.v)
+        {
+            qreal x = std::clamp<qreal>(p.x, 0, w), y = std::clamp<qreal>(p.y, 0, h);
+            if (y > h - r && (x < r || x > w - r))
+            {
+                const QPointF c(x < r ? r : w - r, h - r);
+                const qreal dx = x - c.x(), dy = y - c.y();
+                const qreal d = std::hypot(dx, dy);
+                if (d > r)
+                {
+                    x = c.x() + dx * r / d;
+                    y = c.y() + dy * r / d;
+                }
+            }
+            p.x = float(x);
+            p.y = float(y);
+        }
     }
 
     QSGGeometry *geometry = node->geometry();

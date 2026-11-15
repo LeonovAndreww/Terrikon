@@ -17,7 +17,6 @@
  *****************************************************************************/
 
 import QtQuick
-import QtQuick.Effects
 import QtQuick.Window
 
 import VLC.MainInterface
@@ -385,42 +384,17 @@ Window {
                     GradientStop { position: 1; color: Qt.rgba(0, 0, 0, 0.6) }
                 }
             }
-            // to the edges of the card, cut by its rounded corners
-            Item {
-                id: cardWave
+            // to the edges of the card, kept inside its rounded corners
+            AudioVisualizer {
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
                 height: parent.height * 0.3
-
-                layer.enabled: true
-                layer.effect: MultiEffect {
-                    maskEnabled: true
-                    maskSource: cardWaveMask
-                }
-
-                AudioVisualizer {
-                    anchors.fill: parent
-                    fill: true
-                    style: root.chosenStyle === 1 ? 6 : root.chosenStyle // no ring in a card: the line
-                    color: root.accent
-                    color2: root.accent2
-                }
-            }
-            // the card's shape at the height of the wave: square on top,
-            // rounded at the bottom
-            Item {
-                id: cardWaveMask
-                width: cardWave.width
-                height: cardWave.height
-                visible: false
-                layer.enabled: true
-                Rectangle {
-                    anchors.fill: parent
-                    bottomLeftRadius: 10
-                    bottomRightRadius: 10
-                    color: "black"
-                }
+                fill: true
+                bottomRadius: 10
+                style: root.chosenStyle === 1 ? 6 : root.chosenStyle // no ring in a card: the line
+                color: root.accent
+                color2: root.accent2
             }
 
             // On hover: the title, the buttons, the time

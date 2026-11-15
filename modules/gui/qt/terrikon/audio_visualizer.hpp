@@ -173,6 +173,9 @@ class AudioVisualizer : public QQuickItem
     // Use the whole item, as in the mini window, instead of keeping to the
     // edges of the music player
     Q_PROPERTY(bool fill READ fill WRITE setFill NOTIFY fillChanged FINAL)
+    // The bottom corners of what holds it are rounded so much: what would
+    // stick out is drawn on their curve
+    Q_PROPERTY(qreal bottomRadius READ bottomRadius WRITE setBottomRadius NOTIFY bottomRadiusChanged FINAL)
 
 public:
     explicit AudioVisualizer(QQuickItem *parent = nullptr);
@@ -188,8 +191,11 @@ public:
     qreal level() const { return m_level; }
     bool fill() const { return m_fill; }
     void setFill(bool fill);
+    qreal bottomRadius() const { return m_bottomRadius; }
+    void setBottomRadius(qreal radius);
 
 signals:
+    void bottomRadiusChanged();
     void styleChanged();
     void colorChanged();
     void coverChanged();
@@ -211,6 +217,7 @@ private:
     QRectF m_coverRect;
     qreal m_level = 0;
     bool m_fill = false;
+    qreal m_bottomRadius = 0;
 
     QVector<float> m_bands;
     QVector<float> m_peaks;
