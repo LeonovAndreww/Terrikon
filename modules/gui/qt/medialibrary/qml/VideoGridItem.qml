@@ -58,24 +58,8 @@ Widgets.GridItem {
     readonly property color _groupColor: Qt.hsla(_groupHue(_parentKey), 0.6, 0.55, 1)
     tint: _grouped ? _groupColor : "transparent"
 
-    // Terrikon: the columns of the grid, to find the neighbours
-    property int gridColumns: 0
-    readonly property var _joins: {
-        void (treeModel?.count)
-        if (!_grouped || !treeModel || gridColumns <= 0 || treeRow < 0)
-            return [false, false, false, false]
-        // compared decoded: the model gives "Своё", the address "%D0%A1..."
-        // (folders with other letters than Latin ones were never joined)
-        const plain = (text) => { try { return decodeURIComponent(text) } catch (e) { return text } }
-        const key = plain(_parentKey), r = treeRow, c = gridColumns, n = treeModel.count
-        const same = (row) => row >= 0 && row < n && plain(treeModel.tintKeyAt(row)) === key
-        return [r % c !== 0 && same(r - 1), r % c !== c - 1 && same(r + 1),
-                same(r - c), same(r + c)]
-    }
-    joinLeft: _joins[0]
-    joinRight: _joins[1]
-    joinTop: _joins[2]
-    joinBottom: _joins[3]
+    // Terrikon: the folder view draws the colour under the cards
+    tintUnderneath: _grouped && treeModel !== null
 
     // Terrikon: a hue from a folder key, the same each time
     function _groupHue(key) {

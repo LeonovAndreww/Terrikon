@@ -62,15 +62,9 @@ T.ItemDelegate {
     // Terrikon: the colour the card is tinted with, none if transparent
     property color tint: "transparent"
 
-    // Terrikon: tinted cards of the same folder side by side make one: a
-    // joined side reaches half way into the gap (the neighbour, the other
-    // half), its corners square
-    property bool joinLeft: false
-    property bool joinRight: false
-    property bool joinTop: false
-    property bool joinBottom: false
-    property real joinGapH: 0
-    property real joinGapV: 0
+    // Terrikon: the view draws the folder's colour under its cards as one
+    // shape: the card only adds to it when hovered or selected
+    property bool tintUnderneath: false
     property alias subtitle: subtitleTxt.text
     property alias subtitleVisible: subtitleTxt.visible
     property alias playCoverShowPlay: picture.playCoverShowPlay
@@ -262,21 +256,11 @@ T.ItemDelegate {
     }
 
     background: AnimatedBackground {
-        readonly property real _left: root.joinLeft ? root.joinGapH / 2 : selectedBorderWidth
-        readonly property real _right: root.joinRight ? root.joinGapH / 2 : selectedBorderWidth
-        readonly property real _top: root.joinTop ? root.joinGapV / 2 : selectedBorderWidth
-        readonly property real _bottom: root.joinBottom ? root.joinGapV / 2 : selectedBorderWidth
+        width: root.width + (selectedBorderWidth * 2)
+        height: root.height + (selectedBorderWidth * 2)
 
-        width: root.width + _left + _right
-        height: root.height + _top + _bottom
-
-        x: - _left
-        y: - _top
-
-        topLeftRadius: (root.joinLeft || root.joinTop) ? 0 : radius
-        topRightRadius: (root.joinRight || root.joinTop) ? 0 : radius
-        bottomLeftRadius: (root.joinLeft || root.joinBottom) ? 0 : radius
-        bottomRightRadius: (root.joinRight || root.joinBottom) ? 0 : radius
+        x: - selectedBorderWidth
+        y: - selectedBorderWidth
 
         enabled: theme.initialized
 
@@ -288,7 +272,10 @@ T.ItemDelegate {
                 return base
             // one colour whatever the state, only stronger: hovering and
             // selecting no longer fight the folder's colour
-            const strength = root.selected ? 0.30 : (root.highlighted ? 0.22 : 0.13)
+            // over the view's 0.13 when drawn underneath: about the same
+            const strength = root.tintUnderneath
+                           ? (root.selected ? 0.20 : (root.highlighted ? 0.10 : 0.0))
+                           : (root.selected ? 0.30 : (root.highlighted ? 0.22 : 0.13))
             // the card has no background of its own until selected
             if (base.a < 0.05)
                 return Qt.alpha(root.tint, strength)

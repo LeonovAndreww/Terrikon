@@ -703,7 +703,8 @@ QString MLVideoFoldersModel::tintKeyAt(int row) const
     if (mrlRole < 0)
         return {};
     const QVariant v = data(idx, mrlRole);
-    const QString mrl = v.canConvert<QUrl>() ? v.toUrl().toString() : v.toString();
+    // encoded, as the address is in the cards (the same colour)
+    const QString mrl = v.canConvert<QUrl>() ? v.toUrl().toString(QUrl::FullyEncoded) : v.toString();
     const int slash = mrl.lastIndexOf(QLatin1Char('/'));
     return slash > 0 ? mrl.left(slash) : QString();
 }

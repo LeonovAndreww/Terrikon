@@ -796,8 +796,23 @@ FocusScope {
     }
 
 
+    // Terrikon: drawn under the delegates, scrolling with them
+    property Component underlay: null
+
+    // Terrikon: the first index moved down by the information panel, -1 if
+    // none is open (the panel opens under the row of expandIndex)
+    function expandShiftFrom() {
+        return (expandIndex !== -1) ? flickable.getExpandItemGridId() : -1
+    }
+
     Flickable {
         id: flickable
+
+        Loader {
+            z: -1
+            active: root.underlay !== null
+            sourceComponent: root.underlay
+        }
 
         flickableDirection: Flickable.AutoFlickIfNeeded
 
