@@ -40,9 +40,12 @@
 #include <unistd.h>
 #include <stdckdint.h>
 
+#include <stdatomic.h>
+
 #include <vlc_common.h>
 #include <vlc_charset.h>
 #include <vlc_fs.h>
+#include "../misc/interrupt.h"
 #include "../libvlc.h" /* vlc_mkdir */
 
 #ifndef NTDDI_WIN10_RS3
@@ -63,6 +66,99 @@ static wchar_t *widen_path (const char *path)
     }
     return wpath;
 }
+
+/*
+ * Asking for a file on a network drive whose host does not answer keeps the
+ * thread for as long as Windows tries: 20 s and more, several times in a row
+ * when an input probes its access modules. Nothing could end it: stopping
+ * such an input took that long, and the player opens the next media only
+ * once the last one is gone.
+ *
+ * The questions below can be given up: by the interruption of the thread's
+ * context (vlc_interrupt_kill(), vlc_interrupt_raise()), and, once the
+ * context is killed, after VLC_IO_KILLED_MS at most (a thread that was told
+ * to end may still have files to finish, on drives that do answer).
+ */
+#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+#define VLC_IO_KILLED_MS 2000
+
+struct vlc_io_cancel
+{
+    HANDLE thread;
+    HANDLE timer;
+    bool watched;
+    atomic_bool done;
+};
+
+static void vlc_io_cancel_now(struct vlc_io_cancel *c)
+{
+    /* The thread may be a few instructions away from its call, or back
+     * from it: try for a short while */
+    for (int i = 0; i < 20 && !atomic_load(&c->done); i++)
+    {
+        if (CancelSynchronousIo(c->thread)
+         || GetLastError() != ERROR_NOT_FOUND)
+            break;
+        Sleep(1);
+    }
+}
+
+static void vlc_io_interrupted(void *data)
+{
+    vlc_io_cancel_now(data);
+}
+
+static VOID CALLBACK vlc_io_timeout(PVOID data, BOOLEAN fired)
+{
+    (void) fired;
+    vlc_io_cancel_now(data);
+}
+
+static void vlc_io_cancel_begin(struct vlc_io_cancel *c)
+{
+    c->timer = NULL;
+    c->watched = false;
+    atomic_init(&c->done, false);
+
+    if (!DuplicateHandle(GetCurrentProcess(), GetCurrentThread(),
+                         GetCurrentProcess(), &c->thread, 0, FALSE,
+                         DUPLICATE_SAME_ACCESS))
+    {
+        c->thread = NULL;
+        return;
+    }
+
+    if (vlc_killed())
+    {
+        if (!CreateTimerQueueTimer(&c->timer, NULL, vlc_io_timeout, c,
+                                   VLC_IO_KILLED_MS, 0, WT_EXECUTEONLYONCE))
+            c->timer = NULL;
+    }
+    else
+        c->watched = vlc_interrupt_watch_start(vlc_io_interrupted, c);
+}
+
+/* To be called right after the question, GetLastError() being its own.
+ * Leaves the last error as it was. */
+static void vlc_io_cancel_end(struct vlc_io_cancel *c)
+{
+    const DWORD error = GetLastError();
+
+    atomic_store(&c->done, true);
+    if (c->timer != NULL) /* waits for vlc_io_timeout() if it is running */
+        DeleteTimerQueueTimer(NULL, c->timer, INVALID_HANDLE_VALUE);
+    if (c->watched)
+        vlc_interrupt_watch_stop();
+    if (c->thread != NULL)
+        CloseHandle(c->thread);
+
+    SetLastError(error);
+}
+#else
+struct vlc_io_cancel { char unused; };
+# define vlc_io_cancel_begin(c) ((void)(c))
+# define vlc_io_cancel_end(c) ((void)(c))
+#endif
 
 int vlc_open (const char *filename, int flags, ...)
 {
@@ -117,10 +213,15 @@ int vlc_open (const char *filename, int flags, ...)
 
     HANDLE h;
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+    struct vlc_io_cancel cancel;
+    vlc_io_cancel_begin(&cancel);
     h = CreateFileW(wpath, dwDesiredAccess,
         FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
         NULL, dwCreationDisposition,
         dwFlagsAndAttributes, NULL);
+    vlc_io_cancel_end(&cancel);
+    if (h == INVALID_HANDLE_VALUE && GetLastError() == ERROR_OPERATION_ABORTED)
+        errno = EINTR;
 #else
     CREATEFILE2_EXTENDED_PARAMETERS params = { 0 };
     params.dwSize = sizeof(params);
@@ -303,9 +404,12 @@ vlc_DIR *vlc_opendir (const char *dirname)
         return NULL;
     }
 
+    struct vlc_io_cancel cancel;
+    vlc_io_cancel_begin(&cancel);
     p_dir->fHandle = FindFirstFileExW(p_dir->wildcard, FindExInfoBasic,
                                       &p_dir->wdir, (FINDEX_SEARCH_OPS)0,
                                       NULL, FIND_FIRST_EX_LARGE_FETCH);
+    vlc_io_cancel_end(&cancel);
     if (p_dir->fHandle == INVALID_HANDLE_VALUE)
     {
         free(p_dir->wildcard);
@@ -427,9 +531,14 @@ int vlc_stat (const char *filename, struct stat *buf)
     static_assert (sizeof (*buf) == sizeof (struct _stati64),
                    "Mismatched struct stat definition.");
 
+    struct vlc_io_cancel cancel;
+    vlc_io_cancel_begin(&cancel);
     int ret = _wstati64 (wpath, buf);
     if ( ret != 0 )
     {
+        const int err = errno;
+        vlc_io_cancel_end(&cancel);
+        errno = err;
         free (wpath);
         return ret;
     }
@@ -440,6 +549,7 @@ int vlc_stat (const char *filename, struct stat *buf)
     // GetFileAttributesExW() doesn't have this problem.
     WIN32_FILE_ATTRIBUTE_DATA fad;
     BOOL res = GetFileAttributesExW( wpath, GetFileExInfoStandard, &fad );
+    vlc_io_cancel_end(&cancel);
     free (wpath);
     if ( unlikely(!res) )
     {
