@@ -25,6 +25,7 @@
 #include "media_source.h"
 
 #include <assert.h>
+#include <stdatomic.h>
 #include <vlc_atomic.h>
 #include <vlc_playlist.h>
 #include <vlc_services_discovery.h>
@@ -40,7 +41,9 @@ typedef struct
     vlc_media_source_t public_data;
 
     services_discovery_t *sd;
-    size_t rc;
+    /* Raised from zero (found in the list) and dropped to zero with the
+     * provider locked; otherwise changed without it. */
+    atomic_size_t rc;
     vlc_media_source_provider_t *owner;
     struct vlc_list node;
     char name[];
@@ -111,7 +114,7 @@ vlc_media_source_New(vlc_media_source_provider_t *provider, const char *name)
     if (unlikely(!priv))
         return NULL;
 
-    priv->rc = 1;
+    atomic_init(&priv->rc, 1);
 
     vlc_media_source_t *ms = &priv->public_data;
 
@@ -162,11 +165,14 @@ void
 vlc_media_source_Hold(vlc_media_source_t *ms)
 {
     media_source_private_t *priv = ms_priv(ms);
-    vlc_media_source_provider_t *provider = priv->owner;
-    vlc_mutex_lock(&provider->lock);
-    vlc_assert(priv->rc != 0);
-    priv->rc++;
-    vlc_mutex_unlock(&provider->lock);
+
+    /* Without the provider's lock: it is kept while a services discovery is
+     * opened (vlc_media_source_provider_GetMediaSource()), for as long as
+     * that takes, and this is called from interface threads. The caller
+     * owns a reference: the count cannot fall to zero meanwhile. */
+    size_t rc = atomic_fetch_add_explicit(&priv->rc, 1, memory_order_relaxed);
+    vlc_assert(rc != 0);
+    (void) rc;
 }
 
 void
@@ -175,10 +181,17 @@ vlc_media_source_Release(vlc_media_source_t *ms)
     media_source_private_t *priv = ms_priv(ms);
     vlc_media_source_provider_t *provider = priv->owner;
 
+    /* Not the last reference: no need for the lock (see
+     * vlc_media_source_Hold()) */
+    size_t rc = atomic_load(&priv->rc);
+    vlc_assert(rc != 0);
+    while (rc > 1)
+        if (atomic_compare_exchange_weak(&priv->rc, &rc, rc - 1))
+            return;
+
+    /* The last one, unless the source is found again meanwhile */
     vlc_mutex_lock(&provider->lock);
-    vlc_assert(priv->rc != 0);
-    priv->rc--;
-    if (priv->rc != 0)
+    if (atomic_fetch_sub(&priv->rc, 1) != 1)
     {
         vlc_mutex_unlock(&provider->lock);
         return;
@@ -272,8 +285,9 @@ vlc_media_source_provider_GetMediaSource(vlc_media_source_provider_t *provider,
     if (ms)
     {
         media_source_private_t *priv = ms_priv(ms);
-        vlc_assert(priv->rc != 0);
-        priv->rc++;
+        size_t rc = atomic_fetch_add(&priv->rc, 1);
+        vlc_assert(rc != 0);
+        (void) rc;
     }
     else
         ms = vlc_media_source_provider_Add(provider, name);
