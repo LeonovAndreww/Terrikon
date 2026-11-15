@@ -96,6 +96,8 @@ build, or by reading when the path is taken.
 | Interface | Going back with no history yet took an entry out of an empty list | `navigation_history.cpp` |
 | Interface | The subtitles' frame rate box listened to the delay of the second subtitles and divided where it should multiply; the audio tracks of a video's information showed its video tracks; the teletext buttons called a method colors do not have; the switch named a `control` that does not exist for the screen readers; an extension's menu was read one past the list; the blur divided by zero on an image one pixel wide | `TracksPageSubtitle.qml`, `VideoInfoExpandPanel.qml`, `TeletextWidget.qml`, `CheckButton.qml`, `extensions_manager.cpp`, `fast_gaussian_blur_template.h` |
 | Media library | `getDataById` for an item that is not there (deleted meanwhile) left its promise waiting for ever: the rejection was never reached | `mlbasemodel.cpp`: the answer is passed on also when empty |
+| Media library | The window stopped answering for 20 to 50 s whenever a grid showed a video kept on a network drive or host that does not answer (measured: 48.9 s on Home, then again after each playback). `ExpandGridView` builds every item with `getDataAt()`, which works out all the roles, and the `isDeletableFile` role asked the file system for the rights of the file and of its folder, on the interface thread | `mlmediamodel.cpp`: asked through `terrikon::writableSoon()`, on a thread of its own, waited for 150 ms at most; a drive that keeps one question waiting is not asked more. Measured after: 0.7 s at worst (the start itself) |
+| Player controls | `TypeError: Cannot read property 'item' of null` at each playback start: `ControlRepeater` connected its `forceUnlock` to a function of the control, a connection with no receiver that outlived the control and called it after its end | `ControlRepeater.qml`: a `Connections` of the delegate calls the control |
 
 ## 2. VLC 4's bugs brought out by Terrikon
 
@@ -159,6 +161,7 @@ build, or by reading when the path is taken.
 | Coming back from the player to an opened folder of Videos: "Cannot assign to non-existent property initialIndex", and the place in the folder was lost | the page remembered its place in the history as the other video pages do, but had no property to take it back |
 | Holding the button for 2x: the speed stayed at 2x when the release never came (the window left with the button down, the video ended meanwhile) | the hold only ended on the release; it now also ends when the playback stops or the application is left |
 | The clip popover could stop the interface for up to 5 s the first time: ffmpeg was asked for its encoders on the interface thread; the list was also read and filled from two threads | asked aside when the clip panel is made, once (`std::call_once`) |
+| A thread left looking at a media file (`offThread`) could come back to code that was gone: VLC unloads its plugins on the way out, a drive that does not answer keeps such a thread for tens of seconds | the plugin is kept in memory once such a thread is started (`keepPluginLoaded`) |
 
 ## Known upstream issues, not fixed yet
 
