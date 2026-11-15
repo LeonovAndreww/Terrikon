@@ -21,6 +21,7 @@
 
 #include "mlmediamodel.hpp"
 #include "mlhelper.hpp"
+#include "terrikon/media_tools.hpp"
 #include <QFile>
 
 MLMediaModel::MLMediaModel(QObject *par)
@@ -67,20 +68,16 @@ bool MLMediaModel::getPermissions(const MLMedia* media) const
     if (localPath.isEmpty())
         return false;
 
-    QFileDevice::Permissions filePermissions = QFile::permissions(localPath);
-
-    if (!(filePermissions & QFileDevice::WriteUser))
-        return false;
-
     QUrl parentUrl = getParentURL(media);
     QString parentPath = parentUrl.toLocalFile();
 
     if (parentPath.isEmpty())
         return false;
 
-    QFileDevice::Permissions folderPermissions = QFile::permissions(parentPath);
-
-    return folderPermissions & QFileDevice::WriteUser;
+    /* This is asked on the interface thread, for every getDataAt() (a
+     * hover, a drag, a menu): the file of a network drive that does not
+     * answer must not be waited for here */
+    return terrikon::writableSoon(localPath, parentPath);
 }
 
 void MLMediaModel::deleteFileFromSource(const QModelIndex &index)
