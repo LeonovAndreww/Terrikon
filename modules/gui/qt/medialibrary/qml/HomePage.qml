@@ -400,6 +400,11 @@ Widgets.PageExt {
                                 font.pixelSize: VLCStyle.icon_small
                                 text: VLCIcons.close
                                 description: qsTr("Remove from the media library")
+                                // a round light spot under it on hovering
+                                radius: width / 2
+                                backgroundColor: removeButton.down ? Qt.rgba(1, 1, 1, 0.25)
+                                               : removeButton.hovered ? Qt.rgba(1, 1, 1, 0.14)
+                                               : "transparent"
                                 onClicked: mlFolders.removeAt(chip.index)
                             }
                         }
