@@ -126,9 +126,6 @@ Repeater {
             if (item.menuOpened)
                 item.menuOpened.connect(repeater.menuOpened)
 
-            if (item.forceUnlock)
-                repeater.forceUnlock.connect(item.forceUnlock)
-
             //can't connect to enabledChanged in a Connections
             item.onEnabledChanged.connect(() => {
                 if (loader.activeFocus && !item.enabled) // Loader has focus but item is not enabled
@@ -137,6 +134,18 @@ Repeater {
         }
 
         // Connections
+
+        // NOTE: Not connect(item.forceUnlock): a function of the control is
+        //       no receiver, the connection would outlive the control and
+        //       call it after its end.
+        Connections {
+            target: repeater
+
+            function onForceUnlock() {
+                if (loader.item?.forceUnlock)
+                    loader.item.forceUnlock()
+            }
+        }
 
         Connections {
             target: item
