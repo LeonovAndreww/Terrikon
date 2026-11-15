@@ -28,6 +28,7 @@
 #include "moment_marks.hpp"
 #include "player/player_controller.hpp"
 #include "media_folders.hpp"
+#include "explorer_order.hpp"
 #include "media_tools.hpp"
 
 #include <QCollator>
@@ -139,12 +140,32 @@ void TerrikonActions::queueFolderOf(const QString &mrl)
         QStringList names = file.dir().entryList(patterns, QDir::Files | QDir::Readable);
         if (names.size() < 2 || names.size() > 2000)
             return found;
-        /* the explorer's order: numbers as numbers, case left aside */
-        QCollator collator;
-        collator.setNumericMode(true);
-        collator.setCaseSensitivity(Qt::CaseInsensitive);
-        std::sort(names.begin(), names.end(), collator);
-        const int at = names.indexOf(file.fileName());
+        const auto indexOf = [](const QStringList &list, const QString &name) {
+            for (int i = 0; i < list.size(); ++i)
+                if (list[i].compare(name, Qt::CaseInsensitive) == 0)
+                    return i;
+            return -1;
+        };
+        /* the order of an explorer window showing the folder, as sorted
+         * and grouped there; else by names as the explorer does at first:
+         * numbers as numbers, case left aside */
+        QStringList shown;
+        for (const QString &path : terrikon::explorerOrder(file.absolutePath()))
+        {
+            const QFileInfo item(path);
+            if (indexOf(names, item.fileName()) >= 0)
+                shown << item.fileName();
+        }
+        if (indexOf(shown, file.fileName()) >= 0)
+            names = shown;
+        else
+        {
+            QCollator collator;
+            collator.setNumericMode(true);
+            collator.setCaseSensitivity(Qt::CaseInsensitive);
+            std::sort(names.begin(), names.end(), collator);
+        }
+        const int at = indexOf(names, file.fileName());
         if (at < 0)
             return found;
         for (int i = 0; i < names.size(); ++i)
