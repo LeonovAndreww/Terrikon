@@ -186,7 +186,8 @@ build, or by reading when the path is taken.
 | Previews: dragging along the time bar or the volume grabbed the tile instead | the tile's drag took the pointer over; both bars keep it now (`preventStealing`) |
 | Previews: the volume percent stayed in the middle of the bar, the speaker only told muted or not | the percent follows the level, the speaker shows the level as the player's does |
 | Videos: the cards of a folder with other letters than Latin ones ("Своё") were never joined | the folder's key was compared encoded on one side, decoded on the other |
-| Music mini window: the wave of the card stopped short of its sides and bottom | to the edges, cut by the rounded corners |
+| Music mini window: the wave of the card stopped short of its sides and bottom | to the edges, kept inside the rounded corners by the visualizer itself (a first try with `QtQuick.Effects` left the window empty: that module is not in the build) |
+| Videos: the joined cards of a folder showed a notch where its last row was shorter than the one above | one background per folder drawn under its cards (a few rectangles for the rows in view) instead of one per card, each asking its four neighbours |
 ## Known upstream issues, not fixed yet
 
 - `ListViewExt.qml`: the footer's height depends on its own position ("Binding loop detected for property implicitHeight"). Harmless.
