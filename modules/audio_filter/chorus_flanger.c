@@ -64,6 +64,9 @@ struct filter_sys_t
     int i_bufferLength;
     float * p_delayLineStart, * p_delayLineEnd;
     float * p_write;
+
+    /* the parameters are changed from other threads than the audio's */
+    vlc_mutex_t lock;
 };
 
 /*****************************************************************************
@@ -115,6 +118,7 @@ static int Open( vlc_object_t *p_this )
     filter_sys_t *p_sys = p_filter->p_sys = malloc( sizeof( *p_sys ) );
     if( !p_sys )
         return VLC_ENOMEM;
+    vlc_mutex_init( &p_sys->lock );
 
     p_sys->i_channels       = aout_FormatNbChannels( &p_filter->fmt_in.audio );
     p_sys->f_delayTime      = var_CreateGetFloat( p_this, "delay-time" );
@@ -234,6 +238,9 @@ static block_t *DoWork( filter_t *p_filter, block_t *p_in_buf )
 
     float *p_ptr, f_temp = 0;/* f_diff = 0, f_frac = 0;*/
 
+    vlc_mutex_lock( &p_sys->lock );
+    i_maxOffset = floorf( p_sys->f_sweepDepth * p_sys->i_sampleRate / 1000 );
+
     /* Process each sample */
     for( unsigned i = 0; i < i_samples ; i++ )
     {
@@ -300,6 +307,7 @@ static block_t *DoWork( filter_t *p_filter, block_t *p_in_buf )
         }
 
     }
+    vlc_mutex_unlock( &p_sys->lock );
     return p_in_buf;
 }
 
@@ -336,12 +344,14 @@ static int paramCallback( vlc_object_t *p_this, char const *psz_var,
 {
     filter_t *p_filter = (filter_t *)p_this;
     filter_sys_t *p_sys = p_data;
+    int ret = VLC_SUCCESS;
 
+    vlc_mutex_lock( &p_sys->lock );
     if( !strncmp( psz_var, "delay-time", 10 ) )
     {
         /* if invalid value pretend everything is OK without updating value */
         if( newval.f_float < 0 )
-            return VLC_SUCCESS;
+            goto out;
         p_sys->f_delayTime = newval.f_float;
         if( !reallocate_buffer( p_filter, p_sys ) )
         {
@@ -354,7 +364,7 @@ static int paramCallback( vlc_object_t *p_this, char const *psz_var,
     else if( !strncmp( psz_var, "sweep-depth", 11 ) )
     {
         if( newval.f_float < 0 || newval.f_float > p_sys->f_delayTime)
-            return VLC_SUCCESS;
+            goto out;
         p_sys->f_sweepDepth = newval.f_float;
         if( !reallocate_buffer( p_filter, p_sys ) )
         {
@@ -367,7 +377,7 @@ static int paramCallback( vlc_object_t *p_this, char const *psz_var,
     else if( !strncmp( psz_var, "sweep-rate", 10 ) )
     {
         if( newval.f_float > p_sys->f_sweepDepth )
-            return VLC_SUCCESS;
+            goto out;
         p_sys->f_sweepRate = newval.f_float;
         /* Calculate new f_sinMultiplier */
         if( p_sys->f_sweepDepth < small_value() ||
@@ -386,7 +396,9 @@ static int paramCallback( vlc_object_t *p_this, char const *psz_var,
     else if( !strncmp( psz_var, "dry-mix", 7 ) )
         p_sys->f_dryLevel = newval.f_float;
 
-    return VLC_SUCCESS;
+out:
+    vlc_mutex_unlock( &p_sys->lock );
+    return ret;
 }
 
 static int reallocate_buffer( filter_t *p_filter,  filter_sys_t *p_sys )
@@ -403,6 +415,9 @@ static int reallocate_buffer( filter_t *p_filter,  filter_sys_t *p_sys )
     }
     p_sys->p_delayLineStart = temp;
     p_sys->p_delayLineEnd = p_sys->p_delayLineStart + p_sys->i_bufferLength;
+    /* the old p_write pointed into the old buffer, and may be past the end
+     * of a shorter one */
+    p_sys->p_write = p_sys->p_delayLineStart;
     if( p_sys->i_bufferLength > i_old_length )
         memset( p_sys->p_delayLineStart + i_old_length, 0,
                 ( p_sys->i_bufferLength - i_old_length ) * sizeof( float ) );
