@@ -33,6 +33,9 @@ T.Pane {
 
     property bool paintOnly: false
 
+    // Terrikon: smaller where room is short (picture in picture)
+    property real sliderWidth: VLCStyle.dp(100, VLCStyle.scale)
+
     readonly property color sliderColor: {
         const theme = volControl.colorContext
         return (_player.volume > 1) ? theme.fg.negative : theme.fg.primary
@@ -136,8 +139,7 @@ T.Pane {
         Widgets.SliderExt {
             id: volControl
 
-            // FIXME: use VLCStyle
-            implicitWidth: VLCStyle.dp(100, VLCStyle.scale)
+            implicitWidth: root.sliderWidth
 
             // WARNING: Directly setting the insets break handle and background positioning.
             Binding on topInset {

@@ -22,6 +22,8 @@ import QtQuick.Templates as T
 import VLC.MainInterface
 import VLC.Style
 import VLC.Widgets as Widgets
+import VLC.Util
+import VLC.Terrikon
 import VLC.Playlist
 import VLC.Player
 import VLC.Util
@@ -135,7 +137,8 @@ T.Control {
         color: (hovered ||
                 playButton?.hovered ||
                 closeButton?.hovered ||
-                fullscreenButton?.hovered) ? "#10000000" : "transparent"
+                fullscreenButton?.hovered ||
+                windowButton?.hovered) ? "#10000000" : "transparent"
 
         // It is acceptable for effects to exceed the boundaries of the
         // parent. They are an exception to the "hypothetical clip test".
@@ -149,7 +152,8 @@ T.Control {
                  (videoSurface.hovered ||
                  playButton.hovered ||
                  closeButton.hovered ||
-                 fullscreenButton.hovered)
+                 fullscreenButton.hovered ||
+                 windowButton.hovered)
 
         Widgets.IconButton {
             id: playButton
@@ -217,6 +221,30 @@ T.Control {
             onClicked: {
                 MainCtx.playerFromPip = true
                 MainCtx.playerView = true
+            }
+        }
+
+        // Terrikon: from the video in the corner of the library to the
+        // picture in picture window, over the other applications
+        Widgets.ImageToolButton {
+            id: windowButton
+
+            anchors {
+                top: parent.top
+                topMargin: VLCStyle.margin_small
+                left: fullscreenButton.right
+                leftMargin: VLCStyle.margin_xsmall
+            }
+
+            sourceSize: Qt.size(VLCStyle.icon_PIP, VLCStyle.icon_PIP)
+            imageSource: SVGColorImage.colorize("qrc:///icons/compact_player.svg")
+                             .color1("white").uri()
+            description: qsTr("Picture in picture") + TerrikonActions.hint("pip-toggle")
+
+            onClicked: {
+                MainCtx.playerFromPip = true
+                MainCtx.playerView = true
+                CompactPlayer.enter()
             }
         }
     }

@@ -21,6 +21,7 @@ import QtQuick.Templates as T
 
 import VLC.MainInterface
 import VLC.Player
+import VLC.PlayerControls
 import VLC.Playlist
 import VLC.Style
 import VLC.Util
@@ -245,24 +246,10 @@ Item {
                     font.pixelSize: VLCStyle.fontSize_normal
                 }
 
-                OverlayButton {
-                    glyph: Player.muted ? VLCIcons.volume_muted : VLCIcons.volume_high
-                    size: VLCStyle.icon_small
-                    tip: (Player.muted ? qsTr("Unmute") : qsTr("Mute")) + TerrikonActions.hint("vol-mute")
-                    onClicked: Player.muted = !Player.muted
-                }
-
-                Widgets.SliderExt {
-                    Layout.preferredWidth: VLCStyle.dp(64, VLCStyle.scale)
-                    from: 0
-                    to: 1.25
-                    value: Player.muted ? 0 : Player.volume
-                    color: "white"
-                    onMoved: {
-                        Player.volume = value
-                        if (Player.muted && value > 0)
-                            Player.muted = false
-                    }
+                // the player's own volume control: the same icon, the
+                // percent, the tracks and the boost on hovering the speaker
+                VolumeWidget {
+                    sliderWidth: VLCStyle.dp(72, VLCStyle.scale)
                 }
             }
         }
