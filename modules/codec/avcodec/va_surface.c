@@ -138,7 +138,14 @@ vlc_va_surface_t *va_pool_Get(va_pool_t *va_pool)
     if (unlikely(va_pool->surface_count == 0))
         return NULL;
 
-    vlc_sem_wait(&va_pool->available_surfaces);
+    /* Not for ever: when the surfaces are all held (by pictures waiting for
+     * a clock that waits for this decoder, after a seek), the decoder and
+     * with it the input, which waits for its first picture, stopped for
+     * good: pauses and seeks went unanswered. The frame is lost instead, as
+     * VLC 3 did after a second. */
+    if (vlc_sem_timedwait(&va_pool->available_surfaces,
+                          vlc_tick_now() + VLC_TICK_FROM_SEC(1)) != 0)
+        return NULL;
     surface = GetSurface(va_pool);
     assert(surface != NULL);
     return surface;
