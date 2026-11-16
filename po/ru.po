@@ -44510,8 +44510,48 @@ msgid "More"
 msgstr "Ещё"
 
 #: terrikon
-msgid "Fainter layers behind"
-msgstr "Бледные слои позади"
+msgid "Hills: echo of the last moments"
+msgstr "Холмы: эхо прошлых мгновений"
+
+#: modules/gui/qt/player/qml/PlayerView.qml
+msgid "Round cover"
+msgstr "Круглая обложка"
+
+#: modules/gui/qt/player/qml/controlbarcontrols/VolumeWidget.qml
+msgid "No sound in this file"
+msgstr "В этом файле нет звука"
+
+#: modules/gui/qt/player/qml/PlayerView.qml
+msgid "Other lyrics…"
+msgstr "Другой текст…"
+
+#: modules/gui/qt/player/qml/PlayerView.qml
+msgid "From a file…"
+msgstr "Из файла…"
+
+#: modules/gui/qt/terrikon/lyrics_finder.cpp
+msgid "in time with the song"
+msgstr "по времени"
+
+#: modules/gui/qt/terrikon/lyrics_finder.cpp
+msgid "text only"
+msgstr "только текст"
+
+#: modules/gui/qt/terrikon/lyrics_finder.cpp
+msgid "Look for other versions on LRCLIB"
+msgstr "Искать другие варианты на LRCLIB"
+
+#: modules/gui/qt/terrikon/lyrics_finder.cpp
+msgid "Load lyrics from a file…"
+msgstr "Загрузить текст из файла…"
+
+#: modules/gui/qt/terrikon/lyrics_finder.cpp
+msgid "Lyrics for this song"
+msgstr "Текст для этой песни"
+
+#: modules/gui/qt/terrikon/lyrics_finder.cpp
+msgid "Lyrics (*.lrc *.txt)"
+msgstr "Тексты песен (*.lrc *.txt)"
 
 #: terrikon
 msgid "Mini window over the others"
