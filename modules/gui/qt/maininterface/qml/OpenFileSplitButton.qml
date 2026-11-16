@@ -27,8 +27,10 @@ Widgets.SplitButton {
 
     text: qsTr("Open File")
 
-    iconTxt: VLCIcons.ic_fluent_folder_open_24_regular
-    iconSize: VLCStyle.fontSize_xxlarge
+    // Terrikon: a file, not a folder; a plain button, not the page's main one
+    iconTxt: VLCIcons.ic_fluent_document_add_24_regular
+    iconSize: VLCStyle.fontSize_large
+    colorContext.colorSet: ColorContext.ButtonStandard
 
     model: [
         { text: qsTr("Open Multiple Files"), icon_svg: ":/menu/file.svg" },
