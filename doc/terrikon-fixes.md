@@ -188,6 +188,10 @@ build, or by reading when the path is taken.
 | Videos: the cards of a folder with other letters than Latin ones ("Своё") were never joined | the folder's key was compared encoded on one side, decoded on the other |
 | Music mini window: the wave of the card stopped short of its sides and bottom | to the edges, kept inside the rounded corners by the visualizer itself (a first try with `QtQuick.Effects` left the window empty: that module is not in the build) |
 | Videos: the joined cards of a folder showed a notch where its last row was shorter than the one above | one background per folder drawn under its cards (a few rectangles for the rows in view) instead of one per card, each asking its four neighbours |
+| Home: "Videos" and "Music" were offered though in the library already | an answer to the first request (made before the library's folders were known, slow to count the files) came after the right one and was shown over it; older answers are dropped, folders are compared as real paths and those inside a library folder are not offered |
+| Player: no hand pointer on the previous/next bands, the elapsed/remaining time, the mini window's time bar | the pointer of the setting on each |
+| Visualizations panel stayed open over another media, even a video | closed when the media changes |
+| "Fainter layers behind" showed for every style, did something for the hills only | shown for the hills, named for what it does |
 ## Known upstream issues, not fixed yet
 
 - `ListViewExt.qml`: the footer's height depends on its own position ("Binding loop detected for property implicitHeight"). Harmless.
