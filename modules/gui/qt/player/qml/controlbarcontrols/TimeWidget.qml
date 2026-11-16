@@ -79,4 +79,9 @@ T.Control {
         enabled: !root.paintOnly
         onTapped: MainCtx.showRemainingTime = !MainCtx.showRemainingTime
     }
+
+    HoverHandler {
+        enabled: !root.paintOnly
+        cursorShape: VLCStyle.pointerCursor
+    }
 }

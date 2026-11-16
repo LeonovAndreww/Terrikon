@@ -68,7 +68,13 @@ T.Pane {
 
             focus: true
             paintOnly: root.paintOnly
+            // Terrikon: a video without any sound (an animated cover...):
+            // said, not left for the volume to be blamed
+            readonly property bool silentFile: Player.videoTracks.count > 0 && Player.audioTracks.count === 0
+            opacity: silentFile ? 0.5 : 1
             text: {
+                if (silentFile)
+                    return VLCIcons.volume_muted
                 if (_player.muted)
                     return VLCIcons.volume_muted
                 else if (_player.volume === 0)
@@ -80,7 +86,8 @@ T.Pane {
                 else
                     return VLCIcons.volume_high
             }
-            description: qsTr("Mute") + TerrikonActions.hint("vol-mute")
+            description: silentFile ? qsTr("No sound in this file")
+                                    : qsTr("Mute") + TerrikonActions.hint("vol-mute")
 
             AccessibleCompat.id: "muteButton"
 

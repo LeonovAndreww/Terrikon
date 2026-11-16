@@ -331,6 +331,10 @@ Window {
         TapHandler {
             onTapped: (eventPoint) => { Player.position = eventPoint.position.x / parent.width }
         }
+
+        HoverHandler {
+            cursorShape: VLCStyle.pointerCursor
+        }
     }
 
     component Titles: Column {

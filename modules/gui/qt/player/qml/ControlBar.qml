@@ -210,6 +210,7 @@ T.Pane {
 
                 HoverHandler {
                     id: mediaRemainingTimeHover
+                    cursorShape: VLCStyle.pointerCursor
                 }
 
                 Widgets.ToolTipExt {
