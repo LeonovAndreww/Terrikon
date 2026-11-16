@@ -35,6 +35,9 @@ class NetworkBaseModel: public BaseModel
     Q_OBJECT
 
 public:
+    static QString placeIcon(const QUrl &url);
+
+public:
     enum Role {
         NETWORK_BASE_NAME = Qt::UserRole + 1,
         NETWORK_BASE_MRL,

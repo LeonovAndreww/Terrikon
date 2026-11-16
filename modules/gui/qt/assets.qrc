@@ -97,6 +97,15 @@
         <file alias="file.svg">pixmaps/sd/file.svg</file>
         <file alias="network.svg">pixmaps/sd/network.svg</file>
         <file alias="directory.svg">pixmaps/sd/directory.svg</file>
+        <file alias="place_video.svg">pixmaps/sd/place_video.svg</file>
+        <file alias="place_document.svg">pixmaps/sd/place_document.svg</file>
+        <file alias="place_arrow_download.svg">pixmaps/sd/place_arrow_download.svg</file>
+        <file alias="place_music_note_2.svg">pixmaps/sd/place_music_note_2.svg</file>
+        <file alias="place_desktop.svg">pixmaps/sd/place_desktop.svg</file>
+        <file alias="place_usb_stick.svg">pixmaps/sd/place_usb_stick.svg</file>
+        <file alias="place_server.svg">pixmaps/sd/place_server.svg</file>
+        <file alias="place_laptop.svg">pixmaps/sd/place_laptop.svg</file>
+        <file alias="place_hard_drive.svg">pixmaps/sd/place_hard_drive.svg</file>
         <file alias="stream.svg">pixmaps/sd/stream.svg</file>
         <file alias="node.svg">pixmaps/sd/node.svg</file>
         <file alias="playlist.svg">pixmaps/sd/playlist.svg</file>

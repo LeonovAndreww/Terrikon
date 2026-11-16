@@ -1033,6 +1033,15 @@ libqt_plugin_la_RES = \
 	pixmaps/sd/assembleenationale.svg \
 	pixmaps/sd/capture-card.svg \
 	pixmaps/sd/directory.svg \
+	pixmaps/sd/place_video.svg \
+	pixmaps/sd/place_document.svg \
+	pixmaps/sd/place_arrow_download.svg \
+	pixmaps/sd/place_music_note_2.svg \
+	pixmaps/sd/place_desktop.svg \
+	pixmaps/sd/place_usb_stick.svg \
+	pixmaps/sd/place_server.svg \
+	pixmaps/sd/place_laptop.svg \
+	pixmaps/sd/place_hard_drive.svg \
 	pixmaps/sd/disc.svg \
 	pixmaps/sd/file.svg \
 	pixmaps/sd/fmc.svg \
