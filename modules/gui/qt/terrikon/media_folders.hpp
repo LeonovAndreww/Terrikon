@@ -67,6 +67,11 @@ public:
      * suggestionsReady(): looking at folders can take a minute when one of
      * them is on a network drive that does not answer */
     Q_INVOKABLE void requestSuggestions(const QStringList &have);
+private:
+    /* the last request: an older answer, slower to come, is not shown over
+     * it (asked before the library's folders were known, it offered them) */
+    unsigned m_suggestSerial = 0;
+public:
 
     /* Asks for a folder; empty if cancelled */
     Q_INVOKABLE QUrl pickFolder() const;

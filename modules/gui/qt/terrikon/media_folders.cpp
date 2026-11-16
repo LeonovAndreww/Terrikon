@@ -182,11 +182,12 @@ QVariantList MediaFolders::suggestions(const QStringList &have) const
 void MediaFolders::requestSuggestions(const QStringList &have)
 {
     QPointer<MediaFolders> self(this);
-    std::thread([self, have] {
+    const unsigned serial = ++m_suggestSerial;
+    std::thread([self, have, serial] {
         const QVariantList found = collectSuggestions(have);
         /* back on the interface thread, if it is still there */
-        QMetaObject::invokeMethod(qApp, [self, found] {
-            if (self)
+        QMetaObject::invokeMethod(qApp, [self, found, serial] {
+            if (self && serial == self->m_suggestSerial)
                 emit self->suggestionsReady(found);
         }, Qt::QueuedConnection);
     }).detach();
@@ -206,22 +207,36 @@ static QVariantList collectSuggestions(const QStringList &have)
     candidates.append({ qtr("Music"), music });
 
     QVariantList out;
+    /* the library's folders come as "file:///c:%5CUsers%5C...": compared
+     * as real paths, and what is inside one is in the library already */
     QStringList seen;
     for (const QString &url : have)
     {
-        const QString local = QDir::cleanPath(QUrl(url).toLocalFile());
+        QString local = QUrl(url).toLocalFile();
+        if (local.isEmpty())
+            local = QUrl::fromPercentEncoding(url.toUtf8()).remove(QStringLiteral("file:///"));
+        local = QDir::cleanPath(QDir::fromNativeSeparators(local));
+        const QString canonical = QFileInfo(local).canonicalFilePath();
         if (!local.isEmpty())
-            seen << local;
+            seen << (canonical.isEmpty() ? local : canonical);
     }
+    const auto covered = [&seen](const QString &path) {
+        for (const QString &folder : seen)
+            if (path.compare(folder, Qt::CaseInsensitive) == 0
+                || path.startsWith(folder + QLatin1Char('/'), Qt::CaseInsensitive))
+                return true;
+        return false;
+    };
+    QStringList offered;
     for (const auto &[title, path] : candidates)
     {
         const QFileInfo info(path);
         if (path.isEmpty() || !info.isDir())
             continue;
         const QString canonical = info.canonicalFilePath();
-        if (seen.contains(canonical, Qt::CaseInsensitive))
+        if (covered(canonical) || offered.contains(canonical, Qt::CaseInsensitive))
             continue;
-        seen << canonical;
+        offered << canonical;
         const int count = countIn(canonical, 2, path == music ? audioPatterns() : videoPatterns());
         if (count == 0)
             continue;
