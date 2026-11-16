@@ -270,6 +270,12 @@ FocusScope {
         enter: Transition { NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 140 } }
         exit: Transition { NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 120 } }
 
+        // about what plays: another media, another panel (or none)
+        Connections {
+            target: Player
+            function onInputChanged() { visPanel.close() }
+        }
+
         component Chip: Rectangle {
             id: chip
             property string label
@@ -383,10 +389,18 @@ FocusScope {
                 visible: Visualizer.style !== 0
                 width: parent.width
                 spacing: VLCStyle.margin_xxsmall
+                // the hills only: how they were a moment ago, fainter behind
                 Chip {
-                    label: qsTr("Fainter layers behind")
+                    visible: Visualizer.style === 4
+                    label: qsTr("Hills: echo of the last moments")
                     on: Visualizer.echoes
                     onPicked: Visualizer.echoes = !Visualizer.echoes
+                }
+                Chip {
+                    visible: Visualizer.style === 1
+                    label: qsTr("Round cover")
+                    on: Visualizer.roundCover
+                    onPicked: Visualizer.roundCover = !Visualizer.roundCover
                 }
                 Chip {
                     label: qsTr("Mini window over the others")
@@ -847,7 +861,7 @@ FocusScope {
                     color: Visualizer.color
                     color2: Visualizer.color2
 
-                    cover: cover
+                    cover: roundCoverImage.visible ? roundCoverImage : cover
                 }
 
                 MouseArea {
@@ -1037,6 +1051,8 @@ FocusScope {
                                 // Terrikon: beats with the ring around it
                                 scale: visualizer.visible && Visualizer.style === 1
                                        ? 1 + visualizer.level * 0.05 : 1
+                                // the round one is shown instead
+                                opacity: roundCoverImage.visible ? 0 : 1
 
                                 Accessible.role: Accessible.Graphic
                                 Accessible.name: qsTr("Cover")
@@ -1062,6 +1078,28 @@ FocusScope {
                                     yOffset: VLCStyle.dp(24, VLCStyle.scale)
                                     blurRadius: VLCStyle.dp(54, VLCStyle.scale)
                                 }
+
+                                Widgets.RoundedRectangleShadow {
+                                    color: Qt.rgba(0, 0, 0, .22)
+                                    yOffset: VLCStyle.dp(5, VLCStyle.scale)
+                                    blurRadius: VLCStyle.dp(14, VLCStyle.scale)
+                                }
+                            }
+
+                            // Terrikon: the cover cut to a circle, in the ring
+                            Widgets.ImageExt {
+                                id: roundCoverImage
+
+                                visible: Visualizer.roundCover && Visualizer.style === 1 && visualizer.visible
+                                anchors.centerIn: cover
+                                width: Math.min(cover.paintedWidth, cover.paintedHeight)
+                                height: width
+                                radius: width / 2
+                                source: cover.source
+                                sourceSize: cover.sourceSize
+                                fillMode: Image.PreserveAspectCrop
+                                asynchronous: true
+                                scale: cover.scale
 
                                 Widgets.RoundedRectangleShadow {
                                     color: Qt.rgba(0, 0, 0, .22)
@@ -1270,8 +1308,10 @@ FocusScope {
                                     contentItem: Text {
                                         readonly property int state: LyricsFinder.state
                                         readonly property string link: "<a href=\"find\">%1</a>"
+                                        readonly property string fileLink: " · <a href=\"file\">" + qsTr("From a file…") + "</a>"
                                         color: "white"
-                                        linkColor: "#ffb35c"
+                                        linkColor: "white"
+                                        font.underline: false
                                         font.pixelSize: VLCStyle.fontSize_normal
                                         textFormat: Text.StyledText
                                         horizontalAlignment: Text.AlignHCenter
@@ -1280,17 +1320,24 @@ FocusScope {
                                             case LyricsFinder.Searching:
                                                 return qsTr("Looking for the lyrics…")
                                             case LyricsFinder.NotFound:
-                                                return qsTr("No lyrics found for this song")
+                                                return qsTr("No lyrics found for this song") + fileLink
                                             case LyricsFinder.Failed:
                                                 return qsTr("LRCLIB does not answer.") + " " + link.arg(qsTr("Try again"))
                                             default:
-                                                return qsTr("No lyrics in the file.") + " " + link.arg(qsTr("Find"))
+                                                return qsTr("No lyrics in the file.") + " " + link.arg(qsTr("Find")) + fileLink
                                             }
                                         }
-                                        onLinkActivated: LyricsFinder.find()
+                                        onLinkActivated: (link) => {
+                                            if (link === "file") {
+                                                lyricsNote.close()
+                                                LyricsFinder.loadFile()
+                                            } else {
+                                                LyricsFinder.find()
+                                            }
+                                        }
 
                                         HoverHandler {
-                                            cursorShape: parent.hoveredLink !== "" ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                            cursorShape: parent.hoveredLink !== "" ? VLCStyle.pointerCursor : Qt.ArrowCursor
                                         }
                                     }
                                 }
@@ -1355,6 +1402,22 @@ FocusScope {
                             Navigation.parentItem: rootPlayer
                             Navigation.upItem: audioControls
                             Navigation.downItem: Player.isInteractive ? toggleControlBarButton : controlBar
+                        }
+
+                        // Terrikon: these lyrics are not the right ones: other
+                        // versions found, a file of one's own
+                        Widgets.ButtonExt {
+                            id: otherLyricsButton
+
+                            Layout.alignment: Qt.AlignHCenter
+                            visible: syncToPlaybackCheckBox.visible
+                            text: qsTr("Other lyrics…")
+                            onClicked: LyricsFinder.showMenu()
+
+                            Connections {
+                                target: LyricsFinder
+                                function onChoicesReady() { LyricsFinder.showMenu() }
+                            }
                         }
                     }
 
@@ -1974,6 +2037,7 @@ FocusScope {
         MouseArea {
             anchors.fill: parent
             acceptedButtons: Qt.LeftButton
+            cursorShape: VLCStyle.pointerCursor
             onClicked: zone.activated()
         }
 

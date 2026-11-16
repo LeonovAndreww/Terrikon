@@ -60,6 +60,8 @@ class Visualizer : public QObject
     Q_PROPERTY(int colorMode READ colorMode WRITE setColorMode NOTIFY colorsChanged FINAL)
     /* the fainter, delayed layers behind the main one (hills) */
     Q_PROPERTY(bool echoes READ echoes WRITE setEchoes NOTIFY echoesChanged FINAL)
+    // The cover cut to a circle, inside the ring
+    Q_PROPERTY(bool roundCover READ roundCover WRITE setRoundCover NOTIFY roundCoverChanged FINAL)
     Q_PROPERTY(QStringList colorModeNames READ colorModeNames CONSTANT FINAL)
     Q_PROPERTY(QColor customColor READ customColor WRITE setCustomColor NOTIFY colorsChanged FINAL)
     // The colours to draw with, following the mode and the cover
@@ -68,6 +70,8 @@ class Visualizer : public QObject
 
 public:
     bool echoes() const { return m_echoes; }
+    bool roundCover() const { return m_roundCover; }
+    void setRoundCover(bool on);
     void setEchoes(bool on);
     enum Style { Off = 0, Ring, Bars, Wave, Hills, Mirror, Line, StyleCount };
     Q_ENUM(Style)
@@ -130,6 +134,7 @@ public:
 
 signals:
     void echoesChanged();
+    void roundCoverChanged();
     void styleChanged();
     void backgroundChanged();
     void miniWindowChanged();
@@ -140,6 +145,7 @@ signals:
 
 private:
     bool m_echoes = true;
+    bool m_roundCover = false;
     void listen();
     void readCoverColor();
 

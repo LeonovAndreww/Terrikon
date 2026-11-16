@@ -24,6 +24,10 @@
 #include "player/player_controller.hpp"
 
 #include <QCryptographicHash>
+#include <QCursor>
+#include <QFileDialog>
+#include <QMenu>
+#include <QSet>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -123,6 +127,7 @@ LyricsFinder::LyricsFinder(qt_intf_t *intf, QObject *parent)
     connect(player, &PlayerController::inputChanged, this, [this, later] {
         setState(Idle);
         m_lookedAt.clear(); // played again: looked at again
+        m_candidates.clear();
         later->start();
     });
     connect(player, &PlayerController::currentMetaChanged, later, qOverload<>(&QTimer::start));
@@ -194,7 +199,7 @@ void LyricsFinder::lookLocally()
     });
 }
 
-void LyricsFinder::find()
+void LyricsFinder::find(bool all)
 {
     if (m_state == Searching)
         return;
@@ -209,9 +214,8 @@ void LyricsFinder::find()
     setState(Searching);
 
     vlc_object_t *obj = VLC_OBJECT(m_intf);
-    const QString kept = cacheFile(song.key);
-    struct Result { QString lrc; bool reached = false; };
-    offThread(this, [obj, song, kept] {
+    struct Result { QList<Candidate> found; bool reached = false; };
+    offThread(this, [obj, song, all] {
         Result result;
         const QString base = QStringLiteral("https://lrclib.net/api/");
 
@@ -239,6 +243,43 @@ void LyricsFinder::find()
         else if (clean != song.title || song.title.isEmpty())
             asks << Ask{ song.artist, clean };
 
+        QSet<qint64> seen;
+        /* each answer kept as a choice: the nearest by length first, with
+         * times before without; one of another length only for a version
+         * sped up or slowed down, its times stretched to the file's */
+        const auto consider = [&](const QJsonObject &o) {
+            const qint64 id = o.value(QStringLiteral("id")).toInteger();
+            const QString text = lyricsOf(o);
+            if (text.isEmpty() || seen.contains(id))
+                return;
+            seen.insert(id);
+            const double length = o.value(QStringLiteral("duration")).toDouble();
+            const bool synced = !o.value(QStringLiteral("syncedLyrics")).toString().isEmpty();
+            double score = song.seconds > 0 ? std::abs(length - song.seconds) : 0;
+            double scale = 1;
+            if (score > 15)
+            {
+                const double ratio = length > 0 ? song.seconds / length : 0;
+                if (!otherSpeed || ratio < 0.5 || ratio > 2)
+                    return;
+                scale = ratio;
+                score += 100;
+            }
+            if (!synced)
+                score += 1000;
+            Candidate c;
+            const int secs = int(std::lround(length));
+            c.label = QStringLiteral("%1 — %2  (%3:%4%5)")
+                .arg(o.value(QStringLiteral("artistName")).toString(),
+                     o.value(QStringLiteral("trackName")).toString())
+                .arg(secs / 60).arg(secs % 60, 2, 10, QLatin1Char('0'))
+                .arg(synced ? QStringLiteral(", ") + qtr("in time with the song")
+                            : QStringLiteral(", ") + qtr("text only"));
+            c.lrc = scale != 1 ? scaleLrc(text, scale) : text;
+            c.score = score;
+            result.found << c;
+        };
+
         /* the exact song first: by its artist, title, album and length */
         if (!song.artist.isEmpty() && !song.title.isEmpty() && song.seconds > 0)
         {
@@ -252,12 +293,11 @@ void LyricsFinder::find()
             url.setQuery(q);
             const QJsonDocument doc = QJsonDocument::fromJson(fetch(obj, url, &result.reached));
             if (doc.isObject())
-                result.lrc = lyricsOf(doc.object());
+                consider(doc.object());
         }
 
-        /* else, for each way of asking, the nearest by length among those
-         * of that name, with times before without */
-        for (int i = 0; i < asks.size() * 2 && result.lrc.isEmpty(); ++i)
+        /* then each way of asking, all of them when choices are wanted */
+        for (int i = 0; i < asks.size() * 2 && (all || result.found.isEmpty()); ++i)
         {
             const Ask &ask = asks[i / 2];
             QUrl url(base + QStringLiteral("search"));
@@ -273,57 +313,83 @@ void LyricsFinder::find()
             else
                 continue;
             url.setQuery(q);
-            const QJsonArray found = QJsonDocument::fromJson(fetch(obj, url, &result.reached)).array();
-            double best = 1e9, factor = 1;
-            for (const QJsonValue &v : found)
-            {
-                const QJsonObject o = v.toObject();
-                const QString text = lyricsOf(o);
-                if (text.isEmpty())
-                    continue;
-                const double length = o.value(QStringLiteral("duration")).toDouble();
-                const bool synced = !o.value(QStringLiteral("syncedLyrics")).toString().isEmpty();
-                double score = song.seconds > 0 ? std::abs(length - song.seconds) : 0;
-                double scale = 1;
-                if (score > 15)
-                {
-                    /* another version: only for one sped up or slowed down,
-                     * its times stretched to the file's length */
-                    const double ratio = length > 0 ? song.seconds / length : 0;
-                    if (!otherSpeed || ratio < 0.5 || ratio > 2)
-                        continue;
-                    scale = ratio;
-                    score += 100;
-                }
-                if (!synced)
-                    score += 1000;
-                if (score < best)
-                {
-                    best = score;
-                    result.lrc = text;
-                    factor = scale;
-                }
-            }
-            if (!result.lrc.isEmpty() && factor != 1)
-                result.lrc = scaleLrc(result.lrc, factor);
+            for (const QJsonValue &v : QJsonDocument::fromJson(fetch(obj, url, &result.reached)).array())
+                consider(v.toObject());
         }
-
-        if (!result.lrc.isEmpty() && !kept.isEmpty() && QDir().mkpath(QFileInfo(kept).path()))
-        {
-            QFile file(kept);
-            if (file.open(QIODevice::WriteOnly | QIODevice::Truncate))
-                file.write(result.lrc.toUtf8());
-        }
+        std::stable_sort(result.found.begin(), result.found.end(),
+                         [](const Candidate &x, const Candidate &y) { return x.score < y.score; });
         return result;
-    }, [this, song](const Result &result) {
-        if (result.lrc.isEmpty())
+    }, [this, song, all](const Result &result) {
+        if (current().url != song.url)
+            return;
+        m_candidates = result.found;
+        emit candidatesChanged();
+        if (result.found.isEmpty())
         {
             setState(result.reached ? NotFound : Failed);
             return;
         }
-        apply(song.url, fromLrc(result.lrc));
         setState(Found);
+        if (all)
+            emit choicesReady();
+        else
+            choose(0);
     });
+}
+
+void LyricsFinder::choose(int index)
+{
+    if (index < 0 || index >= m_candidates.size())
+        return;
+    use(m_candidates[index].lrc);
+}
+
+void LyricsFinder::use(const QString &lrc)
+{
+    const Song song = current();
+    const QByteArray raw = fromLrc(lrc);
+    if (song.url.isEmpty() || raw.isEmpty())
+        return;
+    m_intf->p_mainPlayerController->setExternalLyrics(raw);
+    /* kept: the next time the song plays, these */
+    const QString kept = cacheFile(song.key);
+    if (!kept.isEmpty() && QDir().mkpath(QFileInfo(kept).path()))
+    {
+        QFile file(kept);
+        if (file.open(QIODevice::WriteOnly | QIODevice::Truncate))
+            file.write(lrc.toUtf8());
+    }
+    setState(Found);
+}
+
+void LyricsFinder::loadFile()
+{
+    const QString path = QFileDialog::getOpenFileName(nullptr, qtr("Lyrics for this song"), QString(),
+                                                      qtr("Lyrics (*.lrc *.txt)"));
+    QFile f(path);
+    if (!path.isEmpty() && f.size() < 2 * 1024 * 1024 && f.open(QIODevice::ReadOnly))
+        use(QString::fromUtf8(f.readAll()));
+}
+
+void LyricsFinder::showMenu()
+{
+    QMenu menu;
+    QList<QAction *> picks;
+    for (const Candidate &c : m_candidates)
+        picks << menu.addAction(c.label);
+    if (!picks.isEmpty())
+        menu.addSeparator();
+    QAction *search = menu.addAction(qtr("Look for other versions on LRCLIB"));
+    QAction *file = menu.addAction(qtr("Load lyrics from a file…"));
+    QAction *picked = menu.exec(QCursor::pos());
+    if (!picked)
+        return;
+    if (picked == search)
+        find(true);
+    else if (picked == file)
+        loadFile();
+    else
+        choose(picks.indexOf(picked));
 }
 
 QByteArray LyricsFinder::fromLrc(const QString &lrc)

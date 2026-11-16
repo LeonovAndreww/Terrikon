@@ -76,6 +76,7 @@ Visualizer::Visualizer(qt_intf_t *intf, QObject *parent)
 
     m_miniWindow = m_intf->mainSettings->value(QString::fromLatin1(miniKey), false).toBool();
     m_echoes = m_intf->mainSettings->value(QStringLiteral("Visualizer/echoes"), true).toBool();
+    m_roundCover = m_intf->mainSettings->value(QStringLiteral("Visualizer/roundCover"), false).toBool();
     m_hasMiniPosition = m_intf->mainSettings->contains(QString::fromLatin1(miniPositionKey));
     m_miniPosition = m_intf->mainSettings->value(QString::fromLatin1(miniPositionKey), QPoint(-1, -1)).toPoint();
     m_miniShape = qBound(0, m_intf->mainSettings->value(QString::fromLatin1(miniShapeKey), int(Card)).toInt(),
@@ -103,6 +104,15 @@ void Visualizer::setEchoes(bool on)
     m_echoes = on;
     m_intf->mainSettings->setValue(QStringLiteral("Visualizer/echoes"), on);
     emit echoesChanged();
+}
+
+void Visualizer::setRoundCover(bool on)
+{
+    if (on == m_roundCover)
+        return;
+    m_roundCover = on;
+    m_intf->mainSettings->setValue(QStringLiteral("Visualizer/roundCover"), on);
+    emit roundCoverChanged();
 }
 
 void Visualizer::setStyle(int style)

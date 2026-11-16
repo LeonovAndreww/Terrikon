@@ -43,8 +43,13 @@ public:
 
     int state() const { return m_state; }
 
-    /* Looks for the lyrics of the song playing on the web */
-    Q_INVOKABLE void find();
+    /* Looks for the lyrics of the song playing on the web: shows the
+     * best one, or with all, gathers every version for choosing */
+    Q_INVOKABLE void find(bool all = false);
+    /* Another version found, a file of one's own, another search */
+    Q_INVOKABLE void showMenu();
+    /* An .lrc (or plain text) file of one's own for the song */
+    Q_INVOKABLE void loadFile();
 
     /* LRC text as the player keeps lyrics: "ms\x1Ftext" parts apart by
      * \x1E; without times, the lines in order, none current */
@@ -52,9 +57,16 @@ public:
 
 signals:
     void stateChanged();
+    void candidatesChanged();
+    /* found when asked for all: the menu to choose from, again */
+    void choicesReady();
 
 private:
     struct Song { QString url, artist, title, album, key; int seconds = 0; };
+    struct Candidate { QString label, lrc; double score = 0; };
+    void choose(int index);
+    void use(const QString &lrc);
+    QList<Candidate> m_candidates;
     Song current() const;
     void lookLocally();
     void setState(State state);
