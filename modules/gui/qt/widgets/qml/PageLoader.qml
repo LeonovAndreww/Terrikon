@@ -97,17 +97,22 @@ StackViewExt {
                     // takes those it has ("Cannot assign to non-existent
                     // property")
                     const onTheWay = path.length > 1
+                    // the place in a list is kept for any page of the path
+                    // (History.viewProp.initialIndex), also for the pages
+                    // without a list: it is given only to a page having it
+                    // (the views use it once their model is counted)
                     if (!onTheWay) {
                         for (const key of properties.keys()) {
-                            pageProp[key] = properties[key]
+                            if (key !== "initialIndex")
+                                pageProp[key] = properties[key]
                         }
                     }
 
                     History.update([...pagePrefix, head])
                     root.replace(null, component, pageProp)
-                    if (onTheWay && currentItem) {
+                    if (currentItem) {
                         for (const key of properties.keys()) {
-                            if (key in currentItem)
+                            if ((onTheWay || key === "initialIndex") && key in currentItem)
                                 currentItem[key] = properties[key]
                         }
                     }
