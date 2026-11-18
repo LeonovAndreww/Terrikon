@@ -1685,7 +1685,7 @@ static int MP4_ReadBox_stts( stream_t *p_stream, MP4_Box_t *p_box )
     if( p_box->data.p_stts->pi_sample_count == NULL
      || p_box->data.p_stts->pi_sample_delta == NULL )
     {
-        MP4_FreeBox_stts( p_box );
+        /* freed by MP4_FreeBox_stts with the box */
         MP4_READBOX_EXIT( 0 );
     }
 
@@ -1731,7 +1731,7 @@ static int MP4_ReadBox_ctts( stream_t *p_stream, MP4_Box_t *p_box )
     if( unlikely(p_box->data.p_ctts->pi_sample_count == NULL
               || p_box->data.p_ctts->pi_sample_offset == NULL) )
     {
-        MP4_FreeBox_ctts( p_box );
+        /* freed by MP4_FreeBox_ctts with the box */
         MP4_READBOX_EXIT( 0 );
     }
     p_box->data.p_ctts->i_entry_count = count;
@@ -4514,7 +4514,7 @@ static int MP4_ReadBox_tfra( stream_t *p_stream, MP4_Box_t *p_box )
         READ_VARIABLE_LENGTH(p_tfra->i_length_size_of_sample_num, p_tfra->p_sample_number);
     }
     if ( i < i_number_of_entries )
-        i_number_of_entries = i;
+        p_tfra->i_number_of_entries = i_number_of_entries = i;
 
     FIX_VARIABLE_LENGTH(p_tfra->i_length_size_of_traf_num);
     FIX_VARIABLE_LENGTH(p_tfra->i_length_size_of_trun_num);
@@ -5570,9 +5570,11 @@ MP4_Box_t *MP4_BoxGetRoot( stream_t *p_stream )
         return NULL;
 
     p_vroot->i_shortsize = 1;
-    uint64_t i_size;
+    uint64_t i_size = 0;
     if( vlc_stream_GetSize( p_stream, &i_size ) == 0 )
         p_vroot->i_size = i_size;
+    else
+        i_size = 0;
 
     /* First get the moov */
     {
@@ -5623,9 +5625,18 @@ MP4_Box_t *MP4_BoxGetRoot( stream_t *p_stream )
     if( ( p_cmov = MP4_BoxGet( p_vroot, "moov/cmov" ) ) ||
         ( p_cmov = MP4_BoxGet( p_vroot, "foov/cmov" ) ) )
     {
-        MP4_Box_t *p_moov = MP4_BoxExtract( &p_vroot->p_first, p_cmov->p_father->i_type );
         /* get uncompressed p_moov */
         MP4_Box_t *p_umoov = MP4_BoxExtract( &p_cmov->p_first, ATOM_moov );
+        if( p_umoov == NULL )
+        {
+            msg_Err( p_stream, "compressed moov without a moov" );
+            goto error;
+        }
+        MP4_Box_t *p_moov = MP4_BoxExtract( &p_vroot->p_first, p_cmov->p_father->i_type );
+        /* the extracted box may have been the last child */
+        p_vroot->p_last = p_vroot->p_first;
+        while( p_vroot->p_last && p_vroot->p_last->p_next )
+            p_vroot->p_last = p_vroot->p_last->p_next;
         /* make p_root father of this new moov */
         MP4_BoxAddChild( p_vroot, p_umoov );
         /* Release old moov and compressed info */
