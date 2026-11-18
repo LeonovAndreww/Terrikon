@@ -2452,7 +2452,8 @@ static int Control( demux_t *p_demux, int i_query, va_list args )
         case DEMUX_SET_SEEKPOINT:
         {
             const int i_seekpoint = va_arg( args, int );
-            if( !p_sys->p_title )
+            if( !p_sys->p_title || i_seekpoint < 0
+             || i_seekpoint >= p_sys->p_title->i_seekpoint )
                 return VLC_EGENERIC;
             return Seek( p_demux, p_sys->p_title->seekpoint[i_seekpoint]->i_time_offset, true );
         }
@@ -3536,7 +3537,7 @@ static int STTSToSampleChunk(const mp4_track_t *p_track, uint64_t i_dts,
     uint64_t i_entrydts = ck->i_first_dts;
 
     for( uint_fast32_t i = 0;
-         i < ck->i_entries_dts && i_sample < ck->i_sample_count;
+         i < ck->i_entries_dts && i_sample < ck->i_sample_first + ck->i_sample_count;
          i++ )
     {
         uint64_t i_entry_duration = ck->p_sample_count_dts[i] * (uint64_t)
@@ -5515,7 +5516,7 @@ static int FragGetMoofBySidxIndex( demux_t *p_demux, vlc_tick_t target_time,
 
         /* sidx refers to offsets from end of sidx pos in the file + first offset */
         uint64_t i_pos = p_data->i_first_offset + p_sidx->i_pos + p_sidx->i_size;
-        stime_t i_time = 0;
+        stime_t i_time = p_data->i_earliest_presentation_time;
         for( uint16_t i=0; i<p_data->i_reference_count; i++ )
         {
             if(p_data->p_items[i].b_reference_type != 0)
@@ -5547,11 +5548,12 @@ static int FragGetMoofByTfraIndex( demux_t *p_demux, const vlc_tick_t i_target_t
                 continue;
 
             uint64_t i_pos = 0;
+            stime_t i_pos_time = 0;
             mp4_track_t *p_track = MP4_GetTrackByTrackID( p_demux, p_data->i_track_ID );
             if ( p_track )
             {
                 stime_t i_track_target_time = MP4_rescale_qtime( i_target_time, p_track->i_timescale );
-                for ( uint32_t i = 0; i<p_data->i_number_of_entries; i += ( p_data->i_version == 1 ) ? 2 : 1 )
+                for ( uint32_t i = 0; i<p_data->i_number_of_entries; i++ )
                 {
                     stime_t i_time = p_data->p_time[i];
                     uint64_t i_offset = p_data->p_moof_offset[i];
@@ -5562,11 +5564,14 @@ static int FragGetMoofByTfraIndex( demux_t *p_demux, const vlc_tick_t i_target_t
                             break;
 
                         *pi_moof_pos = i_pos;
-                        *pi_sampletime = MP4_rescale_mtime( i_time, p_track->i_timescale );
+                        *pi_sampletime = MP4_rescale_mtime( i_pos_time, p_track->i_timescale );
                         return VLC_SUCCESS;
                     }
                     else
+                    {
                         i_pos = i_offset;
+                        i_pos_time = i_time;
+                    }
                 }
             }
         }
