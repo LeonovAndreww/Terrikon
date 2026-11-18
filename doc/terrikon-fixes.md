@@ -125,6 +125,8 @@ build, or by reading when the path is taken.
 | Matroska | GotoAndPlay: a command without its ) threw out of the parser (std::out_of_range); a well formed one with a short uid was ignored (offset compared with a length); the depth guard was not given back on early returns | bounds checked first, the whole uid read, the depth given back on every way out |
 | Windows | Second instance: payload allocation failure written through NULL | nothing sent |
 | Player | Track lists: a row -1 read before the start of the list | refused |
+| Qt | Leaving the services page while the add-ons were still looked for froze the window: the add-ons manager was let go of on the interface thread, which waited for the finder held by a name lookup or a slow server | let go of on a thread of its own; its late answers dropped |
+| Qt | A page without a list (none of its own initialIndex) given the place in a list kept for it: "Cannot assign to non-existent property" | given only to a page having it |
 ## 2. VLC 4's bugs brought out by Terrikon
 
 | Bug seen | VLC 4's cause | What brought it out | Fix |
