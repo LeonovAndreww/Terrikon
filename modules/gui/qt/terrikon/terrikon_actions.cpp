@@ -32,6 +32,7 @@
 #include "media_tools.hpp"
 
 #include <QCollator>
+#include <atomic>
 #include <QDir>
 #include <QFileInfo>
 #include <vlc_playlist.h>
@@ -98,11 +99,16 @@ TerrikonActions::~TerrikonActions()
 }
 
 /* playlist locked, any thread */
+static std::atomic<int> libraryAppends{0};
+LibraryAppend::LibraryAppend() { ++libraryAppends; }
+LibraryAppend::~LibraryAppend() { --libraryAppends; }
+bool LibraryAppend::active() { return libraryAppends.load() > 0; }
+
 void TerrikonActions::onItemsAdded(vlc_playlist_t *playlist, size_t,
                                    vlc_playlist_item_t *const items[], size_t count,
                                    void *data)
 {
-    if (count != 1 || vlc_playlist_Count(playlist) != 1)
+    if (count != 1 || vlc_playlist_Count(playlist) != 1 || LibraryAppend::active())
         return;
     input_item_t *media = vlc_playlist_item_GetMedia(items[0]);
     if (!media || !media->psz_uri || strncmp(media->psz_uri, "file://", 7) != 0)

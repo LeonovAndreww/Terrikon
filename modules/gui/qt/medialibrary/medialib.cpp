@@ -22,6 +22,7 @@
 #include "util/shared_input_item.hpp"
 #include "terrikon/folder_tree.hpp"
 #include "terrikon/video_preview.hpp"
+#include "terrikon/terrikon_actions.hpp"
 
 #include <utility>
 #include <QCollator>
@@ -138,6 +139,7 @@ void MediaLib::addToPlaylist(const QString& mrl, const QStringList &options)
 {
     QVector<vlc::playlist::Media> medias;
     convertQStringToPlaylistMedias(mrl, options, medias);
+    terrikon::LibraryAppend fromLibrary;
     m_playlistController->append(medias, false);
 }
 
@@ -145,6 +147,7 @@ void MediaLib::addToPlaylist(const QUrl& mrl, const QStringList &options)
 {
     QVector<vlc::playlist::Media> medias;
     convertQUrlToPlaylistMedias(mrl, options, medias);
+    terrikon::LibraryAppend fromLibrary;
     m_playlistController->append(medias, false);
 }
 
@@ -163,6 +166,7 @@ void MediaLib::addToPlaylist(const MLItemId & itemId, const QStringList &options
     //UI thread
     [this](quint64, Context& ctx){
         if (!ctx.medias.empty())
+            terrikon::LibraryAppend fromLibrary;
             m_playlistController->append(ctx.medias, false);
     });
 }
@@ -182,6 +186,7 @@ void MediaLib::addToPlaylist(const QVariantList& itemIdList, const QStringList &
     //UI thread
     [this](quint64, Context& ctx){
         if (!ctx.medias.empty())
+            terrikon::LibraryAppend fromLibrary;
             m_playlistController->append(ctx.medias, false);
     });
 }
@@ -203,6 +208,7 @@ void MediaLib::addAndPlay(const MLItemId & itemId, const QStringList &options )
     //UI thread
     [this](quint64, Context& ctx){
         if (!ctx.medias.empty())
+            terrikon::LibraryAppend fromLibrary;
             m_playlistController->append(ctx.medias, true);
     });
 
@@ -306,6 +312,7 @@ void MediaLib::playWithFolder(const MLItemId &itemId)
         if (ctx.medias.empty())
             return;
         m_playlistController->clear();
+        terrikon::LibraryAppend fromLibrary;
         m_playlistController->append(ctx.medias, false);
         m_playlistController->goTo(ctx.start, true);
     });
@@ -314,12 +321,14 @@ void MediaLib::playWithFolder(const MLItemId &itemId)
 void MediaLib::addAndPlay(const QString& mrl, const QStringList &options)
 {
     vlc::playlist::Media media{ mrl, mrl, options };
+    terrikon::LibraryAppend fromLibrary;
     m_playlistController->append( QVector<vlc::playlist::Media>{media}, true );
 }
 
 void MediaLib::addAndPlay(const QUrl& mrl, const QStringList &options)
 {
     vlc::playlist::Media media{ mrl.toString(QUrl::FullyEncoded), mrl.fileName(), options };
+    terrikon::LibraryAppend fromLibrary;
     m_playlistController->append( QVector<vlc::playlist::Media>{media}, true );
 }
 
@@ -339,6 +348,7 @@ void MediaLib::addAndPlay(const QVariantList& itemIdList, const QStringList &opt
     //UI thread
     [this](quint64, Context& ctx){
         if (!ctx.medias.empty())
+            terrikon::LibraryAppend fromLibrary;
             m_playlistController->append(ctx.medias, true);
     });
 }
@@ -359,6 +369,7 @@ void MediaLib::insertIntoPlaylist(const size_t index, const QVariantList &itemId
     [this, index]
     (quint64, Context& ctx) {
         if (!ctx.medias.isEmpty())
+            terrikon::LibraryAppend fromLibrary;
             m_playlistController->insert( index, ctx.medias );
     });
 }

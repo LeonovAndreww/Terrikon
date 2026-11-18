@@ -29,6 +29,16 @@
 
 namespace terrikon {
 
+/* While it lives, what is added to the playlist comes from the library (a
+ * song of an artist, a video of a folder...): its folder is not queued
+ * around it, as for a file opened from the explorer */
+struct LibraryAppend
+{
+    LibraryAppend();
+    ~LibraryAppend();
+    static bool active();
+};
+
 class ClipSelection;
 class CompactPlayer;
 class MomentMarks;
