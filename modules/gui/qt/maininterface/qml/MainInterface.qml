@@ -365,16 +365,34 @@ Item {
 
         // Terrikon: the mini window of the visualizer, over all the others
         // Also while the player is minimized or put away, for music
+        // Closed with its cross: until the player is back, or another song
+        Connections {
+            target: MainCtx.intfMainWindow
+            function onActiveChanged() {
+                if (MainCtx.intfMainWindow.active)
+                    Visualizer.miniDismissed = false
+            }
+        }
+        Connections {
+            target: Player
+            function onInputChanged() { Visualizer.miniDismissed = false }
+        }
+
+        // Shown when the player is not in sight: minimized, hidden, or
+        // another window in front (Alt+Tab); hidden again when the player
+        // comes back with the music on screen. "Over the others" keeps it
+        // while browsing the library too.
         Loader {
             active: {
-                if (Visualizer.miniWindow)
-                    return true
-                const visibility = MainCtx.intfMainWindow.visibility
-                return MainCtx.pipOnMinimizeMusic
-                && (visibility === Window.Minimized || visibility === Window.Hidden)
-                && !Visualizer.miniDismissed
-                        && Player.playingState !== Player.PLAYING_STATE_STOPPED
-                        && Player.videoTracks.count === 0
+                if (Player.playingState === Player.PLAYING_STATE_STOPPED
+                    || Player.videoTracks.count > 0 || Visualizer.miniDismissed)
+                    return false
+                const window = MainCtx.intfMainWindow
+                const away = window.visibility === Window.Minimized
+                             || window.visibility === Window.Hidden || !window.active
+                if (away)
+                    return MainCtx.pipOnMinimizeMusic || Visualizer.miniWindow
+                return Visualizer.miniWindow && !MainCtx.playerView
             }
             source: "qrc:///qt/qml/VLC/Player/MiniVisualizer.qml"
         }

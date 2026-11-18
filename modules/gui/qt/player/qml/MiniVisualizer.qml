@@ -133,6 +133,38 @@ Window {
 
         HoverHandler { id: hover }
 
+        WheelHandler {
+            acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+            onWheel: (event) => {
+                const step = event.angleDelta.y > 0 ? 0.05 : -0.05
+                Player.volume = Math.max(0, Math.min(1.25, Player.volume + step))
+                volumeHint.show()
+            }
+        }
+
+        Rectangle {
+            id: volumeHint
+            function show() { opacity = 1; volumeHintTimer.restart() }
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.top: parent.top
+            anchors.topMargin: 6
+            width: volumeHintText.implicitWidth + 16
+            height: volumeHintText.implicitHeight + 6
+            radius: height / 2
+            color: Qt.rgba(0, 0, 0, 0.7)
+            opacity: 0
+            z: 2
+            Behavior on opacity { NumberAnimation { duration: 150 } }
+            Text {
+                id: volumeHintText
+                anchors.centerIn: parent
+                text: Math.round(Player.volume * 100) + " %"
+                color: "white"
+                font.pixelSize: 12
+            }
+            Timer { id: volumeHintTimer; interval: 900; onTriggered: volumeHint.opacity = 0 }
+        }
+
         // Windows lets the mouse through fully transparent pixels: an all
         // but invisible ground keeps the whole window in reach
         Rectangle {
@@ -470,6 +502,29 @@ Window {
                 cache: false
                 sourceSize: Qt.size(width * 2, height * 2)
                 source: root.coverSource
+            }
+
+            // On hover: the buttons and the time, on the cover
+            Rectangle {
+                anchors.centerIn: roundCover
+                width: roundCover.width
+                height: width
+                radius: width / 2
+                color: Qt.rgba(0, 0, 0, 0.55)
+                opacity: root.hovered ? 1 : 0
+                visible: opacity > 0
+                Behavior on opacity { NumberAnimation { duration: 150 } }
+
+                Controls {
+                    anchors.centerIn: parent
+                    size: Math.max(16, parent.width / 4.5)
+                }
+                Progress {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.bottom: parent.bottom
+                    anchors.bottomMargin: parent.height * 0.18
+                    width: parent.width * 0.6
+                }
             }
         }
     }
