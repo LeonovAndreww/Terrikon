@@ -48,7 +48,7 @@ int TrackListModel::rowCount(const QModelIndex &) const
 QVariant TrackListModel::data(const QModelIndex &index, int role) const
 {
     int row = index.row();
-    if (row >= m_data.size())
+    if (row < 0 || row >= m_data.size())
         return QVariant{};
     if (role == Qt::DisplayRole)
         return m_data[row].m_title;
@@ -168,7 +168,7 @@ QVariantList TrackListModel::trackStates() const
 bool TrackListModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
     int row = index.row();
-    if (row >= m_data.size())
+    if (row < 0 || row >= m_data.size())
         return false;
     if ( role == VolumeRole )
     {
@@ -780,7 +780,7 @@ int ProgramListModel::rowCount(const QModelIndex &) const
 QVariant ProgramListModel::data(const QModelIndex &index, int role) const
 {
     int row = index.row();
-    if (row >= m_data.size())
+    if (row < 0 || row >= m_data.size())
         return QVariant{};
     if (role == Qt::DisplayRole)
         return m_data[row].m_title;
@@ -792,7 +792,7 @@ QVariant ProgramListModel::data(const QModelIndex &index, int role) const
 bool ProgramListModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
     int row = index.row();
-    if (row >= m_data.size())
+    if (row < 0 || row >= m_data.size())
         return false;
     if ( role != Qt::CheckStateRole )
         return false;
