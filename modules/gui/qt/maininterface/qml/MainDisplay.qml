@@ -67,8 +67,9 @@ FocusScope {
         if (!found)
             return
 
-        if (Player.hasVideoOutput && MainCtx.hasEmbededVideo)
-            _showMiniPlayer = true
+        // Terrikon: no small video in a corner of the library (VLC's):
+        // leaving the player pauses the video, the bar at the bottom leads
+        // back to it, as for music
     }
 
     function loadCurrentHistoryView(focusReason) {
@@ -77,6 +78,8 @@ FocusScope {
     }
 
     Component.onCompleted: {
+        _leftVideo = Player.videoTracks.count > 0
+                     && Player.playingState !== Player.PLAYING_STATE_STOPPED
         if (MainCtx.canShowVideoPIP) {
             pipPlayerComponent.createObject(this)
         } else {
@@ -1135,10 +1138,23 @@ FocusScope {
         }
     }
 
+    // Terrikon: the video the player was left with: its output, taken
+    // down and set up again with the player's surface, is not a new video
+    // to show
+    property bool _leftVideo: false
+    Connections {
+        target: Player
+        function onInputChanged() { g_mainDisplay._leftVideo = false }
+        function onPlayingStateChanged() {
+            if (Player.playingState === Player.PLAYING_STATE_STOPPED)
+                g_mainDisplay._leftVideo = false
+        }
+    }
+
     Connections {
         target: Player
         function onHasVideoOutputChanged() {
-            if (Player.hasVideoOutput && MainCtx.hasEmbededVideo) {
+            if (Player.hasVideoOutput && MainCtx.hasEmbededVideo && !g_mainDisplay._leftVideo) {
                 MainCtx.playerView = true
             } else {
                 _showMiniPlayer = false;

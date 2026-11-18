@@ -90,12 +90,12 @@ MainViewLoader {
 
     function _onItemDoubleClicked(model) {
         MediaLib.addAndPlay(model.id)
-        History.push(["player"])
+        MainCtx.playerView = true // Terrikon: the player is not a page of the history
     }
 
     function _onActionAtIndex() {
         model.addAndPlay(selectionModel.selectedIndexes)
-        History.push(["player"])
+        MainCtx.playerView = true // Terrikon: the player is not a page of the history
     }
 
 
