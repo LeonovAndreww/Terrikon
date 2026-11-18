@@ -329,11 +329,13 @@ void LyricsFinder::find(bool all)
             setState(result.reached ? NotFound : Failed);
             return;
         }
-        setState(Found);
         if (all)
+        {
+            setState(Found);
             emit choicesReady();
+        }
         else
-            choose(0);
+            choose(0); // Found when the lyrics are in
     });
 }
 
