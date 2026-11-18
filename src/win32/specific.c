@@ -184,8 +184,10 @@ void system_Configure( libvlc_int_t *p_this, int i_argc, const char *const ppsz_
                 if( unlikely(p_data == NULL) )
                     i_argc = 0; /* nothing is sent */
                 else
+                {
                     p_data->argc = i_argc;
-                p_data->enqueue = var_InheritBool( p_this, "playlist-enqueue" );
+                    p_data->enqueue = var_InheritBool( p_this, "playlist-enqueue" );
+                }
                 i_data = 0;
                 for( i_opt = 0; i_opt < i_argc; i_opt++ )
                 {
