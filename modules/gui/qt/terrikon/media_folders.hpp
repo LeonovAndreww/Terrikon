@@ -71,6 +71,11 @@ private:
     /* the last request: an older answer, slower to come, is not shown over
      * it (asked before the library's folders were known, it offered them) */
     unsigned m_suggestSerial = 0;
+    /* one look at the drives at a time: asked again meanwhile, it looks
+     * once more with the last list when done */
+    bool m_suggestBusy = false;
+    bool m_suggestAgain = false;
+    QStringList m_suggestHave;
 public:
 
     /* Asks for a folder; empty if cancelled */

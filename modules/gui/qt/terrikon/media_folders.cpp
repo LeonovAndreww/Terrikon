@@ -23,6 +23,7 @@
 
 #include "qt.hpp"
 #include "folder_tree.hpp"
+#include "media_tools.hpp"
 
 #include <QCursor>
 #include <QProcess>
@@ -181,13 +182,32 @@ QVariantList MediaFolders::suggestions(const QStringList &have) const
 
 void MediaFolders::requestSuggestions(const QStringList &have)
 {
-    QPointer<MediaFolders> self(this);
     const unsigned serial = ++m_suggestSerial;
+    m_suggestHave = have;
+    /* a drive that does not answer holds its thread: no second one behind */
+    if (m_suggestBusy)
+    {
+        m_suggestAgain = true;
+        return;
+    }
+    m_suggestBusy = true;
+    QPointer<MediaFolders> self(this);
+    /* the thread may outlive the interface: the code it comes back to stays */
+    terrikon::keepPluginLoaded();
     std::thread([self, have, serial] {
         const QVariantList found = collectSuggestions(have);
         /* back on the interface thread, if it is still there */
         QMetaObject::invokeMethod(qApp, [self, found, serial] {
-            if (self && serial == self->m_suggestSerial)
+            if (!self)
+                return;
+            self->m_suggestBusy = false;
+            if (self->m_suggestAgain)
+            {
+                self->m_suggestAgain = false;
+                --self->m_suggestSerial;
+                self->requestSuggestions(self->m_suggestHave);
+            }
+            else if (serial == self->m_suggestSerial)
                 emit self->suggestionsReady(found);
         }, Qt::QueuedConnection);
     }).detach();
