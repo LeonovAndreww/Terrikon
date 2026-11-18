@@ -250,6 +250,23 @@ static QVariantList collectSuggestions(const QStringList &have)
     return out;
 }
 
+void MediaFolders::revealFile(const QUrl &url) const
+{
+    if (!url.isLocalFile())
+        return;
+    const QString path = url.toLocalFile();
+#ifdef _WIN32
+    /* Explorer wants the path quoted after the comma, not the whole
+     * argument, so bypass QProcess quoting */
+    QProcess explorer;
+    explorer.setProgram(QStringLiteral("explorer.exe"));
+    explorer.setNativeArguments(QStringLiteral("/select,\"%1\"").arg(QDir::toNativeSeparators(path)));
+    explorer.startDetached();
+#else
+    QDesktopServices::openUrl(QUrl::fromLocalFile(QFileInfo(path).absolutePath()));
+#endif
+}
+
 bool MediaFolders::isFolder(const QUrl &url) const
 {
     return url.isLocalFile() && QFileInfo(url.toLocalFile()).isDir();

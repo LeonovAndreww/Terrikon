@@ -221,6 +221,12 @@ NativeMenu {
     }
 
     function openContainingFolder(dataList, options, indexes) {
+        // Terrikon: the file selected in its folder, as the explorer does
+        const mrl = String(dataList[0]?.mrl ?? "")
+        if (mrl.startsWith("file:")) {
+            MediaFolders.revealFile(mrl)
+            return
+        }
         const parentDir = model.getParentURL(indexes[0]);
 
         Qt.openUrlExternally(parentDir)

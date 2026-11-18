@@ -34,6 +34,8 @@
 #include <memory>
 #include <QVariant>
 #include <QDesktopServices>
+#include <QProcess>
+#include <QDir>
 
 namespace vlc {
   namespace playlist {
@@ -709,6 +711,16 @@ void PlaylistController::explore(const PlaylistItem& pItem)
             if( !file.isLocalFile() )
                 return;
 
+#ifdef _WIN32
+            /* Terrikon: the file selected in its folder, as the explorer
+             * does (the path quoted after the comma, not as a whole) */
+            QProcess explorer;
+            explorer.setProgram( QStringLiteral("explorer.exe") );
+            explorer.setNativeArguments( QStringLiteral("/select,\"%1\"")
+                                         .arg( QDir::toNativeSeparators( QString::fromUtf8( path.get() ) ) ) );
+            if( explorer.startDetached() )
+                return;
+#endif
             QDesktopServices::openUrl( file );
         }
     }
