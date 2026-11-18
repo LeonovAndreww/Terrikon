@@ -104,6 +104,26 @@ void WindowTheme::install(qt_intf_t *intf, QApplication &app, bool changeStyle)
      * Fusion follows it */
     if (changeStyle && dark && QApplication::setStyle(QStringLiteral("Fusion")))
         QApplication::setPalette(darkPalette());
+#ifdef _WIN32
+    /* The menus Windows draws for us (the window's own, on a right click on
+     * its title) follow the theme of the player, not only the system's:
+     * uxtheme's SetPreferredAppMode (ordinal 135, Windows 10 1903 and
+     * later; 2 forces dark, 3 light) and FlushMenuThemes (136), as the
+     * explorer and browsers do */
+    if (HMODULE uxtheme = LoadLibraryExW(L"uxtheme.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32))
+    {
+        using SetPreferredAppMode = int (WINAPI *)(int);
+        using FlushMenuThemes = void (WINAPI *)();
+        const auto setMode = reinterpret_cast<SetPreferredAppMode>(
+            reinterpret_cast<void *>(GetProcAddress(uxtheme, MAKEINTRESOURCEA(135))));
+        const auto flush = reinterpret_cast<FlushMenuThemes>(
+            reinterpret_cast<void *>(GetProcAddress(uxtheme, MAKEINTRESOURCEA(136))));
+        if (setMode)
+            setMode(dark ? 2 : 3);
+        if (flush)
+            flush();
+    }
+#endif
     app.installEventFilter(new WindowTheme(intf, &app));
 }
 
