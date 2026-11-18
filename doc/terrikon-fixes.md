@@ -115,6 +115,16 @@ build, or by reading when the path is taken.
 | The first second of a media shown in milliseconds ("671 ms / 00:13") | A length not known yet (0) counted as a media shorter than a second | `VLCTick::isSubSecond`: above 0 only |
 | Home rows: a click on a card scrolled the page under the pointer | The row scrolled itself into view on any focus | not on a focus given by the mouse |
 | A song without an album took the cover of another album lying in the same folder (Folder.jpg in Downloads) | The folder art finder takes the folder's picture for any file | `meta_engine/folder.c`: for files with an album only |
+| MP4 | stts/ctts: a second allocation that fails freed the first array twice (here and with the box) | freed with the box only |
+| MP4 | tfra: a box cut short kept the number of entries announced; a seek walked the zeroed ones | the entries really read |
+| MP4 | tfra v1: a seek skipped every other entry (stepped by two over 64-bit arrays); it gave the offset of a fragment with the time of the next | one by one; the time that goes with the offset |
+| MP4 | sidx: a seek counted the subsegments from 0, not from the earliest presentation time | from that time |
+| MP4 | A seek in a chunk after the first landed on the chunk's first sample: the sample's absolute index was compared with the chunk's length | compared with the chunk's end |
+| MP4 | A chapter number out of the list was read past the end of the array | refused |
+| MP4 | Size of a stream unknown (network): read uninitialized; cmov: an uncompressed box that is no moov was added as NULL, the root's last child left pointing at the freed moov | size 0 = unknown; refused; the last child found again |
+| Matroska | GotoAndPlay: a command without its ) threw out of the parser (std::out_of_range); a well formed one with a short uid was ignored (offset compared with a length); the depth guard was not given back on early returns | bounds checked first, the whole uid read, the depth given back on every way out |
+| Windows | Second instance: payload allocation failure written through NULL | nothing sent |
+| Player | Track lists: a row -1 read before the start of the list | refused |
 ## 2. VLC 4's bugs brought out by Terrikon
 
 | Bug seen | VLC 4's cause | What brought it out | Fix |
@@ -202,6 +212,11 @@ build, or by reading when the path is taken.
 | Music mini window: no buttons in the round shape; shown over the player playing that song; not shown on Alt+Tab, never again once closed | buttons and time on the cover, wheel for the sound; shown when the player is away (minimized, another window in front), the cross holds until the player is back |
 | "Open containing folder" did not select the file | explorer /select, from the library and the play queue |
 | The window's own menu (right click on the title) was light in the dark theme | uxtheme's preferred app mode follows the player's theme |
+| Folder queue in the explorer's order: names given in another form than a wide string were dropped, and files the window did not list (filtered, cut short) left out of the queue | any form converted (StrRetToStrW); those files queued after, by name |
+| Home offers: each refresh started its own thread on the drives (a dead network drive: one more held thread each time), and the plugin could be unloaded under them | one at a time, the last request run when it ends; the plugin held |
+| Lyrics: a late answer for a song played, then another, then that one again was taken as current; a file chosen while another song started was given to it; the file was read on the window's thread | answers tied to the playing they were asked for; the file read away from the window |
+| Back from a video stalled it: its surface gone, the output was set up again and taken for a new video, the player opened again | the video is paused on any way out of the player; its output coming back is not a new video |
+| A right click on the logo opened the window's own menu too | the logo's clicks are its own |
 ## Known upstream issues, not fixed yet
 
 - `ListViewExt.qml`: the footer's height depends on its own position ("Binding loop detected for property implicitHeight"). Harmless.
