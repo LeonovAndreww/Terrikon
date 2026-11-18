@@ -120,6 +120,18 @@ static int FindMeta( vlc_object_t *p_this )
     struct stat st;
     if (vlc_stat(psz_basedir, &st) == 0 && !S_ISDIR(st.st_mode))
     {
+        /* Terrikon: a folder's picture is an album's: a file without an
+         * album (a song among others in Downloads) took the picture of
+         * another album lying there */
+        char *album = input_item_GetAlbum( p_item );
+        const bool hasAlbum = album != NULL && album[0] != '\0';
+        free( album );
+        if (!hasAlbum)
+        {
+            free( psz_basedir );
+            return VLC_EGENERIC;
+        }
+
         char *psz_buf = strrchr( psz_basedir, DIR_SEP_CHAR );
         if (psz_buf != NULL)
             *psz_buf = '\0';
