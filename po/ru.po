@@ -44510,8 +44510,8 @@ msgid "More"
 msgstr "Ещё"
 
 #: terrikon
-msgid "Hills: echo of the last moments"
-msgstr "Холмы: эхо прошлых мгновений"
+msgid "Extra elements"
+msgstr "Дополнительные элементы"
 
 #: modules/gui/qt/player/qml/PlayerView.qml
 msgid "Round cover"
@@ -44520,6 +44520,22 @@ msgstr "Круглая обложка"
 #: modules/gui/qt/player/qml/controlbarcontrols/VolumeWidget.qml
 msgid "No sound in this file"
 msgstr "В этом файле нет звука"
+
+#: modules/gui/qt/widgets/qml/BannerCone.qml
+msgid "About, authors and licence"
+msgstr "О программе, авторы и лицензия"
+
+#: modules/gui/qt/widgets/qml/BannerCone.qml
+msgid "The project on GitHub"
+msgstr "Проект на GitHub"
+
+#: modules/gui/qt/widgets/qml/BannerCone.qml
+msgid "Report a problem"
+msgstr "Сообщить о проблеме"
+
+#: modules/gui/qt/widgets/qml/BannerCone.qml
+msgid "Messages and errors"
+msgstr "Сообщения и ошибки"
 
 #: modules/gui/qt/player/qml/PlayerView.qml
 msgid "Other lyrics…"
