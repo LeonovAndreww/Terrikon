@@ -30,6 +30,7 @@
 # include <shobjidl.h>
 # include <exdisp.h>
 # include <servprov.h>
+# include <shlwapi.h>
 #endif
 
 #ifndef SVGIO_FLAG_VIEWORDER
@@ -92,10 +93,12 @@ bool viewOrder(IDispatch *window, const QString &want, QStringList &out)
         STRRET name = {};
         if (SUCCEEDED(folder->GetDisplayNameOf(child, SHGDN_FORPARSING, &name)))
         {
-            if (name.uType == STRRET_WSTR && name.pOleStr)
+            /* any kind of answer, freed by the conversion */
+            wchar_t *text = nullptr;
+            if (SUCCEEDED(StrRetToStrW(&name, child, &text)) && text)
             {
-                out << QDir::fromNativeSeparators(QString::fromWCharArray(name.pOleStr));
-                CoTaskMemFree(name.pOleStr);
+                out << QDir::fromNativeSeparators(QString::fromWCharArray(text));
+                CoTaskMemFree(text);
             }
         }
         CoTaskMemFree(child);

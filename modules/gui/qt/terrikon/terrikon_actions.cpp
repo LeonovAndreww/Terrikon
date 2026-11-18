@@ -159,18 +159,25 @@ void TerrikonActions::queueFolderOf(const QString &mrl)
         for (const QString &path : terrikon::explorerOrder(file.absolutePath()))
         {
             const QFileInfo item(path);
-            if (indexOf(names, item.fileName()) >= 0)
+            if (indexOf(names, item.fileName()) >= 0 && indexOf(shown, item.fileName()) < 0)
                 shown << item.fileName();
         }
+        QCollator collator;
+        collator.setNumericMode(true);
+        collator.setCaseSensitivity(Qt::CaseInsensitive);
         if (indexOf(shown, file.fileName()) >= 0)
-            names = shown;
-        else
         {
-            QCollator collator;
-            collator.setNumericMode(true);
-            collator.setCaseSensitivity(Qt::CaseInsensitive);
-            std::sort(names.begin(), names.end(), collator);
+            /* the files the window did not list (filtered out, or an answer
+             * cut short) are queued after its own, by name */
+            QStringList rest;
+            for (const QString &name : names)
+                if (indexOf(shown, name) < 0)
+                    rest << name;
+            std::sort(rest.begin(), rest.end(), collator);
+            names = shown + rest;
         }
+        else
+            std::sort(names.begin(), names.end(), collator);
         const int at = indexOf(names, file.fileName());
         if (at < 0)
             return found;
