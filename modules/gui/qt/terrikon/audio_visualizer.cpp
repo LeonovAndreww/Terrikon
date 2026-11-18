@@ -633,6 +633,10 @@ QSGNode *AudioVisualizer::updatePaintNode(QSGNode *old, UpdatePaintNodeData *)
     Mesh mesh;
     const qreal w = width(), h = height();
     const int bands = TERRIKON_TAP_BANDS;
+    /* What is drawn besides the main shape: the peaks, the glow, the thin
+     * circle, the hills of a moment ago */
+    const Visualizer *settings = Visualizer::instance();
+    const bool extras = !settings || settings->echoes();
 
     switch (m_style)
     {
@@ -660,13 +664,15 @@ QSGNode *AudioVisualizer::updatePaintNode(QSGNode *old, UpdatePaintNodeData *)
             const qreal len = 3 + v * std::max(reach, 8.0);
             mesh.bar(c + dir * r0, c + dir * (r0 + len), hw,
                      mix(m_color, m_color2, v * .3, .9), mix(m_color, m_color2, v, .95));
+            if (!extras)
+                continue;
             const qreal pr = r0 + 3 + m_peaks[b] * std::max(reach, 8.0) + 4;
             mesh.bar(c + dir * pr, c + dir * (pr + 1), hw * .8,
                      mix(m_color2, m_color2, 0, .7), mix(m_color2, m_color2, 0, .7));
         }
         /* A thin circle that brightens with the loudness */
         const QColor line = mix(m_color2, m_color, .3, .2 + m_level * .6);
-        const int seg = 180;
+        const int seg = extras ? 180 : 0;
         for (int i = 0; i < seg; i++)
         {
             const qreal a0 = 2 * M_PI * i / seg, a1 = 2 * M_PI * (i + 1) / seg;
@@ -690,6 +696,8 @@ QSGNode *AudioVisualizer::updatePaintNode(QSGNode *old, UpdatePaintNodeData *)
             const qreal y = base - 2 - v * top;
             mesh.bar(QPointF(x, base), QPointF(x, y), hw,
                      mix(m_color, m_color, 0, .4), mix(m_color, m_color2, v, .75));
+            if (!extras)
+                continue;
             const qreal py = base - 6 - m_peaks[b] * top;
             mesh.bar(QPointF(x, py), QPointF(x, py - 1.5), hw,
                      mix(m_color2, m_color2, 0, .8), mix(m_color2, m_color2, 0, .8));
@@ -710,7 +718,7 @@ QSGNode *AudioVisualizer::updatePaintNode(QSGNode *old, UpdatePaintNodeData *)
         };
         const QColor glow = mix(m_color, m_color, 0, .16 + m_level * .2);
         const QColor core = mix(m_color, m_color2, m_level, .95);
-        for (int i = 0; i < n - 1; i++)
+        for (int i = 0; extras && i < n - 1; i++)
             mesh.bar(point(i), point(i + 1), 5, glow, glow);
         for (int i = 0; i < n - 1; i++)
             mesh.bar(point(i), point(i + 1), 1.4, core, core);
@@ -723,11 +731,9 @@ QSGNode *AudioVisualizer::updatePaintNode(QSGNode *old, UpdatePaintNodeData *)
         const struct { const QVector<float> *values; qreal alpha; qreal lift; } layers[] = {
             { &m_echo2, .14, 1.15 }, { &m_echo1, .22, 1.05 }, { &m_bands, .4, 1.0 },
         };
-        const Visualizer *settings = Visualizer::instance();
-        const bool echoes = !settings || settings->echoes();
         for (const auto &layer : layers)
         {
-            if (!echoes && layer.values != &m_bands)
+            if (!extras && layer.values != &m_bands)
                 continue;
             const QVector<float> curve = smoothCurve(*layer.values, 4);
             const int n = curve.size();
@@ -779,7 +785,7 @@ QSGNode *AudioVisualizer::updatePaintNode(QSGNode *old, UpdatePaintNodeData *)
         auto point = [&](int i) { return QPointF(margin + i * dx, base - curve[i] * top); };
         const QColor glow = mix(m_color, m_color, 0, .15 + m_level * .2);
         const QColor core = mix(m_color, m_color2, m_level, .95);
-        for (int i = 0; i < n - 1; i++)
+        for (int i = 0; extras && i < n - 1; i++)
             mesh.bar(point(i), point(i + 1), 4, glow, glow);
         for (int i = 0; i < n - 1; i++)
             mesh.bar(point(i), point(i + 1), 1.3, core, core);

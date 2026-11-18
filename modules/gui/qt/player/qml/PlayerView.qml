@@ -76,7 +76,12 @@ FocusScope {
         MainCtx.preferHotkeys = true
         _vlcVisualization = _vlcVisualizationIndex()
     }
-    Component.onDestruction: MainCtx.preferHotkeys = false
+    Component.onDestruction: {
+        MainCtx.preferHotkeys = false
+        // whatever the way out (mouse back button, history gesture...):
+        // a video left playing without its surface stalls
+        _pauseVideoLeft()
+    }
 
     // Terrikon keys (clip, marks, picture in picture) are VLC hotkeys,
     // carried out by TerrikonActions. Escape closes an open clip panel,
@@ -135,8 +140,19 @@ FocusScope {
                             || (MainCtx.canShowVideoPIP
                                 && (MainCtx.backToPip || MainCtx.playerFromPip))
         MainCtx.playerFromPip = false
-        if (MainCtx.hasEmbededVideo && !keepPlaying)
+        // Terrikon: no video in the corner of the library: the video waits,
+        // paused, under the bar of the player, where it was left (the picture
+        // in picture window is the one to keep it playing)
+        if (!_pauseVideoLeft() && MainCtx.hasEmbededVideo && !keepPlaying)
             MainPlaylistController.stop()
+    }
+
+    function _pauseVideoLeft() {
+        if (!MainCtx.hasEmbededVideo || Player.videoTracks.count === 0 || CompactPlayer.active)
+            return false
+        if (Player.playingState === Player.PLAYING_STATE_PLAYING)
+            MainPlaylistController.pause()
+        return true
     }
 
     // Terrikon: the visualizations by name, the one shown marked
@@ -367,9 +383,8 @@ FocusScope {
                 }
             }
 
-            Section { text: qsTr("Background"); visible: Visualizer.style !== 0 }
+            Section { text: qsTr("Background") }
             Flow {
-                visible: Visualizer.style !== 0
                 width: parent.width
                 spacing: VLCStyle.margin_xxsmall
                 Repeater {
@@ -389,10 +404,11 @@ FocusScope {
                 visible: Visualizer.style !== 0
                 width: parent.width
                 spacing: VLCStyle.margin_xxsmall
-                // the hills only: how they were a moment ago, fainter behind
+                // peaks, glow, thin circle, the hills of a moment ago: what
+                // each style draws besides its main shape (the mirror: none)
                 Chip {
-                    visible: Visualizer.style === 4
-                    label: qsTr("Hills: echo of the last moments")
+                    visible: Visualizer.style !== 5
+                    label: qsTr("Extra elements")
                     on: Visualizer.echoes
                     onPicked: Visualizer.echoes = !Visualizer.echoes
                 }
@@ -429,7 +445,7 @@ FocusScope {
 
     function _onNavigationCancel() {
         _leavePlayer()
-        History.previous()
+        MainCtx.playerView = false
     }
 
     //we draw both the view and the window here
@@ -828,12 +844,12 @@ FocusScope {
                 Rectangle {
                     anchors.fill: parent
                     color: "black"
-                    visible: Visualizer.style !== 0 && Visualizer.background === 1
+                    visible: Visualizer.background === 1
                 }
 
                 Image {
                     anchors.fill: parent
-                    visible: Visualizer.style !== 0 && Visualizer.background === 2
+                    visible: Visualizer.background === 2
                     source: visible ? cover.source : ""
                     fillMode: Image.PreserveAspectCrop
                     asynchronous: true
@@ -1159,65 +1175,81 @@ FocusScope {
                             }
                         }
 
-                        Widgets.SubtitleLabel {
+                        // Terrikon: the line sung with the one before and the
+                        // one after, smaller and fainter, scrolling softly
+                        Item {
                             id: lyricsLabel
 
                             Layout.alignment: Qt.AlignHCenter
                             Layout.topMargin: VLCStyle.margin_large
-                            // Pin width and height so the surrounding centered
-                            // column does not shift when the current lyric
-                            // changes between empty / 1 line / 2 lines. Text
-                            // exceeding two lines wraps then elides on line 2.
                             Layout.preferredWidth: parent.parent.width - VLCStyle.margin_xlarge * 2
-                            Layout.preferredHeight: (lyricsLabelTextMetrics.height * 2) + VLCStyle.margin_xxxsmall
+                            Layout.preferredHeight: lyricsLine.lineHeight * 3
 
                             visible: false
 
                             Binding on visible {
                                 delayed: true
                                 when: lyricsLabel.componentCompleted
-
-                                // Stay visible (reserving the 2-line slot) for the
-                                // entire track when it has any lyrics, so the
-                                // layout does not collapse between lyric lines.
                                 value: Player.hasLyrics && !audioFocusScope.lyricsLayoutActive &&
                                        (centerContent.height > (lyricsLabel.y + lyricsLabel.height))
                             }
 
                             property bool componentCompleted: false
+                            Component.onCompleted: componentCompleted = true
 
-                            Component.onCompleted: {
-                                componentCompleted = true
-                            }
-
-                            elide: Text.ElideRight
-
-                            text: Player.currentLyric.text
-                            font.pixelSize: VLCStyle.fontSize_xlarge
-                            font.weight: Font.DemiBold
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                            wrapMode: Text.WordWrap
-                            color: centerTheme.fg.primary
-
-                            // TODO: Do not use `Binding` when minimum Qt is 6.12:
-                            Binding {
-                                target: lyricsLabel
-                                property: "mutabilityGroup"
-                                when: (lyricsLabel.mutabilityGroup !== undefined)
-                                value: (Player.playingState === Player.PLAYING_STATE_PLAYING) ? Item.ModerateMutabilityGroup
-                                                                                              : Item.StaticMutabilityGroup
-                            }
+                            clip: true
 
                             TextMetrics {
-                                id: lyricsLabelTextMetrics
-                                font: lyricsLabel.font
+                                id: lyricsLine
+                                font.pixelSize: VLCStyle.fontSize_xlarge
+                                font.weight: Font.DemiBold
                                 text: "TEXT"
+                                readonly property real lineHeight: Math.ceil(lyricsLine.boundingRect.height * 1.5)
+                            }
+
+                            ListView {
+                                id: lyricsLines
+
+                                anchors.fill: parent
+                                interactive: false
+                                model: Player.syltLyrics
+                                currentIndex: Math.max(0, Player.currentLyricIndex)
+                                highlightRangeMode: ListView.StrictlyEnforceRange
+                                preferredHighlightBegin: lyricsLine.lineHeight
+                                preferredHighlightEnd: lyricsLine.lineHeight * 2
+                                highlightMoveDuration: VLCStyle.duration_long * 2
+                                highlightMoveVelocity: -1
+
+                                delegate: Text {
+                                    required property int index
+                                    required property var modelData
+                                    readonly property bool isCurrent: index === Player.currentLyricIndex
+
+                                    width: lyricsLines.width
+                                    height: lyricsLine.lineHeight
+                                    text: modelData.text
+                                    elide: Text.ElideRight
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                    font.pixelSize: VLCStyle.fontSize_xlarge
+                                    font.weight: Font.DemiBold
+                                    color: centerTheme.fg.primary
+                                    opacity: isCurrent ? 1 : 0.4
+                                    scale: isCurrent ? 1 : 0.8
+
+                                    // the line coming up springs to its size
+                                    Behavior on scale {
+                                        NumberAnimation { duration: VLCStyle.duration_long; easing.type: Easing.OutBack }
+                                    }
+                                    Behavior on opacity {
+                                        NumberAnimation { duration: VLCStyle.duration_long }
+                                    }
+                                }
                             }
 
                             Accessible.role: Accessible.StaticText
                             Accessible.name: qsTr("Lyrics")
-                            Accessible.description: text
+                            Accessible.description: Player.currentLyric.text
                         }
 
                         Widgets.NavigableRow {
