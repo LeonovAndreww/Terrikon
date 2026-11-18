@@ -125,6 +125,7 @@ LyricsFinder::LyricsFinder(qt_intf_t *intf, QObject *parent)
     later->setInterval(300);
     connect(later, &QTimer::timeout, this, &LyricsFinder::lookLocally);
     connect(player, &PlayerController::inputChanged, this, [this, later] {
+        ++m_playing;
         setState(Idle);
         m_lookedAt.clear(); // played again: looked at again
         m_candidates.clear();
@@ -194,8 +195,9 @@ void LyricsFinder::lookLocally()
                 return fromLrc(QString::fromUtf8(file.readAll()));
         }
         return QByteArray();
-    }, [this, song](const QByteArray &raw) {
-        apply(song.url, raw);
+    }, [this, song, playing = m_playing](const QByteArray &raw) {
+        if (playing == m_playing)
+            apply(song.url, raw);
     });
 }
 
@@ -319,8 +321,8 @@ void LyricsFinder::find(bool all)
         std::stable_sort(result.found.begin(), result.found.end(),
                          [](const Candidate &x, const Candidate &y) { return x.score < y.score; });
         return result;
-    }, [this, song, all](const Result &result) {
-        if (current().url != song.url)
+    }, [this, song, all, playing = m_playing](const Result &result) {
+        if (playing != m_playing || current().url != song.url)
             return;
         m_candidates = result.found;
         emit candidatesChanged();
@@ -366,11 +368,22 @@ void LyricsFinder::use(const QString &lrc)
 
 void LyricsFinder::loadFile()
 {
+    /* the song the dialog was opened for: another one may start meanwhile */
+    const unsigned playing = m_playing;
     const QString path = QFileDialog::getOpenFileName(nullptr, qtr("Lyrics for this song"), QString(),
                                                       qtr("Lyrics (*.lrc *.txt)"));
-    QFile f(path);
-    if (!path.isEmpty() && f.size() < 2 * 1024 * 1024 && f.open(QIODevice::ReadOnly))
-        use(QString::fromUtf8(f.readAll()));
+    if (path.isEmpty() || playing != m_playing)
+        return;
+    /* read away from the window: the file may be on a slow drive */
+    offThread(this, [path] {
+        QFile f(path);
+        if (f.size() < 2 * 1024 * 1024 && f.open(QIODevice::ReadOnly))
+            return QString::fromUtf8(f.readAll());
+        return QString();
+    }, [this, playing](const QString &lrc) {
+        if (playing == m_playing && !lrc.isEmpty())
+            use(lrc);
+    });
 }
 
 void LyricsFinder::showMenu()

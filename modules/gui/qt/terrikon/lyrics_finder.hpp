@@ -75,6 +75,9 @@ private:
     qt_intf_t *m_intf;
     State m_state = Idle;
     QString m_lookedAt;
+    /* which playing an answer belongs to: the same song played again after
+     * another is another playing, a late answer of the first is dropped */
+    unsigned m_playing = 0;
 };
 
 }
