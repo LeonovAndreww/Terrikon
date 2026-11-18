@@ -112,6 +112,9 @@ build, or by reading when the path is taken.
 | After a long pause, playback jumped to the end of the file (a USB drive) | Windows powers a USB drive down after 20 minutes idle; the first reads after it fail, and any read error was taken for the end of the file | `file.c`: on a read error the file is opened again where it was, for some 10 s, until the input stops (not reproduced at will: the drive must sleep) |
 | Library folders: a folder added right after another stayed out of the list | The list was asked once at a time: a change arriving while one was on its way was dropped | `mlfoldersmodel.cpp`: listed once more after it |
 | Library context menu: "Information" and "Media Information" both shown for a video | Two entries for the same window | `MLContextMenu.qml`: the second only where the first is missing |
+| The first second of a media shown in milliseconds ("671 ms / 00:13") | A length not known yet (0) counted as a media shorter than a second | `VLCTick::isSubSecond`: above 0 only |
+| Home rows: a click on a card scrolled the page under the pointer | The row scrolled itself into view on any focus | not on a focus given by the mouse |
+| A song without an album took the cover of another album lying in the same folder (Folder.jpg in Downloads) | The folder art finder takes the folder's picture for any file | `meta_engine/folder.c`: for files with an album only |
 ## 2. VLC 4's bugs brought out by Terrikon
 
 | Bug seen | VLC 4's cause | What brought it out | Fix |
@@ -192,6 +195,13 @@ build, or by reading when the path is taken.
 | Player: no hand pointer on the previous/next bands, the elapsed/remaining time, the mini window's time bar | the pointer of the setting on each |
 | Visualizations panel stayed open over another media, even a video | closed when the media changes |
 | "Fainter layers behind" showed for every style, did something for the hills only | shown for the hills, named for what it does |
+| Lists: a double click (or Enter) did not open the player; Back then led to a half empty page | "player" was pushed as a page of the history, which the page loader no longer knows |
+| A song played from the library (an artist with one song) got its whole folder queued around it (105 files of Downloads) | the folder queue is for files opened from outside only (`LibraryAppend`) |
+| Lyrics: "Find" answered "no lyrics in the file" though it had found them; a second click showed them | the state said found before the lyrics were in |
+| An empty tool tip box over the lyrics note; tool tips at the top of the window covered their button | no tool tip without a text; under the item when there is no room above |
+| Music mini window: no buttons in the round shape; shown over the player playing that song; not shown on Alt+Tab, never again once closed | buttons and time on the cover, wheel for the sound; shown when the player is away (minimized, another window in front), the cross holds until the player is back |
+| "Open containing folder" did not select the file | explorer /select, from the library and the play queue |
+| The window's own menu (right click on the title) was light in the dark theme | uxtheme's preferred app mode follows the player's theme |
 ## Known upstream issues, not fixed yet
 
 - `ListViewExt.qml`: the footer's height depends on its own position ("Binding loop detected for property implicitHeight"). Harmless.
