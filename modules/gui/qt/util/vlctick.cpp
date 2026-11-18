@@ -36,7 +36,9 @@ VLCTick::VLCTick(vlc_tick_t ticks)
 
 bool VLCTick::isSubSecond() const
 {
-    return valid() && asMilliseconds() < 1000;
+    /* Terrikon: a length not known yet (0) is not a media shorter than a
+     * second: its first second was shown in milliseconds */
+    return valid() && asMilliseconds() > 0 && asMilliseconds() < 1000;
 }
 
 bool VLCTick::isSubHour() const
