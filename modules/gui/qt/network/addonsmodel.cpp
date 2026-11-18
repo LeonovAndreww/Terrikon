@@ -26,6 +26,8 @@
 #include "playlist/playlist_controller.hpp"
 
 #include <memory>
+#include <thread>
+#include "terrikon/media_tools.hpp"
 #include <QPixmap>
 #include <QQmlFile>
 
@@ -135,6 +137,14 @@ bool ListCache<AddonItemPtr>::compareItems(const AddonItemPtr& a, const AddonIte
 
 // AddonsModelPrivate
 
+/* Terrikon: what the finder's callbacks reach the model through. The
+ * manager can outlive the model: its finder may wait on the network for
+ * long, so it is let go of away from the interface thread */
+struct AddonsLink
+{
+    class AddonsModelPrivate *d = nullptr; /* the interface thread's only */
+};
+
 class AddonsModelPrivate
     : public LocalListBaseModelPrivate<AddonItemPtr>
 {
@@ -150,9 +160,27 @@ public: //ctor/dtor
 
     ~AddonsModelPrivate()
     {
-        if ( m_manager )
-            addons_manager_Delete( m_manager );
+        dropManager();
     }
+
+    /* the finder is interrupted, but a name lookup or a slow server is not:
+     * joining it here froze the window */
+    void dropManager()
+    {
+        if ( !m_manager )
+            return;
+        (*m_link)->d = nullptr;
+        terrikon::keepPluginLoaded();
+        std::thread( [manager = m_manager, link = m_link] {
+            addons_manager_Delete( manager );
+            delete link;
+        } ).detach();
+        m_manager = nullptr;
+        m_link = nullptr;
+    }
+
+    /* the manager's: freed once it is gone */
+    std::shared_ptr<AddonsLink> *m_link = nullptr;
 
 public:
     const AddonItem* getItemForRow(int row) const
@@ -578,28 +606,31 @@ int AddonsModel::getMaxScore()
 
 static void addonFoundCallback( addons_manager_t *manager, addon_entry_t *entry )
 {
-    AddonsModelPrivate* d = (AddonsModelPrivate*) manager->owner.sys;
-    QMetaObject::invokeMethod( d->q_func(), [d, entryPtr = AddonPtr(entry)]()
+    auto link = *static_cast<std::shared_ptr<AddonsLink> *>( manager->owner.sys );
+    QMetaObject::invokeMethod( qApp, [link, entryPtr = AddonPtr(entry)]() mutable
         {
-            d->addonFound( std::move( entryPtr ) );
+            if ( AddonsModelPrivate *d = link->d )
+                d->addonFound( std::move( entryPtr ) );
         }, Qt::QueuedConnection);
 }
 
 static void addonsDiscoveryEndedCallback( addons_manager_t *manager )
 {
-    AddonsModelPrivate* d = (AddonsModelPrivate*) manager->owner.sys;
-    QMetaObject::invokeMethod( d->q_func(), [d]()
+    auto link = *static_cast<std::shared_ptr<AddonsLink> *>( manager->owner.sys );
+    QMetaObject::invokeMethod( qApp, [link]()
         {
-            d->discoveryEnded();
+            if ( AddonsModelPrivate *d = link->d )
+                d->discoveryEnded();
         }, Qt::QueuedConnection);
 }
 
 static void addonChangedCallback( addons_manager_t *manager, addon_entry_t *entry )
 {
-    AddonsModelPrivate* d = (AddonsModelPrivate*) manager->owner.sys;
-    QMetaObject::invokeMethod( d->q_func(), [d, entryPtr = AddonPtr(entry)]()
+    auto link = *static_cast<std::shared_ptr<AddonsLink> *>( manager->owner.sys );
+    QMetaObject::invokeMethod( qApp, [link, entryPtr = AddonPtr(entry)]() mutable
         {
-            d->addonChanged( std::move( entryPtr ) );
+            if ( AddonsModelPrivate *d = link->d )
+                d->addonChanged( std::move( entryPtr ) );
         }, Qt::QueuedConnection);
 }
 
@@ -609,12 +640,15 @@ bool AddonsModelPrivate::initializeModel()
     if (m_qmlInitializing || !m_ctx)
         return false;
 
-    if ( m_manager )
-        addons_manager_Delete( m_manager );
+    dropManager();
+
+    /* a new link for each manager: the old one's late answers are dropped */
+    m_link = new std::shared_ptr<AddonsLink>( std::make_shared<AddonsLink>() );
+    (*m_link)->d = this;
 
     struct addons_manager_owner owner =
     {
-        this,
+        m_link,
         addonFoundCallback,
         addonsDiscoveryEndedCallback,
         addonChangedCallback,
