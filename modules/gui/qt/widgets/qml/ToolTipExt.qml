@@ -28,7 +28,9 @@ T.ToolTip {
     id: control
 
     x: 0
-    y: -implicitHeight - VLCStyle.margin_xxxsmall
+    y: (parent && parent.mapToItem(null, 0, 0).y < implicitHeight + VLCStyle.margin_xsmall * 2)
+       ? parent.height + VLCStyle.margin_xxxsmall
+       : -implicitHeight - VLCStyle.margin_xxxsmall
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
                             implicitContentWidth + leftPadding + rightPadding)

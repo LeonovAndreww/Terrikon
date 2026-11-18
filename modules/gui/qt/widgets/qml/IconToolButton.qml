@@ -74,7 +74,7 @@ T.ToolButton {
 
     // Tooltip
 
-    T.ToolTip.visible: (hovered || visualFocus)
+    T.ToolTip.visible: description !== "" && (hovered || visualFocus)
 
     T.ToolTip.delay: VLCStyle.delayToolTipAppear
 
