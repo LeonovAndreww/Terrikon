@@ -8,6 +8,7 @@
 
 #include "chapter_command_script.hpp"
 #include "virtual_segment.hpp"
+#include <stdexcept>
 
 namespace mkv {
 
@@ -22,7 +23,12 @@ bool matroska_script_interpretor_c::Interpret( MatroskaChapterProcessTime time, 
     static thread_local int n_call = 0;
     if( n_call > M_MS_MAX_DEPTH )
       return false;
-    n_call++;
+    /* the depth comes back down on every way out */
+    struct depth_guard {
+        int &n;
+        explicit depth_guard( int &n ) : n( n ) { n++; }
+        ~depth_guard() { n--; }
+    } guard( n_call );
 
     bool b_result = false;
 
@@ -32,36 +38,22 @@ bool matroska_script_interpretor_c::Interpret( MatroskaChapterProcessTime time, 
 
     if ( sz_command.compare( 0, CMD_MS_GOTO_AND_PLAY.size(), CMD_MS_GOTO_AND_PLAY ) == 0 )
     {
-        size_t i,j;
+        // GotoAndPlay( uid ): spaces allowed before the (, nothing else
+        const size_t open = sz_command.find_first_not_of( ' ', CMD_MS_GOTO_AND_PLAY.size() );
+        if ( open == std::string::npos || sz_command[open] != '(' )
+            return false;
+        const size_t close = sz_command.find( ')', open + 1 );
+        if ( close == std::string::npos || close <= open + 1 )
+            return false;
 
-        // find the (
-        for ( i=CMD_MS_GOTO_AND_PLAY.size(); i<sz_command.size(); i++)
         {
-            if ( sz_command[i] == ' ' )
-                continue;
-            if ( sz_command[i] == '(' )
-            {
-                i++;
-                break;
-            }
-            return false; // extra characters between command and ( is not supported
-        }
-        // find the )
-        for ( j=i; j<sz_command.size(); j++)
-        {
-            if ( sz_command[j] == ')' )
-            {
-                i--;
-                break;
-            }
-        }
-
-        if(i+1 < j-i-1)
-        {
-            std::string st = sz_command.substr( i+1, j-i-1 );
+            std::string st = sz_command.substr( open + 1, close - open - 1 );
             chapter_uid i_chapter_uid;
             try {
-                i_chapter_uid = std::stoull( st );
+                size_t used = 0;
+                i_chapter_uid = std::stoull( st, &used );
+                if ( st.find_first_not_of( ' ', used ) != std::string::npos )
+                    throw std::invalid_argument( "trailing characters" );
             } catch ( const std::exception & ) {
                 // what a file says need not be a number
                 vlc_debug( l, "Invalid chapter uid in a script command" );
@@ -89,7 +81,6 @@ bool matroska_script_interpretor_c::Interpret( MatroskaChapterProcessTime time, 
         }
     }
 
-    n_call--;
     return b_result;
 }
 
