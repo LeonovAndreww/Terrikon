@@ -172,6 +172,8 @@ Widgets.PageExt {
             Navigation.downItem: mediaRows
 
             onActiveFocusChanged: {
+                if (focusReason === Qt.MouseFocusReason)
+                    return
                 contentYBehavior.enabled = true
                 Helpers.positionFlickableToContainItem(flickable, this)
                 contentYBehavior.enabled = false
@@ -617,7 +619,8 @@ Widgets.PageExt {
                 }
 
                 onActiveFocusChanged: {
-                    if (activeFocus) {
+                    // Terrikon: not on a click: the page jumped under the pointer
+                    if (activeFocus && focusReason !== Qt.MouseFocusReason) {
                         const item = currentItem?.currentItem ?? currentItem?._getItem(currentIndex) // FIXME: `ExpandGridView` does not have `currentItem`.
                         contentYBehavior.enabled = true
                         Helpers.positionFlickableToContainItem(flickable, item ?? this)
@@ -626,7 +629,8 @@ Widgets.PageExt {
                 }
 
                 onCurrentIndexChanged: {
-                    if (activeFocus) {
+                    // Terrikon: not on a click: the page jumped under the pointer
+                    if (activeFocus && focusReason !== Qt.MouseFocusReason) {
                         const item = currentItem?.currentItem ?? currentItem?._getItem(currentIndex) // FIXME: `ExpandGridView` does not have `currentItem`.
                         if (item) {
                             contentYBehavior.enabled = true
@@ -695,7 +699,8 @@ Widgets.PageExt {
                 }
 
                 onActiveFocusChanged: {
-                    if (activeFocus) {
+                    // Terrikon: not on a click: the page jumped under the pointer
+                    if (activeFocus && focusReason !== Qt.MouseFocusReason) {
                         const item = currentItem?.currentItem ?? currentItem?._getItem(currentIndex) // FIXME: `ExpandGridView` does not have `currentItem`.
                         contentYBehavior.enabled = true
                         Helpers.positionFlickableToContainItem(flickable, item ?? this)
@@ -704,7 +709,8 @@ Widgets.PageExt {
                 }
 
                 onCurrentIndexChanged: {
-                    if (activeFocus) {
+                    // Terrikon: not on a click: the page jumped under the pointer
+                    if (activeFocus && focusReason !== Qt.MouseFocusReason) {
                         const item = currentItem?.currentItem ?? currentItem?._getItem(currentIndex) // FIXME: `ExpandGridView` does not have `currentItem`.
                         if (item) {
                             contentYBehavior.enabled = true
@@ -777,7 +783,8 @@ Widgets.PageExt {
                 }
 
                 onActiveFocusChanged: {
-                    if (activeFocus) {
+                    // Terrikon: not on a click: the page jumped under the pointer
+                    if (activeFocus && focusReason !== Qt.MouseFocusReason) {
                         const item = currentItem?.currentItem ?? currentItem?._getItem(currentIndex) // FIXME: `ExpandGridView` does not have `currentItem`.
                         contentYBehavior.enabled = true
                         Helpers.positionFlickableToContainItem(flickable, item ?? this)
@@ -786,7 +793,8 @@ Widgets.PageExt {
                 }
 
                 onCurrentIndexChanged: {
-                    if (activeFocus) {
+                    // Terrikon: not on a click: the page jumped under the pointer
+                    if (activeFocus && focusReason !== Qt.MouseFocusReason) {
                         const item = currentItem?.currentItem ?? currentItem?._getItem(currentIndex) // FIXME: `ExpandGridView` does not have `currentItem`.
                         if (item) {
                             contentYBehavior.enabled = true
@@ -853,7 +861,8 @@ Widgets.PageExt {
                 }
 
                 onActiveFocusChanged: {
-                    if (activeFocus) {
+                    // Terrikon: not on a click: the page jumped under the pointer
+                    if (activeFocus && focusReason !== Qt.MouseFocusReason) {
                         const item = currentItem?.currentItem ?? currentItem?._getItem(currentIndex) // FIXME: `ExpandGridView` does not have `currentItem`.
                         contentYBehavior.enabled = true
                         Helpers.positionFlickableToContainItem(flickable, item ?? this)
@@ -862,7 +871,8 @@ Widgets.PageExt {
                 }
 
                 onCurrentIndexChanged: {
-                    if (activeFocus) {
+                    // Terrikon: not on a click: the page jumped under the pointer
+                    if (activeFocus && focusReason !== Qt.MouseFocusReason) {
                         const item = currentItem?.currentItem ?? currentItem?._getItem(currentIndex) // FIXME: `ExpandGridView` does not have `currentItem`.
                         if (item) {
                             contentYBehavior.enabled = true
