@@ -25,7 +25,8 @@ import VLC.MainInterface
 Item {
     id: root
 
-    property real uiTransluency: (enabled && MainCtx.intfMainWindow.active) ? 1 : 0
+    // Terrikon: optionally also when another window is active
+    property real uiTransluency: (enabled && (MainCtx.intfMainWindow.active || MainCtx.windowTransparentUnfocused)) ? 1 : 0
 
     enabled: MainCtx.hasAcrylicSurface
 

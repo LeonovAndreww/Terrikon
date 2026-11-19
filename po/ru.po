@@ -44712,3 +44712,15 @@ msgstr "Прозрачность окна"
 #: modules/gui/qt/qt.cpp
 msgid "How much of the desktop shows through the side bar and the other translucent parts of the window (Windows; 0: opaque)."
 msgstr "Насколько сквозь боковую панель и другие полупрозрачные части окна виден рабочий стол (Windows; 0 — непрозрачно)."
+
+#: modules/gui/qt/dialogs/preferences/simple_preferences.cpp
+msgid "Keep it when the window is not focused"
+msgstr "Сохранять, когда окно не в фокусе"
+
+#: modules/gui/qt/qt.cpp
+msgid "Keep the transparency when the window is not focused"
+msgstr "Сохранять прозрачность, когда окно не в фокусе"
+
+#: modules/gui/qt/qt.cpp
+msgid "The side bar stays translucent when another window is active."
+msgstr "Боковая панель остаётся полупрозрачной, когда активно другое окно."

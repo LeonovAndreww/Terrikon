@@ -949,6 +949,12 @@ SPrefsPanel::SPrefsPanel( qt_intf_t *_p_intf, QWidget *_parent,
                 MainCtx *mi = p_intf->p_mi;
                 QObject::connect( slider, &QSlider::valueChanged, mi, [mi]( int v ) { mi->setWindowTransparency( v / 100. ); } );
                 m_resetters.push_back( std::make_unique<PropertyResetter>( slider, "value" ) );
+
+                auto *unfocused = new QCheckBox( qtr( "Keep it when the window is not focused" ) );
+                unfocused->setChecked( mi->windowTransparentUnfocused() );
+                grid->addWidget( unfocused, newRow + 1, col, 1, -1 );
+                QObject::connect( unfocused, &QCheckBox::toggled, mi, &MainCtx::setWindowTransparentUnfocused );
+                m_resetters.push_back( std::make_unique<PropertyResetter>( unfocused, "checked" ) );
             }
 
             DialogsProvider *provider = DialogsProvider::getInstance();

@@ -335,6 +335,12 @@ void MainCtx::setWaveformStyle(const QString &style)
     emit waveformStyleChanged();
 }
 
+void MainCtx::setWindowTransparentUnfocused(bool on)
+{
+    config_PutInt("qt-window-transparent-unfocused", on);
+    emit windowTransparentUnfocusedChanged();
+}
+
 void MainCtx::setWindowTransparency(double transparency)
 {
     config_PutFloat("qt-window-transparency", transparency);
