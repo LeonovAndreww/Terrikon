@@ -938,6 +938,14 @@ static void *Thread( void *obj )
     QApplication::setAttribute( Qt::AA_DontCheckOpenGLContextThreadAffinity );
     QQuickWindow::setDefaultAlphaBuffer(true);
 
+#if !defined(_WIN32) && !defined(__APPLE__)
+    /* Terrikon: with Qt's default GLX integration, the X11 compositor's
+     * interface surface comes out opaque (Mesa, Linux Mint 22): the video
+     * under it stays black. EGL keeps its alpha. Only read on X11. */
+    if (qEnvironmentVariableIsEmpty("QT_XCB_GL_INTEGRATION"))
+        qputenv("QT_XCB_GL_INTEGRATION", QByteArrayLiteral("xcb_egl"));
+#endif
+
     /* Start the QApplication here */
     QApplication app( argc, argv );
     app.setProperty("initialStyle", app.style()->name());
