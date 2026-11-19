@@ -225,6 +225,7 @@ build, or by reading when the path is taken.
 | Linux: with the automation on, quitting hung for good: closing a socket does not wake a thread blocked in accept() or recv() on Linux, and the interface waited for that thread | shutdown() on the sockets first |
 | Settings, Components: yt-dlp's version stayed blank on a busy machine (yt-dlp, a Python program, took 8 s; it was killed at 4 s), and the process was destroyed while still running (a Qt warning) | 30 s, nothing waits for it; the process deleted only once it has ended |
 | Automation on Linux: no interface window found (`at`, `items`...), as the X11 compositor renders it offscreen, neither top-level nor visible | also take a window rendered for another one (QQuickRenderControl::renderWindowFor) |
+| Player: the transparency sliders (and speed, sound waves) could only be found in the menu of the subtitles button | a player settings button (gear) with them and Effects and filters; it takes the effects button's place in the bars, saved bars included |
 ## Known upstream issues, not fixed yet
 
 - `ListViewExt.qml`: the footer's height depends on its own position ("Binding loop detected for property implicitHeight"). Harmless.
