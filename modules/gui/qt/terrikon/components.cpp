@@ -165,19 +165,26 @@ QString Components::version(const QString &id) const
         if (text.startsWith(QLatin1String("ffmpeg version ")))
             text = text.mid(15).section(QLatin1Char(' '), 0, 0).section(QLatin1Char('-'), 0, 0);
         self->m_versions.insert(id, text);
-        process->deleteLater();
         emit self->changed(id);
     };
+    /* deleted once it has ended, never while it runs: killing is not
+     * immediate, and Qt warns of a process destroyed still running */
     connect(process, &QProcess::finished, self, [process, done] {
         done(QString::fromUtf8(process->readAllStandardOutput()));
+        process->deleteLater();
     });
-    connect(process, &QProcess::errorOccurred, self, [done](QProcess::ProcessError e) {
+    connect(process, &QProcess::errorOccurred, self, [process, done](QProcess::ProcessError e) {
         if (e == QProcess::FailedToStart)
+        {
             done(QString());
+            process->deleteLater();
+        }
     });
-    QTimer::singleShot(4000, process, [process, done] {
-        process->kill();
+    /* yt-dlp, a Python program, may take 8 s to answer on a busy machine;
+     * nothing waits for it, so the limit is only for one that hangs */
+    QTimer::singleShot(30000, process, [process, done] {
         done(QString());
+        process->kill();
     });
     process->start(tool, { id == QLatin1String("yt-dlp") ? QStringLiteral("--version")
                                                           : QStringLiteral("-version") });
