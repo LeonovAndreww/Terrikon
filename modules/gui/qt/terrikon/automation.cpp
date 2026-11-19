@@ -56,6 +56,7 @@
 #include <QQmlEngine>
 #include <QQmlExpression>
 #include <QQuickItem>
+#include <QQuickRenderControl>
 #include <QQuickWindow>
 #include <QRegularExpression>
 #include <QWheelEvent>
@@ -127,8 +128,11 @@ bool shownInScene(QQuickItem *item)
 QList<QQuickWindow *> quickWindows()
 {
     QList<QQuickWindow *> list;
-    for (QWindow *w : QGuiApplication::topLevelWindows())
-        if (auto *q = qobject_cast<QQuickWindow *>(w); q && q->isVisible())
+    // The X11 compositor renders the interface in an offscreen window, never
+    // shown itself: take a window rendered for another one as well.
+    for (QWindow *w : QGuiApplication::allWindows())
+        if (auto *q = qobject_cast<QQuickWindow *>(w);
+            q && (q->isVisible() || QQuickRenderControl::renderWindowFor(q)))
             list << q;
     return list;
 }
