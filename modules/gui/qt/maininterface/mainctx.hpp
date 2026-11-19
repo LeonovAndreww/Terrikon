@@ -132,6 +132,7 @@ class MainCtx : public QObject
     Q_PROPERTY(QString waveformStyle READ waveformStyle WRITE setWaveformStyle NOTIFY waveformStyleChanged FINAL)
     // Terrikon: how opaque the see-through parts of the player are (menus
     // over the video, messages), and its solid ones (queue, clip panel)
+    Q_PROPERTY(double windowTransparency READ windowTransparency WRITE setWindowTransparency NOTIFY windowTransparencyChanged FINAL)
     Q_PROPERTY(double overlayOpacity READ overlayOpacity WRITE setOverlayOpacity NOTIFY overlayOpacityChanged FINAL)
     Q_PROPERTY(double panelOpacity READ panelOpacity WRITE setPanelOpacity NOTIFY panelOpacityChanged FINAL)
     // Terrikon: how many menus of the player are open; the time line does not
@@ -273,6 +274,7 @@ public:
     inline bool backToPip() const { return var_InheritBool(p_intf, "qt-back-to-pip"); }
     /* Value of a string option of the interface */
     QString waveformStyle() const { return stringOption(QStringLiteral("qt-waveform-style")); }
+    double windowTransparency() const { return var_InheritFloat(p_intf, "qt-window-transparency"); }
     double overlayOpacity() const { return var_InheritFloat(p_intf, "qt-overlay-opacity"); }
     double panelOpacity() const { return var_InheritFloat(p_intf, "qt-panel-opacity"); }
     int openPlayerMenus() const { return m_openPlayerMenus; }
@@ -283,6 +285,7 @@ public:
         m_openPlayerMenus = count;
         emit openPlayerMenusChanged();
     }
+    void setWindowTransparency(double transparency);
     void setOverlayOpacity(double opacity);
     void setPanelOpacity(double opacity);
     /* Writes the settings changed so far to the disk */
@@ -608,6 +611,7 @@ protected slots:
 signals:
     void playerFromPipChanged();
     void waveformStyleChanged();
+    void windowTransparencyChanged();
     void overlayOpacityChanged();
     void panelOpacityChanged();
     void openPlayerMenusChanged();

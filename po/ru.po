@@ -44696,3 +44696,19 @@ msgstr "Настройки плеера"
 #: modules/gui/qt/player/qml/TracksPopover.qml
 msgid "Effects and filters…"
 msgstr "Эффекты и фильтры…"
+
+#: modules/gui/qt/dialogs/preferences/simple_preferences.cpp
+msgid "Window transparency:"
+msgstr "Прозрачность окна:"
+
+#: modules/gui/qt/dialogs/preferences/simple_preferences.cpp
+msgid "How much of the desktop shows through the side bar"
+msgstr "Насколько сквозь боковую панель виден рабочий стол"
+
+#: modules/gui/qt/qt.cpp
+msgid "Window transparency"
+msgstr "Прозрачность окна"
+
+#: modules/gui/qt/qt.cpp
+msgid "How much of the desktop shows through the side bar and the other translucent parts of the window (Windows; 0: opaque)."
+msgstr "Насколько сквозь боковую панель и другие полупрозрачные части окна виден рабочий стол (Windows; 0 — непрозрачно)."

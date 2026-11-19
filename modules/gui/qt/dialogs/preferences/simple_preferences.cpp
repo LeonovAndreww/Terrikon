@@ -923,6 +923,34 @@ SPrefsPanel::SPrefsPanel( qt_intf_t *_p_intf, QWidget *_parent,
             QObject::connect( ui.intfScaleFactorSpinBox, QOverload<int>::of(&QSpinBox::valueChanged)
                               , p_intf->p_mi , updateIntfUserScaleFactorFromControls );
 
+            /* Terrikon: the window's transparency, under the scale,
+             * applied at once */
+            if (auto *grid = qobject_cast<QGridLayout *>( ui.intfScaleFactorSlider->parentWidget()->layout() ))
+            {
+                int row, col, rowSpan, colSpan, spinCol;
+                grid->getItemPosition( grid->indexOf( ui.intfScaleFactorSlider ), &row, &col, &rowSpan, &colSpan );
+                grid->getItemPosition( grid->indexOf( ui.intfScaleFactorSpinBox ), &row, &spinCol, &rowSpan, &colSpan );
+                const int newRow = grid->rowCount();
+                auto *label = new QLabel( qtr( "Window transparency:" ) );
+                auto *slider = new QSlider( Qt::Horizontal );
+                auto *spin = new QSpinBox;
+                slider->setRange( 0, 90 );
+                spin->setRange( 0, 90 );
+                spin->setSuffix( QStringLiteral( "%" ) );
+                label->setBuddy( slider );
+                label->setToolTip( qtr( "How much of the desktop shows through the side bar" ) );
+                slider->setValue( qRound( p_intf->p_mi->windowTransparency() * 100 ) );
+                spin->setValue( slider->value() );
+                grid->addWidget( label, newRow, 0, 1, col );
+                grid->addWidget( slider, newRow, col );
+                grid->addWidget( spin, newRow, spinCol );
+                QObject::connect( slider, &QSlider::valueChanged, spin, &QSpinBox::setValue );
+                QObject::connect( spin, QOverload<int>::of( &QSpinBox::valueChanged ), slider, &QSlider::setValue );
+                MainCtx *mi = p_intf->p_mi;
+                QObject::connect( slider, &QSlider::valueChanged, mi, [mi]( int v ) { mi->setWindowTransparency( v / 100. ); } );
+                m_resetters.push_back( std::make_unique<PropertyResetter>( slider, "value" ) );
+            }
+
             DialogsProvider *provider = DialogsProvider::getInstance();
 
             QObject::connect( ui.toolbarEditor, &QAbstractButton::clicked, provider, &DialogsProvider::showToolbarEditorDialog);

@@ -302,6 +302,8 @@ static void ShowDialog   ( intf_thread_t *, int, int, intf_dialog_args_t * );
 #define PIP_MODE_TEXT N_( "Enable picture-in-picture (PiP) mode" )
 #define PIP_MODE_LONGTEXT N_( "Picture-in-picture mode allows playing video contained in a smaller area so that the interface remains usable." )
 
+#define WINDOW_TRANSPARENCY_TEXT N_( "Window transparency" )
+#define WINDOW_TRANSPARENCY_LONGTEXT N_( "How much of the desktop shows through the side bar and the other translucent parts of the window (Windows; 0: opaque)." )
 #define OVERLAY_OPACITY_TEXT N_( "Opacity of the see-through parts of the player" )
 #define OVERLAY_OPACITY_LONGTEXT N_( "How opaque the menus over the video and the messages on it are." )
 #define PANEL_OPACITY_TEXT N_( "Opacity of the solid parts of the player" )
@@ -506,6 +508,7 @@ vlc_module_begin ()
     add_string( "qt-waveform-style", "curve", WAVEFORM_STYLE_TEXT, WAVEFORM_STYLE_LONGTEXT )
         change_string_list( waveform_style_values, waveform_style_texts )
 
+    add_float_with_range( "qt-window-transparency", 0.55, 0.0, 0.9, WINDOW_TRANSPARENCY_TEXT, WINDOW_TRANSPARENCY_LONGTEXT )
     add_float_with_range( "qt-overlay-opacity", 0.82, 0.2, 1.0, OVERLAY_OPACITY_TEXT, OVERLAY_OPACITY_LONGTEXT )
     add_float_with_range( "qt-panel-opacity", 1.0, 0.2, 1.0, PANEL_OPACITY_TEXT, PANEL_OPACITY_LONGTEXT )
 

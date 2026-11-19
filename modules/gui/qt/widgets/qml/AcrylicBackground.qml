@@ -23,6 +23,7 @@ import QtQuick
 
 import VLC.Widgets
 import VLC.Style
+import VLC.MainInterface
 
 
 ViewBlockingRectangle {
@@ -34,7 +35,8 @@ ViewBlockingRectangle {
 
     property color alternativeColor: tintColor
 
-    readonly property color _actualTintColor: tintColor.alpha(0.7)
+    // Terrikon: how much of the desktop shows through, a setting
+    readonly property color _actualTintColor: tintColor.alpha(1 - MainCtx.windowTransparency)
 
     color: root._actualTintColor.tint(Qt.alpha(root.alternativeColor,
                                                1 - (usingAcrylic ? AcrylicController.uiTransluency : 0)))

@@ -335,6 +335,12 @@ void MainCtx::setWaveformStyle(const QString &style)
     emit waveformStyleChanged();
 }
 
+void MainCtx::setWindowTransparency(double transparency)
+{
+    config_PutFloat("qt-window-transparency", transparency);
+    emit windowTransparencyChanged();
+}
+
 void MainCtx::setOverlayOpacity(double opacity)
 {
     config_PutFloat("qt-overlay-opacity", opacity);
