@@ -221,6 +221,7 @@ build, or by reading when the path is taken.
 | A right click on the logo opened the window's own menu too | the logo's clicks are its own |
 | Linux: forgetting the media whose file is gone did not build (no sys/stat.h), and would have skipped every file, any path starting with / taken for a share | the share check and the separator are Windows only; / elsewhere |
 | Linux: the video window of its own (no embedding, software OpenGL) was still titled "VLC media player" | titled Terrikon, on X11 and Wayland |
+| Linux: with the automation on, quitting hung for good: closing a socket does not wake a thread blocked in accept() or recv() on Linux, and the interface waited for that thread | shutdown() on the sockets first |
 ## Known upstream issues, not fixed yet
 
 - `ListViewExt.qml`: the footer's height depends on its own position ("Binding loop detected for property implicitHeight"). Harmless.

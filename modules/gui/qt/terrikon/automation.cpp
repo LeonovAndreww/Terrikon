@@ -736,10 +736,18 @@ Automation::Automation(qt_intf_t *intf, QObject *parent)
 Automation::~Automation()
 {
     d->stopping = true;
-    if (d->listenFd >= 0)
-        net_Close(d->listenFd);
+    /* shutdown() first: on Linux, closing a socket does not wake a thread
+     * blocked in accept() or recv() on it, and the join below never ends */
     if (int fd = d->clientFd.exchange(-1); fd >= 0)
+    {
+        shutdown(fd, SHUT_RDWR);
         net_Close(fd);
+    }
+    if (d->listenFd >= 0)
+    {
+        shutdown(d->listenFd, SHUT_RDWR);
+        net_Close(d->listenFd);
+    }
     if (d->thread.joinable())
         d->thread.join();
     delete d;
