@@ -107,7 +107,7 @@ decltype (ControlbarProfileModel::m_defaults)
                                     ControlListModel::SUBTITLE_BUTTON,
                                     ControlListModel::BOOKMARK_BUTTON,
                                     ControlListModel::CLIP_BUTTON,
-                                    ControlListModel::EXTENDED_BUTTON,
+                                    ControlListModel::PLAYER_SETTINGS_BUTTON,
                                     ControlListModel::NAVIGATION_BUTTONS
                                 },
                                 {
@@ -130,7 +130,7 @@ decltype (ControlbarProfileModel::m_defaults)
                                 {
                                     ControlListModel::SUBTITLE_BUTTON,
                                     ControlListModel::BOOKMARK_BUTTON,
-                                    ControlListModel::EXTENDED_BUTTON
+                                    ControlListModel::PLAYER_SETTINGS_BUTTON
                                 },
                                 {
                                     ControlListModel::RANDOM_BUTTON,
@@ -254,7 +254,7 @@ decltype (ControlbarProfileModel::m_defaults)
                                     ControlListModel::WIDGET_SPACER,
                                     ControlListModel::FULLSCREEN_BUTTON,
                                     ControlListModel::PLAYLIST_BUTTON,
-                                    ControlListModel::EXTENDED_BUTTON,
+                                    ControlListModel::PLAYER_SETTINGS_BUTTON,
                                     ControlListModel::WIDGET_SPACER,
                                     ControlListModel::RECORD_BUTTON,
                                     ControlListModel::SNAPSHOT_BUTTON,
@@ -281,7 +281,7 @@ decltype (ControlbarProfileModel::m_defaults)
                                     ControlListModel::WIDGET_SPACER,
                                     ControlListModel::FULLSCREEN_BUTTON,
                                     ControlListModel::PLAYLIST_BUTTON,
-                                    ControlListModel::EXTENDED_BUTTON,
+                                    ControlListModel::PLAYER_SETTINGS_BUTTON,
                                     ControlListModel::WIDGET_SPACER,
                                     ControlListModel::RECORD_BUTTON,
                                     ControlListModel::SNAPSHOT_BUTTON,
@@ -388,7 +388,7 @@ decltype (ControlbarProfileModel::m_defaults)
                                     ControlListModel::NEXT_BUTTON,
                                     ControlListModel::WIDGET_SPACER,
                                     ControlListModel::FULLSCREEN_BUTTON,
-                                    ControlListModel::EXTENDED_BUTTON,
+                                    ControlListModel::PLAYER_SETTINGS_BUTTON,
                                     ControlListModel::WIDGET_SPACER,
                                     ControlListModel::PLAYLIST_BUTTON,
                                     ControlListModel::LOOP_BUTTON,
@@ -413,7 +413,7 @@ decltype (ControlbarProfileModel::m_defaults)
                                     ControlListModel::NEXT_BUTTON,
                                     ControlListModel::WIDGET_SPACER,
                                     ControlListModel::FULLSCREEN_BUTTON,
-                                    ControlListModel::EXTENDED_BUTTON,
+                                    ControlListModel::PLAYER_SETTINGS_BUTTON,
                                     ControlListModel::WIDGET_SPACER,
                                     ControlListModel::PLAYLIST_BUTTON,
                                     ControlListModel::LOOP_BUTTON,
@@ -441,7 +441,7 @@ decltype (ControlbarProfileModel::m_defaults)
                                     ControlListModel::NEXT_BUTTON,
                                     ControlListModel::WIDGET_SPACER,
                                     ControlListModel::FULLSCREEN_BUTTON,
-                                    ControlListModel::EXTENDED_BUTTON,
+                                    ControlListModel::PLAYER_SETTINGS_BUTTON,
                                     ControlListModel::WIDGET_SPACER,
                                     ControlListModel::PLAYLIST_BUTTON,
                                     ControlListModel::LOOP_BUTTON,
@@ -479,7 +479,7 @@ decltype (ControlbarProfileModel::m_defaults)
                                     ControlListModel::SUBTITLE_BUTTON,
                                     ControlListModel::BOOKMARK_BUTTON,
                                     ControlListModel::CLIP_BUTTON,
-                                    ControlListModel::EXTENDED_BUTTON,
+                                    ControlListModel::PLAYER_SETTINGS_BUTTON,
                                     ControlListModel::NAVIGATION_BUTTONS,
                                     ControlListModel::COMPACT_PLAYER_BUTTON,
                                     ControlListModel::FULLSCREEN_BUTTON
@@ -506,7 +506,7 @@ decltype (ControlbarProfileModel::m_defaults)
                                     ControlListModel::BOOKMARK_BUTTON,
                                     ControlListModel::RANDOM_BUTTON,
                                     ControlListModel::LOOP_BUTTON,
-                                    ControlListModel::EXTENDED_BUTTON,
+                                    ControlListModel::PLAYER_SETTINGS_BUTTON,
                                     ControlListModel::FULLSCREEN_BUTTON
                                 }
                             }
@@ -922,6 +922,24 @@ bool ControlbarProfileModel::reload()
                 }
             }
 
+            /* Terrikon: the effects button gives its place to the player
+             * settings one (effects and filters open from it), once */
+            if (!m_settings->value(QStringLiteral("playerSettingsButtonAdded")).toBool())
+            {
+                bool has = false;
+                for (const auto &list : data)
+                    has = has || list.contains(ControlListModel::PLAYER_SETTINGS_BUTTON);
+                for (auto &list : data)
+                {
+                    const int ext = list.indexOf(ControlListModel::EXTENDED_BUTTON);
+                    if (ext >= 0 && !has)
+                    {
+                        list[ext] = ControlListModel::PLAYER_SETTINGS_BUTTON;
+                        has = true;
+                    }
+                }
+            }
+
             /* Terrikon: bars saved before the subtitles button existed get
              * it, before the language button, once */
             if (!m_settings->value(QStringLiteral("subtitleButtonAdded")).toBool())
@@ -950,6 +968,7 @@ bool ControlbarProfileModel::reload()
 
     m_settings->endArray();
     m_settings->setValue(QStringLiteral("subtitleButtonAdded"), true);
+    m_settings->setValue(QStringLiteral("playerSettingsButtonAdded"), true);
     m_settings->setValue(QStringLiteral("langMergedIntoSubtitles"), true);
 
     m_selectedProfile = -1;

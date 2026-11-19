@@ -27,9 +27,13 @@ import VLC.Util
 import VLC.Widgets as Widgets
 
 // Audio and subtitles popover, above its button: a short list of settings
-// with their current value; each opens its own page in place.
+// with their current value; each opens its own page in place. With
+// settingsOnly (the player settings button): the player's own settings
+// instead of the tracks.
 T.Popup {
     id: root
+
+    property bool settingsOnly: false
 
     // Terrikon: the time line leaves the pointer alone while this is open
     onOpened: { stack.pop(null); MainCtx.openPlayerMenus += 1 }
@@ -192,46 +196,62 @@ T.Popup {
             spacing: 0
 
             Row {
+                visible: !root.settingsOnly
                 text: qsTr("Subtitles")
                 opensPage: true
                 value: root._selected(Player.subtitleTracks, root._revision)
                 onClicked: stack.push(subtitlesPage)
             }
             Row {
-                visible: Player.audioTracks.count > 0
+                visible: !root.settingsOnly && Player.audioTracks.count > 0
                 text: qsTr("Audio")
                 opensPage: true
                 value: root._selected(Player.audioTracks, root._revision)
                 onClicked: stack.push(audioPage)
             }
             Row {
+                visible: root.settingsOnly
                 text: qsTr("Speed")
                 opensPage: true
                 value: root._speedName(Player.rate)
                 onClicked: stack.push(speedPage)
             }
             Row {
+                visible: !root.settingsOnly
                 text: qsTr("Subtitle style")
                 opensPage: true
                 onClicked: stack.push(stylePage)
             }
             Row {
+                visible: !root.settingsOnly
                 text: qsTr("Synchronization")
                 opensPage: true
                 onClicked: stack.push(syncPage)
             }
             Row {
+                visible: root.settingsOnly
                 text: qsTr("Sound waves")
                 opensPage: true
                 value: root._waveStyles.find(s => s.id === MainCtx.waveformStyle)?.name ?? ""
                 onClicked: stack.push(wavesPage)
             }
             Row {
+                visible: root.settingsOnly
                 text: qsTr("Transparency")
                 opensPage: true
                 onClicked: stack.push(opacityPage)
             }
             Row {
+                visible: root.settingsOnly
+                text: qsTr("Effects and filters…")
+                noCheckMark: true
+                onClicked: {
+                    root.close()
+                    DialogsProvider.extendedDialog()
+                }
+            }
+            Row {
+                visible: !root.settingsOnly
                 text: qsTr("Open subtitle file…")
                 noCheckMark: true
                 onClicked: {

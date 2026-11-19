@@ -87,7 +87,7 @@ public:
         SUBTITLE_BUTTON, /* subtitles on / off */
         /* Terrikon: upstream's 0x2B, moved: ours took 0x2B-0x2D first */
         VOLUME_LEGACY,
-        RESERVED_0X2F,
+        PLAYER_SETTINGS_BUTTON, /* Terrikon: speed, waves, transparency */
         RESERVED_0X30,
         RESERVED_0X31,
         RESERVED_0X32,

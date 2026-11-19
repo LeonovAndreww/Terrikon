@@ -44688,3 +44688,11 @@ msgstr "Ещё раз"
 #: modules/gui/qt/player/qml/PlayerView.qml
 msgid "No lyrics in the file."
 msgstr "В файле нет текста песни."
+
+#: modules/gui/qt/player/qml/controlbarcontrols/PlayerSettingsButton.qml
+msgid "Player settings"
+msgstr "Настройки плеера"
+
+#: modules/gui/qt/player/qml/TracksPopover.qml
+msgid "Effects and filters…"
+msgstr "Эффекты и фильтры…"
