@@ -202,6 +202,8 @@ libmacosx_plugin_la_SOURCES = \
 	gui/macosx/library/VLCLibraryItemInternalMediaItemsDataSource.h \
 	gui/macosx/library/VLCLibraryItemInternalMediaItemsDataSource.m \
 	gui/macosx/library/VLCLibraryItemPresentingCapable.h \
+	gui/macosx/library/VLCLibraryMarkUnplayedButton.h \
+	gui/macosx/library/VLCLibraryMarkUnplayedButton.m \
 	gui/macosx/library/VLCLibraryMasterDetailViewTableViewDataSource.h \
 	gui/macosx/library/VLCLibraryMasterDetailViewTableViewDelegate.h \
 	gui/macosx/library/VLCLibraryMasterDetailViewTableViewDelegate.m \
@@ -334,6 +336,14 @@ libmacosx_plugin_la_SOURCES = \
 	gui/macosx/library/audio-library/VLCLibraryAudioViewController.m \
 	gui/macosx/library/audio-library/VLCLibraryCollectionViewAudioGroupSupplementaryDetailView.h \
 	gui/macosx/library/audio-library/VLCLibraryCollectionViewAudioGroupSupplementaryDetailView.m \
+	gui/macosx/library/audio-library/VLCLibraryMusicCarouselContainerView.h \
+	gui/macosx/library/audio-library/VLCLibraryMusicCarouselContainerView.m \
+	gui/macosx/library/audio-library/VLCLibraryMusicCarouselDataSource.h \
+	gui/macosx/library/audio-library/VLCLibraryMusicCarouselDataSource.m \
+	gui/macosx/library/audio-library/VLCLibraryMusicCompactCarouselCollectionViewItem.h \
+	gui/macosx/library/audio-library/VLCLibraryMusicCompactCarouselCollectionViewItem.m \
+	gui/macosx/library/audio-library/VLCLibraryMusicViewController.h \
+	gui/macosx/library/audio-library/VLCLibraryMusicViewController.m \
 	gui/macosx/library/audio-library/VLCLibrarySongTableCellView.h \
 	gui/macosx/library/audio-library/VLCLibrarySongTableCellView.m \
 	gui/macosx/library/audio-library/VLCLibrarySongsTableViewSongPlayingTableCellView.h \
@@ -344,6 +354,12 @@ libmacosx_plugin_la_SOURCES = \
 	gui/macosx/library/favorites-library/VLCLibraryFavoritesTableViewDelegate.m \
 	gui/macosx/library/favorites-library/VLCLibraryFavoritesViewController.h \
 	gui/macosx/library/favorites-library/VLCLibraryFavoritesViewController.m \
+	gui/macosx/library/history-library/VLCLibraryHistoryDataSource.h \
+	gui/macosx/library/history-library/VLCLibraryHistoryDataSource.m \
+	gui/macosx/library/history-library/VLCLibraryHistorySection.h \
+	gui/macosx/library/history-library/VLCLibraryHistorySection.m \
+	gui/macosx/library/history-library/VLCLibraryHistoryViewController.h \
+	gui/macosx/library/history-library/VLCLibraryHistoryViewController.m \
 	gui/macosx/library/media-source/VLCLibraryMediaSourceViewController.h \
 	gui/macosx/library/media-source/VLCLibraryMediaSourceViewController.m \
 	gui/macosx/library/media-source/VLCMediaSource.h \
@@ -377,6 +393,8 @@ libmacosx_plugin_la_SOURCES = \
 	gui/macosx/library/VLCLibrarySectionedTableViewDelegate.m \
 	gui/macosx/library/search-library/VLCLibrarySearchDataSource.h \
 	gui/macosx/library/search-library/VLCLibrarySearchDataSource.m \
+	gui/macosx/library/search-library/VLCLibrarySearchOverviewController.h \
+	gui/macosx/library/search-library/VLCLibrarySearchOverviewController.m \
 	gui/macosx/library/search-library/VLCLibrarySearchProvider.h \
 	gui/macosx/library/search-library/VLCLibrarySearchProvider.m \
 	gui/macosx/library/search-library/VLCLibrarySearchViewController.h \
@@ -587,6 +605,8 @@ libmacosx_plugin_la_SOURCES = \
 	gui/macosx/windows/video/VLCAspectRatioRetainingVideoWindow.m \
 	gui/macosx/windows/video/VLCFullVideoViewWindow.h \
 	gui/macosx/windows/video/VLCFullVideoViewWindow.m \
+	gui/macosx/windows/video/VLCLyricEntry.h \
+	gui/macosx/windows/video/VLCLyricEntry.m \
 	gui/macosx/windows/video/VLCMainVideoViewAudioMediaDecorativeView.h \
 	gui/macosx/windows/video/VLCMainVideoViewAudioMediaDecorativeView.m \
 	gui/macosx/windows/video/VLCMainVideoViewController.h \

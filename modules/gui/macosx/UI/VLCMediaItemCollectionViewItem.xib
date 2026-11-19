@@ -12,13 +12,15 @@
                 <outlet property="annotationTextField" destination="tm2-NW-WsZ" id="Miy-RS-Rol"/>
                 <outlet property="highlightBox" destination="Vwd-1n-Sbd" id="h1g-hL-1gh"/>
                 <outlet property="imageViewAspectRatioConstraint" destination="f7c-vp-30m" id="2As-9A-WOn"/>
-                <outlet property="mediaImageView" destination="2aB-sB-hfY" id="Sv0-G1-KNm"/>
+                <outlet property="mediaImageView" destination="VIm-G2-dv1" id="Sv0-G1-KNm"/>
                 <outlet property="mediaTitleTextField" destination="OBS-Eh-1mT" id="h1n-PU-IAx"/>
                 <outlet property="playInstantlyButton" destination="S3I-5Z-qgS" id="JlC-bE-i5Y"/>
                 <outlet property="progressIndicator" destination="dFt-oZ-h9P" id="JC6-gk-Mid"/>
                 <outlet property="secondaryInfoTextField" destination="VAn-gF-QiZ" id="U8T-Cs-HaL"/>
                 <outlet property="trailingSecondaryTextToLeadingUnplayedIndicatorConstraint" destination="IXL-bv-5zP" id="V4J-bi-UQB"/>
                 <outlet property="trailingSecondaryTextToTrailingSuperviewConstraint" destination="Zci-25-m59" id="czo-El-QT8"/>
+                <outlet property="trailingTitleTextToTrailingSuperviewConstraint" destination="457-oy-EbD" id="title-trailing-outlet"/>
+                <outlet property="trailingUnplayedIndicatorToTrailingSuperviewConstraint" destination="Dd7-va-0UJ" id="unplayed-trailing-outlet"/>
                 <outlet property="unplayedIndicatorTextField" destination="u2r-zy-XEW" id="56s-K4-Kxr"/>
                 <outlet property="view" destination="Hz6-mo-xeY" id="0bl-1N-x8E"/>
             </connections>
@@ -29,9 +31,13 @@
             <rect key="frame" x="0.0" y="0.0" width="207" height="243"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
-                <customView translatesAutoresizingMaskIntoConstraints="NO" id="2aB-sB-hfY" customClass="VLCImageView">
+                <customView translatesAutoresizingMaskIntoConstraints="NO" id="2aB-sB-hfY">
                     <rect key="frame" x="0.0" y="36" width="207" height="207"/>
                     <subviews>
+                        <imageView translatesAutoresizingMaskIntoConstraints="NO" id="VIm-G2-dv1" customClass="VLCImageView">
+                            <rect key="frame" x="0.0" y="0.0" width="207" height="207"/>
+                            <imageCell key="cell" refusesFirstResponder="YES" imageScaling="proportionallyUpOrDown" id="viN-02-CEl"/>
+                        </imageView>
                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="dFt-oZ-h9P" customClass="VLCLinearProgressIndicator">
                             <rect key="frame" x="0.0" y="0.0" width="207" height="4"/>
                             <constraints>
@@ -40,6 +46,10 @@
                         </customView>
                     </subviews>
                     <constraints>
+                        <constraint firstItem="VIm-G2-dv1" firstAttribute="leading" secondItem="2aB-sB-hfY" secondAttribute="leading" id="vIm-02-l01"/>
+                        <constraint firstAttribute="trailing" secondItem="VIm-G2-dv1" secondAttribute="trailing" id="vIm-02-t01"/>
+                        <constraint firstItem="VIm-G2-dv1" firstAttribute="top" secondItem="2aB-sB-hfY" secondAttribute="top" id="vIm-02-t02"/>
+                        <constraint firstAttribute="bottom" secondItem="VIm-G2-dv1" secondAttribute="bottom" id="vIm-02-b01"/>
                         <constraint firstAttribute="bottom" secondItem="dFt-oZ-h9P" secondAttribute="bottom" id="4q3-3S-7PA"/>
                         <constraint firstAttribute="width" secondItem="2aB-sB-hfY" secondAttribute="height" multiplier="1:1" id="f7c-vp-30m"/>
                         <constraint firstItem="dFt-oZ-h9P" firstAttribute="leading" secondItem="2aB-sB-hfY" secondAttribute="leading" id="gTe-sx-hdP"/>
@@ -143,7 +153,7 @@
                         </userDefinedRuntimeAttribute>
                     </userDefinedRuntimeAttributes>
                 </constraint>
-                <constraint firstAttribute="trailing" secondItem="VAn-gF-QiZ" secondAttribute="trailing" priority="750" id="Zci-25-m59"/>
+                <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="VAn-gF-QiZ" secondAttribute="trailing" id="Zci-25-m59"/>
                 <constraint firstItem="S3I-5Z-qgS" firstAttribute="height" secondItem="Ubz-8I-W2F" secondAttribute="height" id="ebY-C1-rqR"/>
                 <constraint firstItem="tm2-NW-WsZ" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" constant="4" id="fH0-Om-7gV" customClass="VLCSpacingConstraint">
                     <userDefinedRuntimeAttributes>

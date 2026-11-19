@@ -90,7 +90,7 @@ VLCMediaLibraryMediaItem *VLCLibraryModelTestMediaItem(vlc_ml_media_type_t type,
 }
 
 - (void)observeDeletionsForMediaIDs:(NSArray<NSNumber *> *)mediaIDs
-                          handler:(dispatch_block_t)handler
+                            handler:(dispatch_block_t)handler
 {
     @synchronized (self) {
         _expectedDeletionIDs = [NSMutableSet setWithArray:mediaIDs];
@@ -206,7 +206,7 @@ VLCMediaLibraryMediaItem *VLCLibraryModelTestMediaItem(vlc_ml_media_type_t type,
 }
 
 - (NSArray *)readCacheOnQueue:(dispatch_queue_t)queue
-                  withBlock:(NSArray *(^)(void))block
+                    withBlock:(NSArray *(^)(void))block
 {
     NSArray * const cache = [super readCacheOnQueue:queue withBlock:block];
     dispatch_block_t captured = nil;
@@ -292,7 +292,7 @@ VLCMediaLibraryMediaItem *VLCLibraryModelTestMediaItem(vlc_ml_media_type_t type,
 }
 
 - (instancetype)initWithLibrary:(vlc_medialibrary_t *)library
-                 observeEvents:(BOOL)observeEvents
+                  observeEvents:(BOOL)observeEvents
 {
     // The last startup count is audio history. Ensure it is nonzero so its
     // publication can be observed without guessing how long startup takes.
@@ -440,6 +440,19 @@ VLCMediaLibraryMediaItem *VLCLibraryModelTestMediaItem(vlc_ml_media_type_t type,
     return token;
 }
 
+- (void)cancelCacheUpdateForToken:(NSObject *)token
+                           getter:(SEL)getter
+{
+    [super cancelCacheUpdateForToken:token getter:getter];
+    @synchronized (self) {
+        [_pendingQueries removeObject:token];
+        if (_pendingQueries.count == 0 && _queriesFinished != nil) {
+            dispatch_async(dispatch_get_main_queue(), _queriesFinished);
+            _queriesFinished = nil;
+        }
+    }
+}
+
 - (NSUInteger)queryCountForGetter:(SEL)getter
 {
     @synchronized (self) {
@@ -492,6 +505,8 @@ VLCMediaLibraryMediaItem *VLCLibraryModelTestMediaItem(vlc_ml_media_type_t type,
         [self resetCachedListOfRecentlyAddedVideoMedia];
     else if (getter == @selector(cachedRecentlyAddedAudioMedia))
         [self resetCachedListOfRecentlyAddedAudioMedia];
+    else if (getter == @selector(cachedHistoryMedia))
+        [self resetCachedListOfHistoryMedia];
     else
         XCTFail(@"Unsupported cache getter");
 }
@@ -647,7 +662,7 @@ VLCMediaLibraryMediaItem *VLCLibraryModelTestMediaItem(vlc_ml_media_type_t type,
 }
 
 - (instancetype)initWithGroupName:(NSString *)groupName
-                  otherGroupName:(NSString *)otherGroupName
+                   otherGroupName:(NSString *)otherGroupName
 {
     return [self initWithCacheKind:VLCLibraryModelTestGroupCache groupName:groupName otherGroupName:otherGroupName];
 }
@@ -740,7 +755,7 @@ VLCMediaLibraryMediaItem *VLCLibraryModelTestMediaItem(vlc_ml_media_type_t type,
             return nil;
     }
     _model = [[VLCLibraryModelTestQueryGate alloc] initWithLibrary:VLCLibraryDataTypesIntegrationMediaLibrary()
-                                                  observeEvents:NO];
+                                                     observeEvents:NO];
     _model.changeDelegate.throttleInterval = 0.;
     // Replay events in the test's chosen order. Queries still go to the real ML.
     return self;
@@ -1159,7 +1174,7 @@ VLCMediaLibraryMediaItem *VLCLibraryModelTestMediaItem(vlc_ml_media_type_t type,
 }
 
 - (BOOL)renameItemWithID:(int64_t)libraryID
-                    to:(NSString *)name
+                      to:(NSString *)name
 {
     switch (_kind) {
         case VLCLibraryModelTestArtistCache:

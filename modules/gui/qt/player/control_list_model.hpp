@@ -85,7 +85,8 @@ public:
         COMPACT_PLAYER_BUTTON,
         TIME_WIDGET, /* "0:42 / 2:35", for bars laid out like web players */
         SUBTITLE_BUTTON, /* subtitles on / off */
-        RESERVED_0X2E,
+        /* Terrikon: upstream's 0x2B, moved: ours took 0x2B-0x2D first */
+        VOLUME_LEGACY,
         RESERVED_0X2F,
         RESERVED_0X30,
         RESERVED_0X31,
@@ -112,6 +113,7 @@ public:
 
     static_assert(CLIP_BUTTON == 0x1F, "missaligned");
     static_assert(COMPACT_PLAYER_BUTTON == 0x2B, "missaligned");
+    static_assert(VOLUME_LEGACY == 0x2E, "missaligned");
     static_assert(RESERVED_0X3F == 0x3F, "missaligned");
 
     // Basic functionality:

@@ -33,7 +33,7 @@ Function AppExecAs
   ${If} ${AtLeastWinVista}
     Exec '"$WINDIR\explorer.exe" "$INSTDIR\terrikon.exe"'
   ${Else}
-    Exec '$INSTDIR\terrikon.exe'
+    Exec '"$INSTDIR\terrikon.exe"'
   ${Endif}
 FunctionEnd
 

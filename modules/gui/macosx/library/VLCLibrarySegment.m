@@ -38,12 +38,15 @@
 #import "library/VLCLibraryWindowToolbarDelegate.h"
 
 #import "library/audio-library/VLCLibraryAudioViewController.h"
+#import "library/audio-library/VLCLibraryMusicViewController.h"
 
 #import "library/favorites-library/VLCLibraryFavoritesViewController.h"
 
 #import "library/groups-library/VLCLibraryGroupsViewController.h"
 
 #import "library/home-library/VLCLibraryHomeViewController.h"
+
+#import "library/history-library/VLCLibraryHistoryViewController.h"
 
 #import "library/media-source/VLCLibraryMediaSourceViewController.h"
 #import "library/media-source/VLCMediaSource.h"
@@ -204,6 +207,48 @@ NSArray<NSString *> *defaultBookmarkedLocations()
             return VLCLibraryWindowPersistentPreferences.sharedInstance.favoritesLibraryViewMode;
         };
         self.internalToolbarDisplayFlags = standardLibraryViewToolbarDisplayFlags;
+    }
+    return self;
+}
+
+@end
+
+// MARK: - VLCLibraryHistorySegment
+
+@interface VLCLibraryHistorySegment : VLCLibrarySegment
+@end
+
+@implementation VLCLibraryHistorySegment
+
+- (instancetype)init
+{
+    self = [super initWithSegmentType:VLCLibraryHistorySegmentType];
+    if (self) {
+        self.internalDisplayString = _NS("History");
+        self.internalSearchFieldPlaceholder = _NS("Search your history");
+        if (@available(macOS 11.0, *)) {
+            self.internalDisplayImage = [NSImage imageWithSystemSymbolName:@"clock.arrow.circlepath"
+                                                  accessibilityDescription:@"History icon"];
+        } else {
+            self.internalDisplayImage = [NSImage imageNamed:NSImageNameRefreshTemplate];
+        }
+        self.internalMediaLibraryRequired = YES;
+        self.internalLibraryViewControllerClass = VLCLibraryHistoryViewController.class;
+        self.internalLibraryViewControllerCreator = ^{
+            return [[VLCLibraryHistoryViewController alloc] initWithLibraryWindow:VLCMain.sharedInstance.libraryWindow];
+        };
+        self.internalLibraryViewPresenter = ^(VLCLibraryAbstractSegmentViewController * const controller) {
+            [(VLCLibraryHistoryViewController *)controller presentHistoryView];
+        };
+        self.internalGetViewModePreference = ^{
+            return VLCLibraryWindowPersistentPreferences.sharedInstance.historyLibraryViewMode;
+        };
+        self.internalSaveViewModePreference = ^(const NSInteger viewMode) {
+            VLCLibraryWindowPersistentPreferences.sharedInstance.historyLibraryViewMode = viewMode;
+        };
+        self.internalToolbarDisplayFlags = VLCLibraryWindowToolbarDisplayFlagToggleViewModeSegmentButton |
+                                           VLCLibraryWindowToolbarDisplayFlagLibrarySearchBar |
+                                           VLCLibraryWindowToolbarDisplayFlagClearHistoryButton;
     }
     return self;
 }
@@ -516,14 +561,13 @@ NSArray<NSString *> *defaultBookmarkedLocations()
             self.internalDisplayImage.template = YES;
         }
         self.internalMediaLibraryRequired = YES;
-        self.internalLibraryViewControllerClass = VLCLibraryAudioViewController.class;
+        self.internalLibraryViewControllerClass = VLCLibraryMusicViewController.class;
         self.internalLibraryViewControllerCreator = ^{
-            return [[VLCLibraryAudioViewController alloc] initWithLibraryWindow:VLCMain.sharedInstance.libraryWindow];
+            return [[VLCLibraryMusicViewController alloc] initWithLibraryWindow:VLCMain.sharedInstance.libraryWindow];
         };
         self.internalLibraryViewPresenter = ^(VLCLibraryAbstractSegmentViewController * const controller) {
-            [(VLCLibraryAudioViewController *)controller presentAudioView];
+            [(VLCLibraryMusicViewController *)controller presentMusicView];
         };
-        self.internalToolbarDisplayFlags = standardLibraryViewToolbarDisplayFlags;
         self.internalChildNodes = @[
             [[VLCLibraryMusicArtistSubSegment alloc] init],
             [[VLCLibraryMusicAlbumSubSegment alloc] init],
@@ -933,6 +977,7 @@ NSArray<NSString *> *defaultBookmarkedLocations()
             [[VLCLibraryHomeSegment alloc] init],
             [[VLCLibraryHeaderSegment alloc] initWithDisplayString:_NS("Library")],
             [[VLCLibraryFavoritesSegment alloc] init],
+            [[VLCLibraryHistorySegment alloc] init],
             [[VLCLibraryVideoSegment alloc] init],
             [[VLCLibraryMusicSegment alloc] init],
             [[VLCLibraryPlaylistSegment alloc] init],
@@ -956,6 +1001,8 @@ NSArray<NSString *> *defaultBookmarkedLocations()
             return [[VLCLibraryHomeSegment alloc] init];
         case VLCLibraryFavoritesSegmentType:
             return [[VLCLibraryFavoritesSegment alloc] init];
+        case VLCLibraryHistorySegmentType:
+            return [[VLCLibraryHistorySegment alloc] init];
         case VLCLibraryVideoSegmentType:
             return [[VLCLibraryVideoSegment alloc] init];
         case VLCLibraryShowsVideoSubSegmentType:
@@ -1004,7 +1051,7 @@ NSArray<NSString *> *defaultBookmarkedLocations()
     VLCMediaLibraryMediaItem * const mediaItem = (VLCMediaLibraryMediaItem *)libraryItem;
     const BOOL validMediaItem = mediaItem != nil;
     if (validMediaItem && mediaItem.mediaType == VLC_ML_MEDIA_TYPE_AUDIO) {
-        return [VLCLibrarySegment segmentWithSegmentType:VLCLibraryMusicSegmentType];
+        return [VLCLibrarySegment segmentWithSegmentType:VLCLibrarySongsMusicSubSegmentType];
     } else if (validMediaItem && mediaItem.mediaType == VLC_ML_MEDIA_TYPE_VIDEO) {
         if (mediaItem.mediaSubType == VLC_ML_MEDIA_SUBTYPE_SHOW_EPISODE) {
             return [VLCLibrarySegment segmentWithSegmentType:VLCLibraryShowsVideoSubSegmentType];
@@ -1091,12 +1138,16 @@ NSArray<NSString *> *defaultBookmarkedLocations()
 
 - (NSInteger)viewMode
 {
-    return self.internalGetViewModePreference();
+    return self.internalGetViewModePreference != nil
+        ? self.internalGetViewModePreference()
+        : VLCLibrarySmallestSentinelViewModeSegment;
 }
 
 - (void)setViewMode:(NSInteger)viewMode
 {
-    self.internalSaveViewModePreference(viewMode);
+    if (self.internalSaveViewModePreference != nil) {
+        self.internalSaveViewModePreference(viewMode);
+    }
 }
 
 - (NSUInteger)toolbarDisplayFlags

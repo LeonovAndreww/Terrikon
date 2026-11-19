@@ -46,10 +46,12 @@ extern NSString * const VLCLibraryModelRecentsMediaListReset;
 extern NSString * const VLCLibraryModelRecentAudioMediaListReset;
 extern NSString * const VLCLibraryModelRecentlyAddedVideoMediaListReset;
 extern NSString * const VLCLibraryModelRecentlyAddedAudioMediaListReset;
+extern NSString * const VLCLibraryModelHistoryMediaListReset;
 extern NSString * const VLCLibraryModelListOfShowsReset;
 extern NSString * const VLCLibraryModelListOfMoviesReset;
 extern NSString * const VLCLibraryModelListOfGroupsReset;
 
+extern NSString * const VLCLibraryModelMediaItemDeleted; // The notification object is the library ID as an NSNumber.
 extern NSString * const VLCLibraryModelAudioMediaItemDeleted;
 extern NSString * const VLCLibraryModelVideoMediaItemDeleted;
 extern NSString * const VLCLibraryModelRecentsMediaItemDeleted;
@@ -61,6 +63,7 @@ extern NSString * const VLCLibraryModelGroupDeleted;
 extern NSString * const VLCLibraryModelPlaylistDeleted;
 extern NSString * const VLCLibraryModelShowDeleted;
 
+extern NSString * const VLCLibraryModelMediaItemUpdated;
 extern NSString * const VLCLibraryModelAudioMediaItemUpdated;
 extern NSString * const VLCLibraryModelVideoMediaItemUpdated;
 extern NSString * const VLCLibraryModelRecentsMediaItemUpdated;
@@ -111,6 +114,12 @@ extern NSString * const VLCLibraryModelDiscoveryFailed;
 // The latest 20 additions of each type, newest first, following the current search filter.
 @property (readonly) NSArray <VLCMediaLibraryMediaItem *> *listOfRecentlyAddedVideoMedia;
 @property (readonly) NSArray <VLCMediaLibraryMediaItem *> *listOfRecentlyAddedAudioMedia;
+
+@property (readonly) size_t numberOfHistoryMedia;
+@property (readonly) NSArray <VLCMediaLibraryMediaItem *> *listOfHistoryMedia;
+
+// Up to 20 played library tracks, ranked by play count and following the current search filter.
+@property (readonly) NSArray<VLCMediaLibraryMediaItem *> *listOfMostPlayedAudioMedia;
 
 @property (readonly) size_t numberOfShows;
 @property (readonly) NSArray <VLCMediaLibraryShow *> *listOfShows;
