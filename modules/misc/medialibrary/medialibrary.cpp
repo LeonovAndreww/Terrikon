@@ -29,6 +29,8 @@
 #include <vlc_media_library.h>
 #include <vlc_dialog.h>
 #include <vlc_fs.h>
+
+#include <sys/stat.h>
 #ifdef _WIN32
 # include <windows.h>
 #endif
@@ -333,7 +335,11 @@ void* MediaLibrary::forgetGoneExternalMedia( void* data )
                     continue;
                 char* path = vlc_uri2path( mrl.c_str() );
                 /* never a share: its host may not answer */
+#ifdef _WIN32
                 if ( path == nullptr || path[0] == '\\' || path[0] == '/' )
+#else
+                if ( path == nullptr )
+#endif
                 {
                     free( path );
                     continue;
@@ -352,12 +358,18 @@ void* MediaLibrary::forgetGoneExternalMedia( void* data )
                 if ( vlc_stat( path, &st ) != 0 && errno == ENOENT )
                 {
                     /* the file only: a folder gone may be a drive unplugged */
+#ifdef _WIN32
                     char* sep = strrchr( path, '\\' );
+                    char* const root_end = path + 2;
+#else
+                    char* sep = strrchr( path, '/' );
+                    char* const root_end = path;
+#endif
                     if ( sep != nullptr )
                     {
                         /* no separator at the end, which stat() refuses,
                          * but for the root of the drive */
-                        sep[sep == path + 2 ? 1 : 0] = '\0';
+                        sep[sep == root_end ? 1 : 0] = '\0';
                         if ( vlc_stat( path, &st ) == 0 )
                             gone.push_back( media );
                     }
