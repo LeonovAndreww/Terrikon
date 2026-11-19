@@ -127,6 +127,7 @@ build, or by reading when the path is taken.
 | Player | Track lists: a row -1 read before the start of the list | refused |
 | Qt | Leaving the services page while the add-ons were still looked for froze the window: the add-ons manager was let go of on the interface thread, which waited for the finder held by a name lookup or a slow server | let go of on a thread of its own; its late answers dropped |
 | Qt | A page without a list (none of its own initialIndex) given the place in a list kept for it: "Cannot assign to non-existent property" | given only to a page having it |
+| Linux X11, the Qt X11 compositor: the video stayed black under the interface (Linux Mint 22 Cinnamon, Mesa radeonsi). With Qt's default GLX integration the interface surface came out opaque; upstream at the same commit behaves the same | QT_XCB_GL_INTEGRATION=xcb_egl unless the user set it: EGL keeps the alpha |
 ## 2. VLC 4's bugs brought out by Terrikon
 
 | Bug seen | VLC 4's cause | What brought it out | Fix |
@@ -223,6 +224,7 @@ build, or by reading when the path is taken.
 | Linux: the video window of its own (no embedding, software OpenGL) was still titled "VLC media player" | titled Terrikon, on X11 and Wayland |
 | Linux: with the automation on, quitting hung for good: closing a socket does not wake a thread blocked in accept() or recv() on Linux, and the interface waited for that thread | shutdown() on the sockets first |
 | Settings, Components: yt-dlp's version stayed blank on a busy machine (yt-dlp, a Python program, took 8 s; it was killed at 4 s), and the process was destroyed while still running (a Qt warning) | 30 s, nothing waits for it; the process deleted only once it has ended |
+| Automation on Linux: no interface window found (`at`, `items`...), as the X11 compositor renders it offscreen, neither top-level nor visible | also take a window rendered for another one (QQuickRenderControl::renderWindowFor) |
 ## Known upstream issues, not fixed yet
 
 - `ListViewExt.qml`: the footer's height depends on its own position ("Binding loop detected for property implicitHeight"). Harmless.
