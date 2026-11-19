@@ -219,6 +219,8 @@ build, or by reading when the path is taken.
 | Lyrics: a late answer for a song played, then another, then that one again was taken as current; a file chosen while another song started was given to it; the file was read on the window's thread | answers tied to the playing they were asked for; the file read away from the window |
 | Back from a video stalled it: its surface gone, the output was set up again and taken for a new video, the player opened again | the video is paused on any way out of the player; its output coming back is not a new video |
 | A right click on the logo opened the window's own menu too | the logo's clicks are its own |
+| Linux: forgetting the media whose file is gone did not build (no sys/stat.h), and would have skipped every file, any path starting with / taken for a share | the share check and the separator are Windows only; / elsewhere |
+| Linux: the video window of its own (no embedding, software OpenGL) was still titled "VLC media player" | titled Terrikon, on X11 and Wayland |
 ## Known upstream issues, not fixed yet
 
 - `ListViewExt.qml`: the footer's height depends on its own position ("Binding loop detected for property implicitHeight"). Harmless.
