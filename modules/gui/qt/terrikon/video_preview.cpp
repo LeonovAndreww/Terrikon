@@ -262,7 +262,7 @@ void VideoPreview::start()
         return;
     }
     /* back where the last preview of it was left */
-    if (m_startTime <= 0.)
+    if (m_startTime <= 0. && !m_backdrop)
         m_startTime = resumeTime(keyOf(m_source));
     if (m_startTime > 0.)
     {
@@ -271,16 +271,27 @@ void VideoPreview::start()
     }
     /* no window, no fullscreen: only this item shows it */
     input_item_AddOption(item, ":no-video-title-show", VLC_INPUT_OPTION_TRUSTED);
-    /* the first subtitles, if any */
-    input_item_AddOption(item, ":sub-track=0", VLC_INPUT_OPTION_TRUSTED);
-    /* over and over, as long as it is pointed at */
-    input_item_AddOption(item, ":input-repeat=65535", VLC_INPUT_OPTION_TRUSTED);
+    if (m_backdrop)
+    {
+        /* the picture alone: the player in front has the rest */
+        input_item_AddOption(item, ":no-audio", VLC_INPUT_OPTION_TRUSTED);
+        input_item_AddOption(item, ":no-spu", VLC_INPUT_OPTION_TRUSTED);
+    }
+    else
+    {
+        /* the first subtitles, if any */
+        input_item_AddOption(item, ":sub-track=0", VLC_INPUT_OPTION_TRUSTED);
+        /* over and over, as long as it is pointed at */
+        input_item_AddOption(item, ":input-repeat=65535", VLC_INPUT_OPTION_TRUSTED);
+    }
 
     vlc_player_Lock(player);
     vlc_player_aout_Mute(player, muted());
     vlc_player_aout_SetVolume(player, float(m_volume));
     vlc_player_SetCurrentMedia(player, item);
     vlc_player_Start(player);
+    if (m_paused)
+        vlc_player_Pause(player);
     vlc_player_Unlock(player);
     input_item_Release(item);
 
@@ -297,12 +308,15 @@ void VideoPreview::stop()
         /* where it was left: the next preview and opening it go on there;
          * near either end, nothing to go on from */
         poll();
-        std::lock_guard<std::mutex> lock(s_resumeLock);
-        const QString key = keyOf(m_source);
-        if (m_time > 1. && (m_length <= 0. || m_time < m_length - 2.))
-            s_resume.insert(key, m_time);
-        else
-            s_resume.remove(key);
+        if (!m_backdrop)
+        {
+            std::lock_guard<std::mutex> lock(s_resumeLock);
+            const QString key = keyOf(m_source);
+            if (m_time > 1. && (m_length <= 0. || m_time < m_length - 2.))
+                s_resume.insert(key, m_time);
+            else
+                s_resume.remove(key);
+        }
     }
     if (m_frames)
     {
@@ -346,6 +360,65 @@ void VideoPreview::seek(double position)
         vlc_player_Start(m_player);
     vlc_player_Unlock(m_player);
     poll();
+}
+
+void VideoPreview::seekTime(double seconds)
+{
+    if (!m_player)
+        return;
+    vlc_player_Lock(m_player);
+    vlc_player_SeekByTime(m_player, vlc_tick_from_sec(std::max(0., seconds)),
+                          VLC_PLAYER_SEEK_PRECISE, VLC_PLAYER_WHENCE_ABSOLUTE);
+    vlc_player_Unlock(m_player);
+    poll();
+}
+
+void VideoPreview::setPaused(bool paused)
+{
+    if (paused == m_paused)
+        return;
+    m_paused = paused;
+    if (m_player)
+    {
+        vlc_player_Lock(m_player);
+        if (paused)
+            vlc_player_Pause(m_player);
+        else
+            vlc_player_Resume(m_player);
+        vlc_player_Unlock(m_player);
+    }
+    emit pausedChanged();
+}
+
+/* Small and blurred by boxes: the picture behind the round video */
+static QImage softened(const QImage &frame)
+{
+    const int w = 64;
+    const int h = std::max(1, int(qint64(w) * frame.height() / std::max(1, frame.width())));
+    QImage img = frame.scaled(w, h, Qt::IgnoreAspectRatio, Qt::SmoothTransformation)
+                      .convertToFormat(QImage::Format_RGB32);
+    QImage tmp(img.size(), QImage::Format_RGB32);
+    const int r = 2;
+    for (int pass = 0; pass < 3; ++pass)
+        for (int dir = 0; dir < 2; ++dir)
+        {
+            const QImage &src = dir == 0 ? img : tmp;
+            QImage &dst = dir == 0 ? tmp : img;
+            for (int y = 0; y < h; ++y)
+                for (int x = 0; x < w; ++x)
+                {
+                    int sr = 0, sg = 0, sb = 0, n = 0;
+                    for (int k = -r; k <= r; ++k)
+                    {
+                        const int xx = dir == 0 ? std::clamp(x + k, 0, w - 1) : x;
+                        const int yy = dir == 1 ? std::clamp(y + k, 0, h - 1) : y;
+                        const QRgb p = reinterpret_cast<const QRgb *>(src.constScanLine(yy))[xx];
+                        sr += qRed(p); sg += qGreen(p); sb += qBlue(p); ++n;
+                    }
+                    reinterpret_cast<QRgb *>(dst.scanLine(y))[x] = qRgb(sr / n, sg / n, sb / n);
+                }
+        }
+    return img;
 }
 
 QString VideoPreview::diagnose(const QUrl &source, bool failed)
@@ -468,6 +541,8 @@ QSGNode *VideoPreview::updatePaintNode(QSGNode *old, UpdatePaintNodeData *)
         node->setOwnsTexture(true);
         node->setFiltering(QSGTexture::Linear);
     }
+    if (!image.isNull() && m_soft)
+        image = softened(image);
     if (!image.isNull())
         node->setTexture(window()->createTextureFromImage(image));
     if (!node->texture())

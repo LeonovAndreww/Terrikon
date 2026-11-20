@@ -57,6 +57,13 @@ class VideoPreview : public QQuickItem
     /* Why there is no preview, said to the user ("" while none is known):
      * the file gone, its drive not plugged in, the share not answering */
     Q_PROPERTY(QString problem READ problem NOTIFY problemChanged FINAL)
+    /* Behind something else (the round video of the player): no sound,
+     * no subtitles, no repeat, nothing remembered of where it was left;
+     * set before the source */
+    Q_PROPERTY(bool backdrop MEMBER m_backdrop FINAL)
+    Q_PROPERTY(bool paused READ paused WRITE setPaused NOTIFY pausedChanged FINAL)
+    /* Drawn small and softened: a blurred picture for little work */
+    Q_PROPERTY(bool soft MEMBER m_soft NOTIFY softChanged FINAL)
 
 public:
     explicit VideoPreview(QQuickItem *parent = nullptr);
@@ -86,6 +93,10 @@ public:
 
     /* 0..1 */
     Q_INVOKABLE void seek(double position);
+    /* in seconds */
+    Q_INVOKABLE void seekTime(double seconds);
+    bool paused() const { return m_paused; }
+    void setPaused(bool paused);
 
 signals:
     void sourceChanged();
@@ -94,6 +105,8 @@ signals:
     void progressChanged();
     void hasFrameChanged();
     void problemChanged();
+    void pausedChanged();
+    void softChanged();
 
 protected:
     QSGNode *updatePaintNode(QSGNode *old, UpdatePaintNodeData *) override;
@@ -114,6 +127,9 @@ private:
     bool m_hasFrame = false;
     double m_volume = 1.;
     QString m_problem;
+    bool m_backdrop = false;
+    bool m_paused = false;
+    bool m_soft = false;
     bool m_problemAsked = false;
     QElapsedTimer m_started;
     static qt_intf_t *s_intf;
