@@ -64,6 +64,10 @@ class Visualizer : public QObject
     Q_PROPERTY(bool echoes READ echoes WRITE setEchoes NOTIFY echoesChanged FINAL)
     // The cover cut to a circle, inside the ring
     Q_PROPERTY(bool roundCover READ roundCover WRITE setRoundCover NOTIFY roundCoverChanged FINAL)
+    // Where the settings panel was moved to: stuck to the time line, or so
+    // far from the bottom of the player (-1: where it was opened from)
+    Q_PROPERTY(bool panelDocked READ panelDocked WRITE setPanelDocked NOTIFY panelPlaceChanged FINAL)
+    Q_PROPERTY(qreal panelBottomGap READ panelBottomGap WRITE setPanelBottomGap NOTIFY panelPlaceChanged FINAL)
     Q_PROPERTY(QStringList colorModeNames READ colorModeNames CONSTANT FINAL)
     Q_PROPERTY(QColor customColor READ customColor WRITE setCustomColor NOTIFY colorsChanged FINAL)
     // The colours to draw with, following the mode and the cover
@@ -75,6 +79,10 @@ class Visualizer : public QObject
 public:
     bool echoes() const { return m_echoes; }
     bool roundCover() const { return m_roundCover; }
+    bool panelDocked() const { return m_panelDocked; }
+    void setPanelDocked(bool on);
+    qreal panelBottomGap() const { return m_panelBottomGap; }
+    void setPanelBottomGap(qreal gap);
     void setRoundCover(bool on);
     void setEchoes(bool on);
     enum Style { Off = 0, Ring, Bars, Wave, Hills, Mirror, Line, StyleCount };
@@ -142,6 +150,7 @@ public:
 signals:
     void echoesChanged();
     void roundCoverChanged();
+    void panelPlaceChanged();
     void styleChanged();
     void backgroundChanged();
     void miniWindowChanged();
@@ -153,6 +162,8 @@ signals:
 private:
     bool m_echoes = true;
     bool m_roundCover = false;
+    bool m_panelDocked = false;
+    qreal m_panelBottomGap = -1;
     void listen();
     void readCoverColor();
 
