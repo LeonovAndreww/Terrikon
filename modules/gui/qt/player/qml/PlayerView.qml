@@ -1473,6 +1473,8 @@ FocusScope {
                         Connections {
                             target: Player
 
+                            // Terrikon: the toast says it, as for a video
+                            enabled: false
                             function onVolumeChanged() {
                                 animationVolume.restart()
                             }
