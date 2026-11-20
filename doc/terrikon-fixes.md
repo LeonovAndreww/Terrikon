@@ -130,6 +130,8 @@ build, or by reading when the path is taken.
 | Linux X11, the Qt X11 compositor: the video stayed black under the interface (Linux Mint 22 Cinnamon, Mesa radeonsi). With Qt's default GLX integration the interface surface came out opaque; upstream at the same commit behaves the same | QT_XCB_GL_INTEGRATION=xcb_egl unless the user set it: EGL keeps the alpha |
 | Input | A file read over a slow network (an SMB share giving 1 MB/s to a 6 MB/s video): the demuxer blocked in its read while the outputs ran dry, and the clock went on: the time ran over a frozen picture, the sound was dropped as late, then the late PCR reset the clock and the time jumped back | a stall watch: the outputs paused while the demuxer waits with the decoders empty, on again once 1 s is gathered (2, 4, 8 s for the next stalls); the PCRs met meanwhile and the bursts after it are not taken for discontinuities |
 | Qt, Windows | A maximized window that stayed a popup the size of the screen (back from full screen) lost 8 px on each side for a sizing frame it does not have: the desktop showed unblurred all around, and the acrylic layer was shifted by as much | the frame taken off only for a window with a sizing frame (WM_NCCALCSIZE and the acrylic surface) |
+| Player bar | A video without a cover shows the note of music | the video placeholder |
+
 ## 2. VLC 4's bugs brought out by Terrikon
 
 | Bug seen | VLC 4's cause | What brought it out | Fix |
@@ -235,6 +237,10 @@ build, or by reading when the path is taken.
 | Music: the volume said twice, VLC's label at the top right and the toast | the toast only, as for a video |
 | Music in its own window: the dark cover on hover did not beat with the picture; resizing decoded the picture again at each step (black, late, small) | it beats with it; the picture decoded once at a fixed size |
 | Visualization: after the power was unplugged and plugged back, it was drawn once a second (in its window and in the full screen player); the frames of the window stopped coming (cause not reproduced) | drawn on a timer of its own when the frames stop, noted in the journal |
+| Most of Terrikon's Russian strings (426) were not translated in the builds: make merged ru.po with the stale vlc.pot, newer by a few ms after a git checkout, and dropped them | the build keeps ru.po the newer |
+| Back from a video: it paused under the bar instead of going on in the small view | it goes on there, by default |
+| Sound and tracks popovers hard to read: the opacity of the overlays on the picture | the panels' opacity |
+| Clip export: a black square around the progress | the bar's own background removed |
 ## Known upstream issues, not fixed yet
 
 - `ListViewExt.qml`: the footer's height depends on its own position ("Binding loop detected for property implicitHeight"). Harmless.
