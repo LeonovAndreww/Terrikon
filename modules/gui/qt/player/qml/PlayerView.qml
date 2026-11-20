@@ -251,19 +251,11 @@ FocusScope {
     // Terrikon's own first (drawn in the player, around and under the
     // cover), then their colour and background, then VLC's, which take the
     // whole view. Choosing one side turns the other off.
-    // Terrikon: where the panel was moved to, kept (Visualizer): stuck to
-    // the time line (then it follows it, down to the bottom of the player
-    // when the controls hide), or so far from the bottom
-    property bool _visDocked: Visualizer.panelDocked
-    on_VisDockedChanged: Visualizer.panelDocked = _visDocked
-    property real _visBottomGap: Visualizer.panelBottomGap
-    on_VisBottomGapChanged: Visualizer.panelBottomGap = _visBottomGap
-
     function chooseVisualization(globalPos) {
         const p = rootPlayer.mapFromGlobal(globalPos.x, globalPos.y)
         visPanel.x = Math.max(VLCStyle.margin_small,
                               Math.min(rootPlayer.width - visPanel.width - VLCStyle.margin_small, p.x - visPanel.width + VLCStyle.dp(40, VLCStyle.scale)))
-        visPanel._openY = Math.min(rootPlayer.height - VLCStyle.dp(120, VLCStyle.scale), p.y + VLCStyle.margin_xxsmall)
+        visPanel.y = Math.min(rootPlayer.height - VLCStyle.dp(120, VLCStyle.scale), p.y + VLCStyle.margin_xxsmall)
         rootPlayer._vlcVisualization = rootPlayer._vlcVisualizationIndex()
         visPanel.open()
     }
@@ -281,24 +273,6 @@ FocusScope {
         focus: true
         closePolicy: T.Popup.CloseOnEscape | T.Popup.CloseOnPressOutside
 
-        // Terrikon: moved up and down by dragging; let go near the time line,
-        // it sticks to it
-        property real _openY: 0
-        readonly property real _gap: VLCStyle.margin_small
-        readonly property real _lineY: controlBar.state === "visible" ? rootPlayer.positionSliderY
-                                                                      : rootPlayer.height
-        readonly property real _dockY: _lineY - height - _gap
-        readonly property real _maxY: rootPlayer.height - height - _gap
-        property bool _nearLine: false
-
-        y: rootPlayer._visDocked ? _dockY
-                                 : rootPlayer._visBottomGap >= 0 ? Math.max(_gap, rootPlayer.height - rootPlayer._visBottomGap - height)
-                                                                  : _openY
-        Behavior on y {
-            enabled: rootPlayer._visDocked && !visDrag.active
-            NumberAnimation { duration: VLCStyle.duration_long; easing.type: Easing.OutCubic }
-        }
-
         readonly property ColorContext colorContext: ColorContext {
             id: visTheme
             colorSet: ColorContext.Window
@@ -308,48 +282,8 @@ FocusScope {
         background: Rectangle {
             radius: VLCStyle.dp(12, VLCStyle.scale)
             color: Qt.rgba(0.11, 0.11, 0.11, 0.96)
-            // about to stick to the time line
-            border.color: visPanel._nearLine ? visTheme.accent : Qt.rgba(1, 1, 1, 0.12)
-            border.width: visPanel._nearLine ? 2 : 1
-
-            // the popup takes the press itself: a drag handler under it
-            // never becomes active, a mouse area does
-            MouseArea {
-                id: visDrag
-                anchors.fill: parent
-                cursorShape: Qt.SizeVerCursor
-                preventStealing: true
-                readonly property bool active: pressed
-                property real _startY: 0
-                property real _pressY: 0
-                onPressed: (mouse) => {
-                    _startY = visPanel.y
-                    _pressY = mapToItem(null, mouse.x, mouse.y).y
-                }
-                onPositionChanged: (mouse) => {
-                    const y = Math.max(visPanel._gap, Math.min(visPanel._maxY,
-                                       _startY + mapToItem(null, mouse.x, mouse.y).y - _pressY))
-                    rootPlayer._visDocked = false
-                    rootPlayer._visBottomGap = rootPlayer.height - y - visPanel.height
-                    visPanel._nearLine = controlBar.state === "visible"
-                                         && Math.abs(y - visPanel._dockY) < VLCStyle.dp(32, VLCStyle.scale)
-                }
-                onReleased: {
-                    if (visPanel._nearLine)
-                        rootPlayer._visDocked = true
-                    visPanel._nearLine = false
-                }
-            }
-
-            // the handle it is dragged by (the empty places of the panel too)
-            Rectangle {
-                anchors.horizontalCenter: parent.horizontalCenter
-                y: VLCStyle.margin_xxsmall + 1
-                width: VLCStyle.dp(36, VLCStyle.scale)
-                height: VLCStyle.dp(4, VLCStyle.scale)
-                radius: height / 2
-                color: Qt.rgba(1, 1, 1, visDrag.active ? 0.6 : 0.25)
-            }
+            border.color: Qt.rgba(1, 1, 1, 0.12)
+            border.width: 1
         }
 
         function _cap(text) { return text.length ? text[0].toUpperCase() + text.slice(1) : text }
