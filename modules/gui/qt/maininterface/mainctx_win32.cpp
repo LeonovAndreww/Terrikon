@@ -213,7 +213,12 @@ public:
             // We don't need this correction when we're fullscreen. We will
             // have the WS_POPUP size, so we don't have to worry about
             // borders, and the default frame will be fine.
-            if (IsZoomed(msg->hwnd) && (m_window->windowState() != Qt::WindowFullScreen))
+            /* Terrikon: only a window with a sizing frame is maximized over
+             * the screen edges; back from full screen the window can stay a
+             * popup the size of the screen, and an 8 px see-through band was
+             * cut all around it */
+            if (IsZoomed(msg->hwnd) && (m_window->windowState() != Qt::WindowFullScreen)
+                && (GetWindowLongPtr(msg->hwnd, GWL_STYLE) & WS_THICKFRAME))
             {
                 // Windows automatically adds a standard width border to all
                 // sides when a window is maximized. We have to remove it
