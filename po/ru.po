@@ -44800,7 +44800,3 @@ msgstr "Первый цвет градиента"
 #: modules/gui/qt/terrikon/audio_visualizer.cpp
 msgid "Second colour of the gradient"
 msgstr "Второй цвет градиента"
-
-#: modules/gui/qt/player/qml/PlayerView.qml
-msgid "Over the video"
-msgstr "Поверх видео"
