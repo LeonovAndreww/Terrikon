@@ -3864,8 +3864,13 @@ static int EsOutVaControlLocked(es_out_sys_t *p_sys, input_source_t *source,
                        * discontinuity either */
                       || stall_resumed || p_sys->b_stall_seen;
         /* Do not account the download stall as clock lateness. The input
-         * clock will shift this frozen system date when rebuffering ends. */
-        const vlc_tick_t system_now = (p_sys->b_rebuffering || p_sys->b_stalled)
+         * clock will shift this frozen system date when rebuffering ends.
+         * Terrikon: the same while paused. A seek while paused takes a new
+         * reference then; dated now, it was shifted on resuming by the whole
+         * pause, from before the seek too: a clock gap of that much, the
+         * time stood still and the sound went out of sync. */
+        const vlc_tick_t system_now = (p_sys->b_rebuffering || p_sys->b_stalled
+                                       || p_sys->b_paused)
                                     ? p_sys->i_pause_date : vlc_tick_now();
         vlc_tick_t i_late = input_clock_Update(
                             p_pgrm->p_input_clock,
