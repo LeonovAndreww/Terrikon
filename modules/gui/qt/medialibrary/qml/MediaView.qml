@@ -88,8 +88,21 @@ MainViewLoader {
         return currentItem?.getItemY(index) ?? 0
     }
 
-    function _onItemDoubleClicked(model) {
-        MediaLib.addAndPlay(model.id)
+    // Terrikon: music goes on with what follows it in the row, as from
+    // any other list; a video stays alone (its own autoplay rules)
+    function _play(index, model) {
+        if (model.isVideo !== true && index >= 0 && index < root.model.count - 1) {
+            const indexes = []
+            for (let i = index; i < root.model.count; ++i)
+                indexes.push(root.model.index(i, 0))
+            root.model.addAndPlay(indexes)
+        } else {
+            MediaLib.addAndPlay(model.id)
+        }
+    }
+
+    function _onItemDoubleClicked(index, model) {
+        _play(index, model)
         MainCtx.playerView = true // Terrikon: the player is not a page of the history
     }
 
@@ -172,13 +185,13 @@ MainViewLoader {
 
                 onPlayClicked: {
                     if (model.id !== undefined) {
-                        MediaLib.addAndPlay(model.id)
+                        root._play(index, model)
                         if (model.isVideo)
                             MainCtx.requestShowPlayerView()
                     }
                 }
 
-                onItemDoubleClicked: root._onItemDoubleClicked(model)
+                onItemDoubleClicked: root._onItemDoubleClicked(index, model)
 
                 onContextMenuButtonClicked: (_, globalMousePos) => {
                     gridView.rightClickOnItem(index)
@@ -280,8 +293,8 @@ MainViewLoader {
 
             rowContextMenu: contextMenu
 
-            onItemDoubleClicked: (_, model) => {
-                root._onItemDoubleClicked(model)
+            onItemDoubleClicked: (index, model) => {
+                root._onItemDoubleClicked(index, model)
             }
 
             onRightClick: (_, _, globalMousePos) => {
