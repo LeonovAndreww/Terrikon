@@ -131,6 +131,7 @@ build, or by reading when the path is taken.
 | Input | A file read over a slow network (an SMB share giving 1 MB/s to a 6 MB/s video): the demuxer blocked in its read while the outputs ran dry, and the clock went on: the time ran over a frozen picture, the sound was dropped as late, then the late PCR reset the clock and the time jumped back | a stall watch: the outputs paused while the demuxer waits with the decoders empty, on again once 1 s is gathered (2, 4, 8 s for the next stalls); the PCRs met meanwhile and the bursts after it are not taken for discontinuities |
 | Qt, Windows | A maximized window that stayed a popup the size of the screen (back from full screen) lost 8 px on each side for a sizing frame it does not have: the desktop showed unblurred all around, and the acrylic layer was shifted by as much | the frame taken off only for a window with a sizing frame (WM_NCCALCSIZE and the acrylic surface) |
 | Player bar | A video without a cover shows the note of music | the video placeholder |
+| Input clock | A seek while paused, then play: the time stood still for a while, the sound out of sync (the new clock reference, dated during the pause, shifted on resuming by the whole pause: a clock gap) | the reference of a paused input dated at the pause, as while rebuffering |
 
 ## 2. VLC 4's bugs brought out by Terrikon
 
