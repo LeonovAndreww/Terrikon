@@ -166,6 +166,10 @@ T.Page {
 
         background: Rectangle {
             color: theme.bg.primary
+            // Terrikon: none when the main area lets the desktop show through:
+            // its background is behind already, this one would hide the desktop
+            visible: !(AcrylicController.enabled
+                       && MainCtx.windowContentTransparency * AcrylicController.uiTransluency > 0)
         }
 
         RowLayout {
