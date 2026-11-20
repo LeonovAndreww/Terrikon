@@ -426,6 +426,11 @@ FocusScope {
                     onPicked: Visualizer.roundCover = !Visualizer.roundCover
                 }
                 Chip {
+                    label: qsTr("Over the video")
+                    on: Visualizer.overVideo
+                    onPicked: Visualizer.overVideo = !Visualizer.overVideo
+                }
+                Chip {
                     label: qsTr("Mini window over the others")
                     on: Visualizer.miniWindow
                     onPicked: Visualizer.miniWindow = !Visualizer.miniWindow
@@ -587,14 +592,51 @@ FocusScope {
             id: videoComponent
 
             FocusScope {
+                id: videoScope
                 // Video
 
                 focus: true
 
+                // Terrikon: the visualization over the video (off by
+                // default); the ring takes the video cut to a circle, made
+                // smaller to fit in it
+                readonly property bool _visOn: Visualizer.overVideo && Visualizer.style !== 0
+                readonly property bool _ring: _visOn && Visualizer.style === 1
+                property size _videoSize: TerrikonActions.videoSize()
+                readonly property real _aspect: _videoSize.width > 0 && _videoSize.height > 0
+                                                ? _videoSize.width / _videoSize.height : 16 / 9
+                Connections {
+                    target: Player
+                    function onHasVideoOutputChanged() { videoScope._videoSize = TerrikonActions.videoSize() }
+                    function onInputChanged() { videoScope._videoSize = TerrikonActions.videoSize() }
+                }
+                Timer {
+                    // the track format may come after the output
+                    interval: 1000
+                    repeat: true
+                    running: videoScope._ring
+                    onTriggered: videoScope._videoSize = TerrikonActions.videoSize()
+                }
+
+                // Where the round video goes: the ring is drawn around it
+                Item {
+                    id: videoCircle
+                    readonly property real paintedWidth: width
+                    readonly property real paintedHeight: height
+                    x: (videoVis.width - width) / 2
+                    y: videoVis.y + (videoVis.height - height) / 2
+                    width: Math.min(videoVis.width, videoVis.height) * 0.52
+                    height: width
+                }
+
                 VideoSurface {
                     id: videoSurface
 
-                    anchors.fill: parent
+                    // the whole view, or around the circle, covering it
+                    x: videoScope._ring ? videoCircle.x + (videoCircle.width - width) / 2 : 0
+                    y: videoScope._ring ? videoCircle.y + (videoCircle.height - height) / 2 : 0
+                    width: videoScope._ring ? videoCircle.width * Math.max(1, videoScope._aspect) : parent.width
+                    height: videoScope._ring ? videoCircle.height / Math.min(1, videoScope._aspect) : parent.height
 
                     // With regard to `ViewBlockingRectangle`, we
                     // do not need to prevent painting anything
@@ -734,6 +776,37 @@ FocusScope {
                     }
 
                     visible: rootPlayer.displayFadeRectangles && !(controlBar.background && controlBar.background.visible)
+                }
+
+                // Outside the circle: a black ring wide enough to hide the rest
+                // of the picture
+                Rectangle {
+                    readonly property real band: Math.max(videoSurface.width, videoSurface.height)
+                    visible: videoScope._ring
+                    anchors.centerIn: videoCircle
+                    width: videoCircle.width + 2 * band
+                    height: width
+                    radius: width / 2
+                    color: "transparent"
+                    border.color: "black"
+                    border.width: band
+                    scale: videoCircle.scale
+                }
+
+                AudioVisualizer {
+                    id: videoVis
+
+                    anchors.fill: parent
+                    anchors.topMargin: playerSpecializationLoader.topPadding
+                    anchors.bottomMargin: playerSpecializationLoader.bottomPadding > 0
+                                          ? Math.max(0, controlBar.height - controlBar.sliderY)
+                                          : 0
+                    style: videoScope._visOn ? Visualizer.style : 0
+                    visible: videoScope._visOn
+                    color: Visualizer.color
+                    color2: Visualizer.color2
+                    gradient: Visualizer.gradient
+                    cover: videoScope._ring ? videoCircle : null
                 }
             }
         }
@@ -1508,7 +1581,7 @@ FocusScope {
         id: topBar
 
         // Terrikon: the one visualization button, for any music
-        showVisualization: rootPlayer._vlcVisualization > 0 || Player.videoTracks.count === 0
+        showVisualization: true   // a video too: "over the video" is turned on there
         onVisualizationRequested: (globalPos) => rootPlayer.chooseVisualization(globalPos)
 
         anchors.top: parent.top
