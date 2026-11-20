@@ -23,6 +23,7 @@ import QtQuick.Layouts
 import VLC.MainInterface
 import VLC.Style
 import VLC.Widgets as Widgets
+import VLC.Playlist
 
 FocusScope {
     id: root
@@ -172,7 +173,20 @@ FocusScope {
 
                 selectByMouse: true
 
-                placeholderText: qsTr("filter")
+                placeholderText: qsTr("filter or link")
+
+                // Terrikon: a link typed here is played on Enter
+                readonly property bool _isLink: /^\s*([a-z][a-z0-9+.-]*:\/\/|www\.)\S+\s*$/i.test(text)
+                onAccepted: {
+                    if (!_isLink)
+                        return
+                    let url = text.trim()
+                    if (url.startsWith("www."))
+                        url = "https://" + url
+                    MainPlaylistController.append([url], true)
+                    clear()
+                    root.retract()
+                }
 
                 Navigation.parentItem: root
                 Navigation.upItem: root.popBelow ? iconButton : null
