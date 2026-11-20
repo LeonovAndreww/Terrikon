@@ -22,6 +22,7 @@
 #endif
 
 #include "audio_visualizer.hpp"
+#include "diagnostics.hpp"
 #include <QGuiApplication>
 #include <QScreen>
 #include "player/player_controller.hpp"
@@ -440,6 +441,25 @@ AudioVisualizer::AudioVisualizer(QQuickItem *parent)
     m_echo2.fill(0.f, TERRIKON_TAP_BANDS);
     m_wave.fill(0.f, TERRIKON_TAP_WAVE);
     m_clock.start();
+
+    m_kick = new QTimer(this);
+    m_kick->setTimerType(Qt::PreciseTimer);
+    m_kick->setInterval(16);
+    connect(m_kick, &QTimer::timeout, this, [this] {
+        /* nothing to draw for in a hidden or minimized window */
+        if (!window() || !window()->isExposed() || window()->visibility() == QWindow::Minimized
+            || m_clock.elapsed() - m_lastFrameMs < 50)
+            return;
+        /* noted once it lasts a second: a new window's first frame is late too */
+        if (!m_kickNoted && ++m_kicks >= 60)
+        {
+            m_kickNoted = true;
+            if (auto *journal = Diagnostics::instance())
+                journal->note(QStringLiteral("visualizer: no frames for 50 ms, drawing on a timer"));
+        }
+        sample();
+        update();
+    });
 }
 
 void AudioVisualizer::setStyle(int style)
@@ -502,9 +522,12 @@ void AudioVisualizer::itemChange(ItemChange change, const ItemChangeData &value)
 
     /* Draw again after every frame while shown, in step with the screen */
     disconnect(m_frameConnection);
+    m_kick->stop();
     QQuickWindow *win = window();
     if (win && isVisible() && m_style != 0)
     {
+        m_lastFrameMs = m_clock.elapsed();
+        m_kick->start();
         m_frameConnection = connect(win, &QQuickWindow::frameSwapped,
                                     this, &AudioVisualizer::onFrame, Qt::QueuedConnection);
         m_lastMs = m_clock.elapsed();
@@ -514,6 +537,8 @@ void AudioVisualizer::itemChange(ItemChange change, const ItemChangeData &value)
 
 void AudioVisualizer::onFrame()
 {
+    m_lastFrameMs = m_clock.elapsed();
+    m_kicks = 0;
     sample();
     update();
 }

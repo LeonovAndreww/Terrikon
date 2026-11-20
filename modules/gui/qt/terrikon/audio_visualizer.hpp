@@ -24,6 +24,7 @@
 
 #include <QColor>
 #include <QElapsedTimer>
+#include <QTimer>
 #include <QObject>
 #include <QPointer>
 #include <QPoint>
@@ -233,6 +234,12 @@ private:
     QElapsedTimer m_clock;
     qint64 m_lastMs = 0;
     QMetaObject::Connection m_frameConnection;
+    /* Draws when the frames stop coming (after a power change the window
+     * went on drawing only once a second, for the clock) */
+    QTimer *m_kick = nullptr;
+    qint64 m_lastFrameMs = 0;
+    bool m_kickNoted = false;
+    int m_kicks = 0;   /* in a row, without a frame */
 };
 
 }
