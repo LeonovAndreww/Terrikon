@@ -230,6 +230,11 @@ build, or by reading when the path is taken.
 | Player: the transparency sliders (and speed, sound waves) could only be found in the menu of the subtitles button | a player settings button (gear) with them and Effects and filters; it takes the effects button's place in the bars, saved bars included || Seek bar waves and thumbnails: ffmpeg read a whole big file on a network drive (up to three times: waves, key frames, every frame) beside the playback; on a slow share the video stalled and the next file took half a minute to open | for a file over 48 MB on a network drive, the quick thumbnails only (16 seeks); the waves stay, ffmpeg seeks over the video (1 MB read out of 140) |
 | Seek bar thumbnails: the quick pass (16 frames sought one by one) never ran, the seek bar never gave the strip the length: every file was read through for its key frames first | the length given, waited for while the file opens |
 
+| Music started from a row of Home (New music) played alone: the next one never came | the track and those after it in the row go to the queue |
+| Music: no full screen, the button stayed disabled without a video output | the window itself takes the screen |
+| Music: the volume said twice, VLC's label at the top right and the toast | the toast only, as for a video |
+| Music in its own window: the dark cover on hover did not beat with the picture; resizing decoded the picture again at each step (black, late, small) | it beats with it; the picture decoded once at a fixed size |
+| Visualization: after the power was unplugged and plugged back, it was drawn once a second (in its window and in the full screen player); the frames of the window stopped coming (cause not reproduced) | drawn on a timer of its own when the frames stop, noted in the journal |
 ## Known upstream issues, not fixed yet
 
 - `ListViewExt.qml`: the footer's height depends on its own position ("Binding loop detected for property implicitHeight"). Harmless.
