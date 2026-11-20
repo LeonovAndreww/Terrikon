@@ -153,11 +153,14 @@ T.AbstractButton {
             Layout.fillHeight: true
             Layout.preferredWidth: height
 
+            // Terrikon: a video gets the video placeholder, not the note
+            readonly property url _noArt: Player.videoTracks.count > 0 ? VLCStyle.noArtVideoCover
+                                                                       : VLCStyle.noArtAlbumCover
             source: {
                 if (!paintOnly && Player.artwork && Player.artwork.toString())
                     return VLCAccessImage.uri(Player.artwork)
                 else
-                    return VLCStyle.noArtAlbumCover
+                    return _noArt
             }
 
             sourceSize.height: root.height * MainCtx.effectiveDevicePixelRatio(Window.window)
@@ -177,8 +180,8 @@ T.AbstractButton {
                                                 .arg(progressIndicator.text)
 
             onStatusChanged: {
-                if (source !== VLCStyle.noArtAlbumCover && status === Image.Error)
-                    source = VLCStyle.noArtAlbumCover
+                if (source !== _noArt && status === Image.Error)
+                    source = _noArt
             }
 
             Rectangle {
