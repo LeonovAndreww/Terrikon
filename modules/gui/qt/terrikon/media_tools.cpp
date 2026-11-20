@@ -55,6 +55,9 @@
 #include <mutex>
 #include <thread>
 #include <cmath>
+#if defined(__linux__)
+# include <sys/vfs.h>
+#endif
 
 #ifdef _WIN32
 # include <windows.h>
@@ -1205,6 +1208,47 @@ void WaveformLoader::clear()
     emit tracksChanged();
 }
 
+/* A big file on a network drive (or not a file at all): reading it through
+ * to draw the waves or every key frame takes the bandwidth the playback
+ * needs; on a slow share the video stalled, the sound dropped and a new file
+ * took half a minute to open. Asked off the GUI thread. */
+static bool slowToReadThrough(const QString &path)
+{
+    QString local = path;
+    if (local.contains(QLatin1String("://")))
+    {
+        const QUrl url(local);
+        if (!url.isLocalFile())
+            return true;
+        local = url.toLocalFile();
+    }
+    bool network = false;
+#ifdef _WIN32
+    const QString native = QDir::toNativeSeparators(local);
+    if (native.startsWith(QLatin1String("\\\\")))
+        network = true;
+    else if (native.size() > 2 && native[1] == QLatin1Char(':'))
+        network = GetDriveTypeW(QString(native.left(2) + QLatin1Char('\\')).toStdWString().c_str()) == DRIVE_REMOTE;
+#elif defined(__linux__)
+    struct statfs fs;
+    if (statfs(QFile::encodeName(local).constData(), &fs) == 0)
+    {
+        switch ((unsigned long)fs.f_type)
+        {
+            case 0x6969:       /* NFS */
+            case 0xFF534D42:   /* CIFS */
+            case 0xFE534D42:   /* SMB2 */
+            case 0x517B:       /* SMB */
+            case 0x65735546:   /* FUSE (sshfs, gvfs) */
+                network = true;
+                break;
+        }
+    }
+#endif
+    /* Small ones (songs) are read in a moment even there */
+    return network && QFileInfo(local).size() > 48ll * 1024 * 1024;
+}
+
 void WaveformLoader::load(const QString &path)
 {
     clear();
@@ -1212,9 +1256,12 @@ void WaveformLoader::load(const QString &path)
         return;
     m_path = path;
     const quint64 load = ++m_loads;
-    offThread(this, [path] { return cacheDirFor(path, QStringLiteral("waveforms")); },
+    offThread(this, [path] {
+                  return slowToReadThrough(path) ? QString()
+                                                 : cacheDirFor(path, QStringLiteral("waveforms"));
+              },
               [this, load](const QString &dir) {
-        if (load != m_loads)
+        if (load != m_loads || dir.isEmpty())
             return;
         m_cacheDir = dir;
         probe();
@@ -1431,10 +1478,15 @@ void ThumbnailStrip::load(const QString &path)
 
     m_path = path;
     const quint64 load = ++m_loads;
-    offThread(this, [path] { return cacheDirFor(path, QStringLiteral("thumbnails")); },
-              [this, load](const QString &dir) {
-        if (load == m_loads)
-            loadFrom(dir);
+    offThread(this, [path] {
+                  return QStringList{ cacheDirFor(path, QStringLiteral("thumbnails")),
+                                      slowToReadThrough(path) ? QStringLiteral("1") : QString() };
+              },
+              [this, load](const QStringList &r) {
+        if (load != m_loads)
+            return;
+        m_slow = !r.value(1).isEmpty();
+        loadFrom(r.value(0));
     });
 }
 
@@ -1456,7 +1508,7 @@ void ThumbnailStrip::loadFrom(const QString &dir)
     {
         m_ready = true;
         emit readyChanged();
-        if (!m_keyFramesOnly)
+        if (!m_keyFramesOnly && !m_slow)
             startPass(true);
         return;
     }
@@ -1464,12 +1516,13 @@ void ThumbnailStrip::loadFrom(const QString &dir)
     {
         m_ready = true;
         emit readyChanged();
-        startPass(false);
+        if (!m_slow)
+            startPass(false);
         return;
     }
     if (m_duration > 0.)
         startQuickPass();
-    else
+    else if (!m_slow)
         startPass(false);
 }
 
@@ -1614,8 +1667,9 @@ void ThumbnailStrip::onFinished(int exitCode, QProcess::ExitStatus status)
                 }
             }
         }
-        /* then the key frames, finer */
-        startPass(false);
+        /* then the key frames, finer: not through a slow share */
+        if (!m_slow)
+            startPass(false);
         return;
     }
     if (status != QProcess::NormalExit || exitCode != 0)

@@ -316,6 +316,7 @@ private:
     QString m_cacheDir;
     quint64 m_loads = 0;
     bool m_keyFramesOnly = false;
+    bool m_slow = false;   /* a big file on a network drive */
     QString m_sheetDir; /* where the sheets in use are */
     bool m_densePass = false;
     bool m_quickPass = false;
