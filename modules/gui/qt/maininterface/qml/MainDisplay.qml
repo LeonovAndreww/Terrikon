@@ -310,7 +310,10 @@ FocusScope {
             implicitWidth: stackView.implicitWidth
             implicitHeight: stackView.implicitHeight
 
-            color: theme.bg.primary
+            // Terrikon: the desktop can show through it too, a setting
+            color: theme.bg.primary.alpha(1 - (AcrylicController.enabled
+                                               ? MainCtx.windowContentTransparency * AcrylicController.uiTransluency
+                                               : 0))
 
             layer.enabled: MainCtx.backdropBlurRequested() &&
                            (GraphicsInfo.shaderType === GraphicsInfo.RhiShader) &&

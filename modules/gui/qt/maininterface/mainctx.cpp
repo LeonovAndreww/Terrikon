@@ -341,6 +341,24 @@ void MainCtx::setWindowTransparentUnfocused(bool on)
     emit windowTransparentUnfocusedChanged();
 }
 
+void MainCtx::setWindowContentTransparency(double transparency)
+{
+    config_PutFloat("qt-window-content-transparency", transparency);
+    emit windowContentTransparencyChanged();
+}
+
+void MainCtx::setWindowBlur(int blur)
+{
+    config_PutInt("qt-window-blur", blur);
+    emit windowBlurChanged();
+}
+
+void MainCtx::setWindowBlurType(int type)
+{
+    config_PutInt("qt-window-blur-type", type);
+    emit windowBlurChanged();
+}
+
 void MainCtx::setWindowTransparency(double transparency)
 {
     config_PutFloat("qt-window-transparency", transparency);

@@ -180,6 +180,7 @@ private:
     void sync();
     void updateVisual();
     void commitChanges();
+    void applyBlurSettings();
 
     void setActive(bool newActive);
 

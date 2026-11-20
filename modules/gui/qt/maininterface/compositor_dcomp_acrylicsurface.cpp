@@ -124,6 +124,13 @@ CompositorDCompositionAcrylicSurface::CompositorDCompositionAcrylicSurface(qt_in
         setActive(m_transparencyEnabled && m_mainCtx->acrylicActive());
     });
 
+    // Terrikon: the blur settings, applied at once
+    connect(m_mainCtx, &MainCtx::windowBlurChanged, this, [this]()
+    {
+        applyBlurSettings();
+        commitChanges();
+    });
+
     // CSDWin32EventHandler updates frame when window is maximized
     connect(window(), &QWindow::windowStateChanged, this, [this]()
     {
@@ -266,10 +273,8 @@ try
 
     HR(m_dcompDevice->CreateGaussianBlurEffect(&m_gaussianBlur), "create gaussian effect");
 
-    m_saturationEffect->SetSaturation(2);
-
     m_gaussianBlur->SetBorderMode(D2D1_BORDER_MODE_HARD);
-    m_gaussianBlur->SetStandardDeviation(16); // Terrikon: 40, the desktop could not be made out
+    applyBlurSettings(); // Terrikon: settings (was a saturation of 2, a blur of 40)
     m_gaussianBlur->SetInput(0, m_saturationEffect.Get(), 0);
     m_rootVisual->SetEffect(m_gaussianBlur.Get());
 
@@ -375,7 +380,8 @@ void CompositorDCompositionAcrylicSurface::sync()
         frameY = GetSystemMetrics(SM_CYFRAME) + GetSystemMetrics(SM_CYCAPTION)
                     + GetSystemMetrics(SM_CXPADDEDBORDER);
     }
-    else if (window()->visibility() & QWindow::Maximized)
+    else if ((window()->visibility() & QWindow::Maximized)
+             && (GetWindowLongPtr(hwnd(), GWL_STYLE) & WS_THICKFRAME))  // Terrikon, see WM_NCCALCSIZE
     {
         // in maximized state CSDWin32EventHandler re-adds border
         frameX = GetSystemMetrics(SM_CXSIZEFRAME) + GetSystemMetrics(SM_CXPADDEDBORDER);
@@ -415,6 +421,15 @@ void CompositorDCompositionAcrylicSurface::updateVisual()
 
     if (FAILED(hr))
         qDebug("failed to update shared multi window visual");
+}
+
+void CompositorDCompositionAcrylicSurface::applyBlurSettings()
+{
+    if (!m_gaussianBlur || !m_saturationEffect)
+        return;
+    const int type = m_mainCtx->windowBlurType();
+    m_saturationEffect->SetSaturation(type == 0 ? 2.f : 1.f);
+    m_gaussianBlur->SetStandardDeviation(type == 2 ? 0.f : (float)m_mainCtx->windowBlur());
 }
 
 void CompositorDCompositionAcrylicSurface::commitChanges()

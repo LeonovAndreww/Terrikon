@@ -44724,3 +44724,59 @@ msgstr "Сохранять прозрачность, когда окно не в
 #: modules/gui/qt/qt.cpp
 msgid "The side bar stays translucent when another window is active."
 msgstr "Боковая панель остаётся полупрозрачной, когда активно другое окно."
+
+#: modules/gui/qt/qt.cpp
+msgid "Main area transparency"
+msgstr "Прозрачность основной области"
+
+#: modules/gui/qt/qt.cpp
+msgid "How much of the desktop shows through the main area of the library, behind the tiles and the lists (Windows; 0: opaque)."
+msgstr "Насколько сквозь основную область медиатеки, за плитками и списками, виден рабочий стол (Windows; 0 — непрозрачно)."
+
+#: modules/gui/qt/qt.cpp
+msgid "Blur of the transparency"
+msgstr "Размытие прозрачности"
+
+#: modules/gui/qt/qt.cpp
+msgid "How much the desktop behind the window is blurred (Windows)."
+msgstr "Насколько размыт рабочий стол за окном (Windows)."
+
+#: modules/gui/qt/qt.cpp
+msgid "Kind of the transparency"
+msgstr "Вид прозрачности"
+
+#: modules/gui/qt/qt.cpp
+msgid "Acrylic: blurred, colors made richer; frosted glass: only blurred; clear glass: not blurred (Windows)."
+msgstr "Акрил: размыто, цвета насыщеннее; матовое стекло: только размыто; прозрачное стекло: без размытия (Windows)."
+
+#: modules/gui/qt/dialogs/preferences/simple_preferences.cpp
+msgid "Main area transparency:"
+msgstr "Прозрачность основной области:"
+
+#: modules/gui/qt/dialogs/preferences/simple_preferences.cpp
+msgid "How much of the desktop shows through the main area, behind the tiles and the lists"
+msgstr "Насколько сквозь основную область, за плитками и списками, виден рабочий стол"
+
+#: modules/gui/qt/dialogs/preferences/simple_preferences.cpp
+msgid "Kind of the transparency:"
+msgstr "Вид прозрачности:"
+
+#: modules/gui/qt/dialogs/preferences/simple_preferences.cpp
+msgid "Acrylic: blurred, richer colors"
+msgstr "Акрил: размыто, цвета насыщеннее"
+
+#: modules/gui/qt/dialogs/preferences/simple_preferences.cpp
+msgid "Frosted glass: blurred"
+msgstr "Матовое стекло: размыто"
+
+#: modules/gui/qt/dialogs/preferences/simple_preferences.cpp
+msgid "Clear glass: not blurred"
+msgstr "Прозрачное стекло: без размытия"
+
+#: modules/gui/qt/dialogs/preferences/simple_preferences.cpp
+msgid "Blur:"
+msgstr "Размытие:"
+
+#: modules/gui/qt/dialogs/preferences/simple_preferences.cpp
+msgid "How much the desktop behind the window is blurred"
+msgstr "Насколько размыт рабочий стол за окном"

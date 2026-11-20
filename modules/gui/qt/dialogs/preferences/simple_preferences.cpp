@@ -30,6 +30,8 @@
 #include <QGroupBox>
 #include <QBoxLayout>
 #include "simple_preferences.hpp"
+#include <algorithm>
+#include <functional>
 #include "preferences_widgets.hpp"
 #include "dialogs/dialogs_provider.hpp"
 #include "maininterface/mainctx.hpp"
@@ -930,29 +932,66 @@ SPrefsPanel::SPrefsPanel( qt_intf_t *_p_intf, QWidget *_parent,
                 int row, col, rowSpan, colSpan, spinCol;
                 grid->getItemPosition( grid->indexOf( ui.intfScaleFactorSlider ), &row, &col, &rowSpan, &colSpan );
                 grid->getItemPosition( grid->indexOf( ui.intfScaleFactorSpinBox ), &row, &spinCol, &rowSpan, &colSpan );
-                const int newRow = grid->rowCount();
-                auto *label = new QLabel( qtr( "Window transparency:" ) );
-                auto *slider = new QSlider( Qt::Horizontal );
-                auto *spin = new QSpinBox;
-                slider->setRange( 0, 90 );
-                spin->setRange( 0, 90 );
-                spin->setSuffix( QStringLiteral( "%" ) );
-                label->setBuddy( slider );
-                label->setToolTip( qtr( "How much of the desktop shows through the side bar" ) );
-                slider->setValue( qRound( p_intf->p_mi->windowTransparency() * 100 ) );
-                spin->setValue( slider->value() );
-                grid->addWidget( label, newRow, 0, 1, col );
-                grid->addWidget( slider, newRow, col );
-                grid->addWidget( spin, newRow, spinCol );
-                QObject::connect( slider, &QSlider::valueChanged, spin, &QSpinBox::setValue );
-                QObject::connect( spin, QOverload<int>::of( &QSpinBox::valueChanged ), slider, &QSlider::setValue );
+                int nextRow = grid->rowCount();
                 MainCtx *mi = p_intf->p_mi;
-                QObject::connect( slider, &QSlider::valueChanged, mi, [mi]( int v ) { mi->setWindowTransparency( v / 100. ); } );
-                m_resetters.push_back( std::make_unique<PropertyResetter>( slider, "value" ) );
+                /* A slider and its number, applied as moved */
+                auto addSlider = [&]( const QString &text, const QString &tip, int max, const QString &suffix,
+                                      int value, std::function<void(int)> apply ) {
+                    auto *label = new QLabel( text );
+                    auto *slider = new QSlider( Qt::Horizontal );
+                    auto *spin = new QSpinBox;
+                    slider->setRange( 0, max );
+                    spin->setRange( 0, max );
+                    spin->setSuffix( suffix );
+                    label->setBuddy( slider );
+                    label->setToolTip( tip );
+                    slider->setToolTip( tip );
+                    slider->setValue( value );
+                    spin->setValue( value );
+                    grid->addWidget( label, nextRow, 0, 1, col );
+                    grid->addWidget( slider, nextRow, col );
+                    grid->addWidget( spin, nextRow, spinCol );
+                    ++nextRow;
+                    QObject::connect( slider, &QSlider::valueChanged, spin, &QSpinBox::setValue );
+                    QObject::connect( spin, QOverload<int>::of( &QSpinBox::valueChanged ), slider, &QSlider::setValue );
+                    QObject::connect( slider, &QSlider::valueChanged, mi, apply );
+                    m_resetters.push_back( std::make_unique<PropertyResetter>( slider, "value" ) );
+                    return std::make_pair( slider, spin );
+                };
+                const QString percent = QStringLiteral( "%" );
+                addSlider( qtr( "Window transparency:" ), qtr( "How much of the desktop shows through the side bar" ),
+                           100, percent, qRound( mi->windowTransparency() * 100 ),
+                           [mi]( int v ) { mi->setWindowTransparency( v / 100. ); } );
+                addSlider( qtr( "Main area transparency:" ), qtr( "How much of the desktop shows through the main area, behind the tiles and the lists" ),
+                           100, percent, qRound( mi->windowContentTransparency() * 100 ),
+                           [mi]( int v ) { mi->setWindowContentTransparency( v / 100. ); } );
+
+                auto *typeLabel = new QLabel( qtr( "Kind of the transparency:" ) );
+                auto *type = new QComboBox;
+                type->addItem( qtr( "Acrylic: blurred, richer colors" ) );
+                type->addItem( qtr( "Frosted glass: blurred" ) );
+                type->addItem( qtr( "Clear glass: not blurred" ) );
+                type->setCurrentIndex( std::clamp( mi->windowBlurType(), 0, 2 ) );
+                typeLabel->setBuddy( type );
+                grid->addWidget( typeLabel, nextRow, 0, 1, col );
+                grid->addWidget( type, nextRow, col, 1, -1 );
+                ++nextRow;
+                QObject::connect( type, QOverload<int>::of( &QComboBox::currentIndexChanged ), mi, &MainCtx::setWindowBlurType );
+                m_resetters.push_back( std::make_unique<PropertyResetter>( type, "currentIndex" ) );
+
+                const auto blur = addSlider( qtr( "Blur:" ), qtr( "How much the desktop behind the window is blurred" ),
+                                             60, QString(), mi->windowBlur(),
+                                             [mi]( int v ) { mi->setWindowBlur( v ); } );
+                auto blurShown = [blur, type] {
+                    blur.first->setEnabled( type->currentIndex() != 2 );
+                    blur.second->setEnabled( type->currentIndex() != 2 );
+                };
+                blurShown();
+                QObject::connect( type, QOverload<int>::of( &QComboBox::currentIndexChanged ), blur.first, blurShown );
 
                 auto *unfocused = new QCheckBox( qtr( "Keep it when the window is not focused" ) );
                 unfocused->setChecked( mi->windowTransparentUnfocused() );
-                grid->addWidget( unfocused, newRow + 1, col, 1, -1 );
+                grid->addWidget( unfocused, nextRow, col, 1, -1 );
                 QObject::connect( unfocused, &QCheckBox::toggled, mi, &MainCtx::setWindowTransparentUnfocused );
                 m_resetters.push_back( std::make_unique<PropertyResetter>( unfocused, "checked" ) );
             }

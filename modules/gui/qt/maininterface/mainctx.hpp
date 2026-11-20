@@ -133,6 +133,9 @@ class MainCtx : public QObject
     // Terrikon: how opaque the see-through parts of the player are (menus
     // over the video, messages), and its solid ones (queue, clip panel)
     Q_PROPERTY(bool windowTransparentUnfocused READ windowTransparentUnfocused WRITE setWindowTransparentUnfocused NOTIFY windowTransparentUnfocusedChanged FINAL)
+    Q_PROPERTY(double windowContentTransparency READ windowContentTransparency WRITE setWindowContentTransparency NOTIFY windowContentTransparencyChanged FINAL)
+    Q_PROPERTY(int windowBlur READ windowBlur WRITE setWindowBlur NOTIFY windowBlurChanged FINAL)
+    Q_PROPERTY(int windowBlurType READ windowBlurType WRITE setWindowBlurType NOTIFY windowBlurChanged FINAL)
     Q_PROPERTY(double windowTransparency READ windowTransparency WRITE setWindowTransparency NOTIFY windowTransparencyChanged FINAL)
     Q_PROPERTY(double overlayOpacity READ overlayOpacity WRITE setOverlayOpacity NOTIFY overlayOpacityChanged FINAL)
     Q_PROPERTY(double panelOpacity READ panelOpacity WRITE setPanelOpacity NOTIFY panelOpacityChanged FINAL)
@@ -277,6 +280,10 @@ public:
     QString waveformStyle() const { return stringOption(QStringLiteral("qt-waveform-style")); }
     bool windowTransparentUnfocused() const { return var_InheritBool(p_intf, "qt-window-transparent-unfocused"); }
     double windowTransparency() const { return var_InheritFloat(p_intf, "qt-window-transparency"); }
+    double windowContentTransparency() const { return var_InheritFloat(p_intf, "qt-window-content-transparency"); }
+    int windowBlur() const { return var_InheritInteger(p_intf, "qt-window-blur"); }
+    /* 0: acrylic, 1: frosted glass, 2: clear glass */
+    int windowBlurType() const { return var_InheritInteger(p_intf, "qt-window-blur-type"); }
     double overlayOpacity() const { return var_InheritFloat(p_intf, "qt-overlay-opacity"); }
     double panelOpacity() const { return var_InheritFloat(p_intf, "qt-panel-opacity"); }
     int openPlayerMenus() const { return m_openPlayerMenus; }
@@ -289,6 +296,9 @@ public:
     }
     void setWindowTransparentUnfocused(bool);
     void setWindowTransparency(double transparency);
+    void setWindowContentTransparency(double transparency);
+    void setWindowBlur(int blur);
+    void setWindowBlurType(int type);
     void setOverlayOpacity(double opacity);
     void setPanelOpacity(double opacity);
     /* Writes the settings changed so far to the disk */
@@ -616,6 +626,8 @@ signals:
     void waveformStyleChanged();
     void windowTransparentUnfocusedChanged();
     void windowTransparencyChanged();
+    void windowContentTransparencyChanged();
+    void windowBlurChanged();
     void overlayOpacityChanged();
     void panelOpacityChanged();
     void openPlayerMenusChanged();
