@@ -21,15 +21,25 @@ import QtQuick
 import VLC.Widgets as Widgets
 import VLC.Style
 import VLC.Player
+import VLC.MainInterface
 import VLC.Util
 import VLC.Terrikon
 
 Widgets.IconToolButton {
     id: fullScreenBtn
 
-    enabled: Player.hasVideoOutput
-    text: Player.fullscreen ? VLCIcons.defullscreen :VLCIcons.fullscreen
-    onClicked: Player.fullscreen = !Player.fullscreen
+    // Terrikon: music (no video output) takes the whole screen with the
+    // window itself
+    readonly property bool _full: Player.hasVideoOutput
+                                  ? Player.fullscreen
+                                  : MainCtx.intfMainWindow.visibility === Window.FullScreen
+    text: _full ? VLCIcons.defullscreen : VLCIcons.fullscreen
+    onClicked: {
+        if (Player.hasVideoOutput)
+            Player.fullscreen = !Player.fullscreen
+        else
+            MainCtx.toggleInterfaceFullScreen()
+    }
     description: qsTr("Full screen") + TerrikonActions.hint("toggle-fullscreen")
 
     AccessibleCompat.id: "fullscreenButton"
