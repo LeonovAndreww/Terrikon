@@ -161,7 +161,7 @@ T.ProgressBar {
         x: 0
         width: control.width
         height: VLCStyle.dp(28, VLCStyle.scale)
-        y: -height - control._overlayGap
+        y: -height   // rising right from the line
         z: 1
     }
 
@@ -174,7 +174,7 @@ T.ProgressBar {
         x: 0
         width: control.width
         height: VLCStyle.dp(16, VLCStyle.scale)
-        y: control.height + control._overlayGap
+        y: control.height
         z: 1
 
         transform: Scale { origin.y: VLCStyle.dp(8, VLCStyle.scale); yScale: -1 }
