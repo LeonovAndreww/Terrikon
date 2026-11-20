@@ -251,6 +251,10 @@ FocusScope {
     // Terrikon's own first (drawn in the player, around and under the
     // cover), then their colour and background, then VLC's, which take the
     // whole view. Choosing one side turns the other off.
+    // Terrikon: the visualization shown in the player (its component sets
+    // it), moved by visMover
+    property Item _visItem: null
+
     function chooseVisualization(globalPos) {
         const p = rootPlayer.mapFromGlobal(globalPos.x, globalPos.y)
         visPanel.x = Math.max(VLCStyle.margin_small,
@@ -271,7 +275,7 @@ FocusScope {
         padding: VLCStyle.margin_normal
         modal: false
         focus: true
-        closePolicy: T.Popup.CloseOnEscape | T.Popup.CloseOnPressOutside
+        closePolicy: T.Popup.CloseOnEscape   // outside: see visMover
 
         readonly property ColorContext colorContext: ColorContext {
             id: visTheme
@@ -843,6 +847,14 @@ FocusScope {
                     color2: Visualizer.color2
                     gradient: Visualizer.gradient
                     cover: videoScope._ring ? videoCircle : null
+                    // Terrikon: moved up or down (not the ring), see visMover
+                    transform: Translate {
+                        y: (Visualizer.onTimeLine || Visualizer.style === 1) ? 0
+                           : Math.max(-videoVis.height * .6,
+                                      Math.min(videoVis.anchors.bottomMargin,
+                                               videoVis.anchors.bottomMargin - Visualizer.bottomGap))
+                    }
+                    Component.onCompleted: rootPlayer._visItem = videoVis
                 }
             }
         }
@@ -995,6 +1007,14 @@ FocusScope {
                     gradient: Visualizer.gradient
 
                     cover: roundCoverImage.visible ? roundCoverImage : cover
+                    // Terrikon: moved up or down (not the ring), see visMover
+                    transform: Translate {
+                        y: (Visualizer.onTimeLine || Visualizer.style === 1) ? 0
+                           : Math.max(-visualizer.height * .6,
+                                      Math.min(visualizer.anchors.bottomMargin,
+                                               visualizer.anchors.bottomMargin - Visualizer.bottomGap))
+                    }
+                    Component.onCompleted: rootPlayer._visItem = visualizer
                 }
 
                 MouseArea {
@@ -2331,6 +2351,84 @@ FocusScope {
         id: audioContextMenu
 
         ctx: MainCtx
+    }
+
+    // Terrikon: while the panel of the visualization is open, the
+    // visualization (not the ring) is moved up and down by dragging it. Let
+    // go near the time line, it sticks to it and follows it; elsewhere it
+    // keeps its distance from the bottom of the player. A press anywhere
+    // else closes the panel and goes on as usual.
+    MouseArea {
+        id: visMover
+
+        anchors.fill: parent
+        z: 1000
+        enabled: visPanel.visible
+        hoverEnabled: true
+        preventStealing: true
+        cursorShape: (_over || pressed) ? Qt.SizeVerCursor : Qt.ArrowCursor
+
+        property bool _over: false
+        property bool _near: false
+        property real _lineY: 0
+        property real _pressY: 0
+        property real _startBottom: 0
+
+        readonly property Item _it: {
+            const it = rootPlayer._visItem
+            return (it && it.visible && it.style !== 0 && it.style !== 1) ? it : null
+        }
+        // where the bottom of the drawing is, and would be on the time line
+        function _bottom() { return _it.mapToItem(visMover, 0, _it.height).y }
+        function _lineBottom() { return _bottom() - _it.transform[0].y }
+        // the drawing takes the lower third of the item, about
+        function _hit(y) {
+            return !!_it && y >= _it.mapToItem(visMover, 0, _it.height * .66).y - VLCStyle.margin_small
+                         && y <= _bottom() + VLCStyle.margin_small
+        }
+
+        onPositionChanged: (mouse) => {
+            if (!pressed) {
+                _over = _hit(mouse.y)
+                return
+            }
+            if (!_it)
+                return
+            const bottom = Math.max(_it.mapToItem(visMover, 0, 0).y + _it.height * .4,
+                                    Math.min(height, _startBottom + mouse.y - _pressY))
+            const line = _lineBottom()
+            _lineY = line
+            _near = Math.abs(bottom - line) < VLCStyle.dp(24, VLCStyle.scale)
+            // in the coordinates of its parent, whose bottom it keeps to
+            const parentBottom = _it.parent.mapFromItem(visMover, 0, bottom).y
+            Visualizer.bottomGap = _it.parent.height - parentBottom
+            Visualizer.onTimeLine = false
+        }
+        onPressed: (mouse) => {
+            if (!_hit(mouse.y)) {
+                mouse.accepted = false
+                visPanel.close()
+                return
+            }
+            _pressY = mouse.y
+            _startBottom = _bottom()
+        }
+        onReleased: {
+            if (_near)
+                Visualizer.onTimeLine = true
+            _near = false
+        }
+        onCanceled: _near = false
+
+        // where it would stick
+        Rectangle {
+            visible: visMover._near && !!visMover._it
+            x: 0
+            width: parent.width
+            height: 2
+            y: visMover._lineY - 1
+            color: windowTheme.accent
+        }
     }
 
     TapHandler {

@@ -79,6 +79,8 @@ Visualizer::Visualizer(qt_intf_t *intf, QObject *parent)
     m_miniWindow = m_intf->mainSettings->value(QString::fromLatin1(miniKey), false).toBool();
     m_echoes = m_intf->mainSettings->value(QStringLiteral("Visualizer/echoes"), true).toBool();
     m_roundCover = m_intf->mainSettings->value(QStringLiteral("Visualizer/roundCover"), false).toBool();
+    m_onTimeLine = m_intf->mainSettings->value(QStringLiteral("Visualizer/onTimeLine"), true).toBool();
+    m_bottomGap = m_intf->mainSettings->value(QStringLiteral("Visualizer/bottomGap"), 0).toReal();
     m_hasMiniPosition = m_intf->mainSettings->contains(QString::fromLatin1(miniPositionKey));
     m_miniPosition = m_intf->mainSettings->value(QString::fromLatin1(miniPositionKey), QPoint(-1, -1)).toPoint();
     m_miniShape = qBound(0, m_intf->mainSettings->value(QString::fromLatin1(miniShapeKey), int(Card)).toInt(),
@@ -109,6 +111,24 @@ void Visualizer::setEchoes(bool on)
     m_echoes = on;
     m_intf->mainSettings->setValue(QStringLiteral("Visualizer/echoes"), on);
     emit echoesChanged();
+}
+
+void Visualizer::setOnTimeLine(bool on)
+{
+    if (on == m_onTimeLine)
+        return;
+    m_onTimeLine = on;
+    m_intf->mainSettings->setValue(QStringLiteral("Visualizer/onTimeLine"), on);
+    emit placeChanged();
+}
+
+void Visualizer::setBottomGap(qreal gap)
+{
+    if (qFuzzyCompare(gap, m_bottomGap))
+        return;
+    m_bottomGap = gap;
+    m_intf->mainSettings->setValue(QStringLiteral("Visualizer/bottomGap"), gap);
+    emit placeChanged();
 }
 
 void Visualizer::setRoundCover(bool on)

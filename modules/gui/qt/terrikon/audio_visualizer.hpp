@@ -64,6 +64,10 @@ class Visualizer : public QObject
     Q_PROPERTY(bool echoes READ echoes WRITE setEchoes NOTIFY echoesChanged FINAL)
     // The cover cut to a circle, inside the ring
     Q_PROPERTY(bool roundCover READ roundCover WRITE setRoundCover NOTIFY roundCoverChanged FINAL)
+    // Where the visualization of the player was moved to: on the time line
+    // (following it), or so far above the bottom of the player
+    Q_PROPERTY(bool onTimeLine READ onTimeLine WRITE setOnTimeLine NOTIFY placeChanged FINAL)
+    Q_PROPERTY(qreal bottomGap READ bottomGap WRITE setBottomGap NOTIFY placeChanged FINAL)
     Q_PROPERTY(QStringList colorModeNames READ colorModeNames CONSTANT FINAL)
     Q_PROPERTY(QColor customColor READ customColor WRITE setCustomColor NOTIFY colorsChanged FINAL)
     // The colours to draw with, following the mode and the cover
@@ -75,6 +79,10 @@ class Visualizer : public QObject
 public:
     bool echoes() const { return m_echoes; }
     bool roundCover() const { return m_roundCover; }
+    bool onTimeLine() const { return m_onTimeLine; }
+    void setOnTimeLine(bool on);
+    qreal bottomGap() const { return m_bottomGap; }
+    void setBottomGap(qreal gap);
     void setRoundCover(bool on);
     void setEchoes(bool on);
     enum Style { Off = 0, Ring, Bars, Wave, Hills, Mirror, Line, StyleCount };
@@ -142,6 +150,7 @@ public:
 signals:
     void echoesChanged();
     void roundCoverChanged();
+    void placeChanged();
     void styleChanged();
     void backgroundChanged();
     void miniWindowChanged();
@@ -153,6 +162,8 @@ signals:
 private:
     bool m_echoes = true;
     bool m_roundCover = false;
+    bool m_onTimeLine = true;
+    qreal m_bottomGap = 0;
     void listen();
     void readCoverColor();
 
