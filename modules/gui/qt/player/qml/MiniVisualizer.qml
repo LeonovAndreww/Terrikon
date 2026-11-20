@@ -431,6 +431,7 @@ Window {
                 style: root.chosenStyle === 1 ? 6 : root.chosenStyle // no ring in a card: the line
                 color: root.accent
                 color2: root.accent2
+                gradient: Visualizer.gradient
             }
 
             // On hover: the title, the buttons, the time
@@ -479,6 +480,7 @@ Window {
                 cover: roundCover
                 color: root.accent
                 color2: root.accent2
+                gradient: Visualizer.gradient
             }
 
             Rectangle {
@@ -548,6 +550,7 @@ Window {
                 style: root.chosenStyle === 1 ? 5 : root.chosenStyle // no ring in a strip: the mirror
                 color: root.accent
                 color2: root.accent2
+                gradient: Visualizer.gradient
             }
             Widgets.ImageExt {
                 id: stripCover
@@ -609,6 +612,7 @@ Window {
                 style: root.chosenStyle
                 color: root.accent
                 color2: root.accent2
+                gradient: Visualizer.gradient
             }
         }
     }

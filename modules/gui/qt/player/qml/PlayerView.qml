@@ -370,12 +370,14 @@ FocusScope {
                     model: Visualizer.colorModeNames.length
                     delegate: Chip {
                         required property int index
-                        label: visPanel._cap(Visualizer.colorModeNames[index].replace(/…$/, "")) + (index === 2 ? "…" : "")
+                        label: visPanel._cap(Visualizer.colorModeNames[index].replace(/…$/, "")) + (index === 2 || index === 4 ? "…" : "")
                         on: Visualizer.colorMode === index
                         swatch: index === Visualizer.colorMode ? Visualizer.color : "transparent"
                         onPicked: {
                             if (index === 2)
                                 Visualizer.pickCustomColor()
+                            else if (index === 4)
+                                Visualizer.pickCustomGradient()
                             else
                                 Visualizer.colorMode = index
                         }
@@ -876,6 +878,7 @@ FocusScope {
                     visible: style !== 0 && !audioFocusScope.lyricsLayoutActive
                     color: Visualizer.color
                     color2: Visualizer.color2
+                    gradient: Visualizer.gradient
 
                     cover: roundCoverImage.visible ? roundCoverImage : cover
                 }

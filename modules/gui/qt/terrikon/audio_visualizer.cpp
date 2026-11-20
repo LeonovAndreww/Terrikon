@@ -51,6 +51,7 @@ static const char miniShapeKey[] = "Terrikon/visualizer-mini-shape";
 static const char miniSizeKey[] = "Terrikon/visualizer-mini-size-%1";
 static const char colorModeKey[] = "Terrikon/visualizer-color-mode";
 static const char customColorKey[] = "Terrikon/visualizer-color";
+static const char customColor2Key[] = "Terrikon/visualizer-color2";
 static const char tapFilter[] = "terrikon_tap";
 
 Visualizer *Visualizer::s_instance = nullptr;
@@ -88,6 +89,9 @@ Visualizer::Visualizer(qt_intf_t *intf, QObject *parent)
     const QColor custom(m_intf->mainSettings->value(QString::fromLatin1(customColorKey)).toString());
     if (custom.isValid())
         m_customColor = custom;
+    const QColor custom2(m_intf->mainSettings->value(QString::fromLatin1(customColor2Key)).toString());
+    if (custom2.isValid())
+        m_customColor2 = custom2;
     connect(m_intf->p_mainPlayerController, &PlayerController::currentMetaChanged,
             this, &Visualizer::readCoverColor);
     readCoverColor();
@@ -221,7 +225,8 @@ void Visualizer::setColorMode(int mode)
 
 QStringList Visualizer::colorModeNames() const
 {
-    return { qtr("White"), qtr("Colour of the cover"), qtr("My colour") };
+    return { qtr("White"), qtr("Colour of the cover"), qtr("My colour"),
+             qtr("Gradient of the cover"), qtr("My gradient") };
 }
 
 void Visualizer::setCustomColor(const QColor &color)
@@ -242,10 +247,44 @@ void Visualizer::pickCustomColor()
     setColorMode(Custom);
 }
 
+void Visualizer::pickCustomGradient()
+{
+    const QColor first = QColorDialog::getColor(m_customColor, nullptr, qtr("First colour of the gradient"));
+    if (!first.isValid())
+        return;
+    const QColor second = QColorDialog::getColor(m_customColor2, nullptr, qtr("Second colour of the gradient"));
+    if (!second.isValid())
+        return;
+    m_customColor = first;
+    m_customColor2 = second;
+    m_intf->mainSettings->setValue(QString::fromLatin1(customColorKey), first.name());
+    m_intf->mainSettings->setValue(QString::fromLatin1(customColor2Key), second.name());
+    if (m_colorMode == CustomGradient)
+        emit colorsChanged();
+    setColorMode(CustomGradient);
+}
+
+QVariantList Visualizer::gradient() const
+{
+    QVariantList stops;
+    if (m_colorMode == CoverGradient && m_coverColors.size() >= 2)
+        for (const QColor &color : m_coverColors)
+            stops << QVariant::fromValue(color);
+    else if (m_colorMode == CustomGradient)
+        stops << QVariant::fromValue(m_customColor) << QVariant::fromValue(m_customColor2);
+    return stops;
+}
+
 QColor Visualizer::color() const
 {
     switch (m_colorMode)
     {
+    case CoverGradient:
+        if (!m_coverColors.isEmpty())
+            return m_coverColors.first();
+        return m_coverColor.isValid() ? m_coverColor : QColor(Qt::white);
+    case CustomGradient:
+        return m_customColor;
     case CoverColor:
         return m_coverColor.isValid() ? m_coverColor : QColor(Qt::white);
     case Custom:
@@ -273,6 +312,7 @@ void Visualizer::readCoverColor()
         return;
     m_coverUrl = url;
     QColor found;
+    QList<QColor> colors;
     QImage image;
     if (url.isLocalFile())
     {
@@ -299,6 +339,49 @@ void Visualizer::readCoverColor()
                 b += pixel.blueF() * weight;
                 total += weight;
             }
+        /* The main colours: the hues that weigh most, apart from each
+         * other, for the gradient */
+        struct Bucket { double r = 0., g = 0., b = 0., weight = 0.; } buckets[24];
+        for (int y = 0; y < small.height(); ++y)
+            for (int x = 0; x < small.width(); ++x)
+            {
+                const QColor pixel = QColor::fromRgb(small.pixel(x, y));
+                const float sat = pixel.hsvSaturationF(), val = pixel.valueF();
+                if (sat < .18f || val < .18f)
+                    continue;
+                const double weight = sat * sat * std::min(1., val * 1.6);
+                Bucket &bucket = buckets[int(std::max(0.f, pixel.hsvHueF()) * 24) % 24];
+                bucket.r += pixel.redF() * weight;
+                bucket.g += pixel.greenF() * weight;
+                bucket.b += pixel.blueF() * weight;
+                bucket.weight += weight;
+            }
+        QList<int> chosen;
+        for (int pick = 0; pick < 3; ++pick)
+        {
+            int best = -1;
+            for (int i = 0; i < 24; ++i)
+            {
+                bool adjacent = false;
+                for (int other : chosen)
+                    adjacent = adjacent || (i - other + 24) % 24 <= 1 || (other - i + 24) % 24 <= 1;
+                if (!adjacent && buckets[i].weight > 0.
+                    && (best < 0 || buckets[i].weight > buckets[best].weight))
+                    best = i;
+            }
+            if (best < 0 || (!chosen.isEmpty() && buckets[best].weight < buckets[chosen.first()].weight * .12))
+                break;
+            chosen << best;
+        }
+        for (int i : chosen)
+        {
+            const Bucket &bucket = buckets[i];
+            QColor color = QColor::fromRgbF(float(bucket.r / bucket.weight), float(bucket.g / bucket.weight),
+                                            float(bucket.b / bucket.weight));
+            float hue, saturation, value;
+            color.getHsvF(&hue, &saturation, &value);
+            colors << QColor::fromHsvF(hue, saturation, std::max(value, .85f));
+        }
         if (total > 0.)
         {
             found = QColor::fromRgbF(float(r / total), float(g / total), float(b / total));
@@ -308,10 +391,18 @@ void Visualizer::readCoverColor()
             found = QColor::fromHsvF(hue, saturation, std::max(value, .85f));
         }
     }
-    if (found == m_coverColor)
+    /* One colour only (a grey cover with a touch of it): it and a paler one */
+    if (colors.size() == 1)
+    {
+        float hue, saturation, value;
+        colors.first().getHsvF(&hue, &saturation, &value);
+        colors << QColor::fromHsvF(std::fmod(hue + .08f, 1.f), saturation * .55f, 1.f);
+    }
+    if (found == m_coverColor && colors == m_coverColors)
         return;
     m_coverColor = found;
-    if (m_colorMode == CoverColor)
+    m_coverColors = colors;
+    if (m_colorMode == CoverColor || m_colorMode == CoverGradient)
         emit colorsChanged();
 }
 
@@ -496,6 +587,49 @@ void AudioVisualizer::setColor(const QColor &color)
         return;
     m_color = color;
     emit colorChanged();
+}
+
+QVariantList AudioVisualizer::gradient() const
+{
+    QVariantList stops;
+    for (const QColor &color : m_stops)
+        stops << QVariant::fromValue(color);
+    return stops;
+}
+
+void AudioVisualizer::setGradient(const QVariantList &gradient)
+{
+    QVector<QColor> stops;
+    for (const QVariant &stop : gradient)
+    {
+        const QColor color = stop.value<QColor>();
+        if (color.isValid())
+            stops << color;
+    }
+    if (stops == m_stops)
+        return;
+    m_stops = stops;
+    emit colorChanged();
+    update();
+}
+
+QColor AudioVisualizer::tint(qreal t) const
+{
+    if (m_stops.size() < 2)
+        return m_color;
+    t = qBound(0.0, t, 1.0) * (m_stops.size() - 1);
+    const int i = std::min(int(t), int(m_stops.size()) - 2);
+    return mix(m_stops[i], m_stops[i + 1], t - i, 1.0);
+}
+
+QColor AudioVisualizer::paleTint(qreal t) const
+{
+    if (m_stops.size() < 2)
+        return m_color2;
+    const QColor c = tint(t);
+    return QColor::fromRgbF(float(c.redF() + (1. - c.redF()) * .6),
+                            float(c.greenF() + (1. - c.greenF()) * .6),
+                            float(c.blueF() + (1. - c.blueF()) * .6));
 }
 
 void AudioVisualizer::setColor2(const QColor &color)
@@ -687,13 +821,16 @@ QSGNode *AudioVisualizer::updatePaintNode(QSGNode *old, UpdatePaintNodeData *)
             const qreal angle = -M_PI / 2 + (i + .5) * step;
             const QPointF dir(std::cos(angle), std::sin(angle));
             const qreal len = 3 + v * std::max(reach, 8.0);
+            /* from the top both ways, as the bands */
+            const qreal t = qreal(b) / (bands - 1);
+            const QColor k1 = tint(t), k2 = paleTint(t);
             mesh.bar(c + dir * r0, c + dir * (r0 + len), hw,
-                     mix(m_color, m_color2, v * .3, .9), mix(m_color, m_color2, v, .95));
+                     mix(k1, k2, v * .3, .9), mix(k1, k2, v, .95));
             if (!extras)
                 continue;
             const qreal pr = r0 + 3 + m_peaks[b] * std::max(reach, 8.0) + 4;
             mesh.bar(c + dir * pr, c + dir * (pr + 1), hw * .8,
-                     mix(m_color2, m_color2, 0, .7), mix(m_color2, m_color2, 0, .7));
+                     mix(k2, k2, 0, .7), mix(k2, k2, 0, .7));
         }
         /* A thin circle that brightens with the loudness */
         const QColor line = mix(m_color2, m_color, .3, .2 + m_level * .6);
@@ -702,8 +839,10 @@ QSGNode *AudioVisualizer::updatePaintNode(QSGNode *old, UpdatePaintNodeData *)
         {
             const qreal a0 = 2 * M_PI * i / seg, a1 = 2 * M_PI * (i + 1) / seg;
             const qreal r = r0 - 4;
+            const qreal f = qreal(i) / seg, t = f < .5 ? 2 * f : 2 * (1 - f);
+            const QColor ln = m_stops.size() < 2 ? line : mix(paleTint(t), tint(t), .3, line.alphaF());
             mesh.bar(c + QPointF(std::cos(a0), std::sin(a0)) * r,
-                     c + QPointF(std::cos(a1), std::sin(a1)) * r, 1, line, line);
+                     c + QPointF(std::cos(a1), std::sin(a1)) * r, 1, ln, ln);
         }
         break;
     }
@@ -719,13 +858,15 @@ QSGNode *AudioVisualizer::updatePaintNode(QSGNode *old, UpdatePaintNodeData *)
             const qreal x = margin + (b + .5) * slot;
             const float v = m_bands[b];
             const qreal y = base - 2 - v * top;
+            const qreal t = qreal(b) / (bands - 1);
+            const QColor k1 = tint(t), k2 = paleTint(t);
             mesh.bar(QPointF(x, base), QPointF(x, y), hw,
-                     mix(m_color, m_color, 0, .4), mix(m_color, m_color2, v, .75));
+                     mix(k1, k1, 0, .4), mix(k1, k2, v, .75));
             if (!extras)
                 continue;
             const qreal py = base - 6 - m_peaks[b] * top;
             mesh.bar(QPointF(x, py), QPointF(x, py - 1.5), hw,
-                     mix(m_color2, m_color2, 0, .8), mix(m_color2, m_color2, 0, .8));
+                     mix(k2, k2, 0, .8), mix(k2, k2, 0, .8));
         }
         break;
     }
@@ -744,9 +885,16 @@ QSGNode *AudioVisualizer::updatePaintNode(QSGNode *old, UpdatePaintNodeData *)
         const QColor glow = mix(m_color, m_color, 0, .16 + m_level * .2);
         const QColor core = mix(m_color, m_color2, m_level, .95);
         for (int i = 0; extras && i < n - 1; i++)
-            mesh.bar(point(i), point(i + 1), 5, glow, glow);
+        {
+            const QColor g = mix(tint(qreal(i) / (n - 1)), m_color, 0, glow.alphaF());
+            mesh.bar(point(i), point(i + 1), 5, g, g);
+        }
         for (int i = 0; i < n - 1; i++)
-            mesh.bar(point(i), point(i + 1), 1.4, core, core);
+        {
+            const qreal t = qreal(i) / (n - 1);
+            const QColor k = m_stops.size() < 2 ? core : mix(tint(t), paleTint(t), m_level, .95);
+            mesh.bar(point(i), point(i + 1), 1.4, k, k);
+        }
         break;
     }
     case Visualizer::Hills:
@@ -763,15 +911,17 @@ QSGNode *AudioVisualizer::updatePaintNode(QSGNode *old, UpdatePaintNodeData *)
             const QVector<float> curve = smoothCurve(*layer.values, 4);
             const int n = curve.size();
             const qreal dx = w / (n - 1);
-            const QColor hi = mix(m_color, m_color2, .2, layer.alpha);
-            const QColor lo = mix(m_color, m_color, 0, layer.alpha * .15);
             for (int i = 0; i < n - 1; i++)
             {
+                const qreal t = qreal(i) / (n - 1);
+                const QColor k1 = tint(t), k2 = paleTint(t);
+                const QColor hi = mix(k1, k2, .2, layer.alpha);
+                const QColor lo = mix(k1, k1, 0, layer.alpha * .15);
                 const QPointF p0(i * dx, base - 2 - curve[i] * top * layer.lift);
                 const QPointF p1((i + 1) * dx, base - 2 - curve[i + 1] * top * layer.lift);
                 mesh.quad(p0, p1, QPointF(p1.x(), base), QPointF(p0.x(), base), hi, hi, lo, lo);
-                mesh.bar(p0, p1, .9, mix(m_color2, m_color2, 0, layer.alpha + .2),
-                         mix(m_color2, m_color2, 0, layer.alpha + .2));
+                mesh.bar(p0, p1, .9, mix(k2, k2, 0, layer.alpha + .2),
+                         mix(k2, k2, 0, layer.alpha + .2));
             }
         }
         break;
@@ -791,8 +941,9 @@ QSGNode *AudioVisualizer::updatePaintNode(QSGNode *old, UpdatePaintNodeData *)
             const float v = m_bands[b];
             const qreal x = margin + (i + .5) * slot;
             const qreal len = 1 + v * half;
-            const QColor tip = mix(m_color, m_color2, v, .9);
-            const QColor core = mix(m_color, m_color, 0, .55);
+            const qreal t = qreal(i) / (count - 1);
+            const QColor tip = mix(tint(t), paleTint(t), v, .9);
+            const QColor core = mix(tint(t), tint(t), 0, .55);
             mesh.bar(QPointF(x, mid), QPointF(x, mid - len), hw, core, tip);
             mesh.bar(QPointF(x, mid), QPointF(x, mid + len), hw, core, tip);
         }
@@ -811,9 +962,16 @@ QSGNode *AudioVisualizer::updatePaintNode(QSGNode *old, UpdatePaintNodeData *)
         const QColor glow = mix(m_color, m_color, 0, .15 + m_level * .2);
         const QColor core = mix(m_color, m_color2, m_level, .95);
         for (int i = 0; extras && i < n - 1; i++)
-            mesh.bar(point(i), point(i + 1), 4, glow, glow);
+        {
+            const QColor g = mix(tint(qreal(i) / (n - 1)), m_color, 0, glow.alphaF());
+            mesh.bar(point(i), point(i + 1), 4, g, g);
+        }
         for (int i = 0; i < n - 1; i++)
-            mesh.bar(point(i), point(i + 1), 1.3, core, core);
+        {
+            const qreal t = qreal(i) / (n - 1);
+            const QColor k = m_stops.size() < 2 ? core : mix(tint(t), paleTint(t), m_level, .95);
+            mesh.bar(point(i), point(i + 1), 1.3, k, k);
+        }
         break;
     }
     default:

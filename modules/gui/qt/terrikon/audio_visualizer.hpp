@@ -23,6 +23,7 @@
 #include "qt.hpp"
 
 #include <QColor>
+#include <QVariant>
 #include <QElapsedTimer>
 #include <QTimer>
 #include <QObject>
@@ -68,6 +69,8 @@ class Visualizer : public QObject
     // The colours to draw with, following the mode and the cover
     Q_PROPERTY(QColor color READ color NOTIFY colorsChanged FINAL)
     Q_PROPERTY(QColor color2 READ color2 NOTIFY colorsChanged FINAL)
+    // The colours along the drawing, in a gradient mode; empty otherwise
+    Q_PROPERTY(QVariantList gradient READ gradient NOTIFY colorsChanged FINAL)
 
 public:
     bool echoes() const { return m_echoes; }
@@ -118,7 +121,7 @@ public:
     QStringList styleNames() const;
     QStringList backgroundNames() const;
 
-    enum ColorMode { White = 0, CoverColor, Custom, ColorModeCount };
+    enum ColorMode { White = 0, CoverColor, Custom, CoverGradient, CustomGradient, ColorModeCount };
     Q_ENUM(ColorMode)
     int colorMode() const { return m_colorMode; }
     void setColorMode(int mode);
@@ -127,6 +130,9 @@ public:
     void setCustomColor(const QColor &color);
     QColor color() const;
     QColor color2() const;
+    QVariantList gradient() const;
+    // The two colours of the user's gradient, one dialog after the other
+    Q_INVOKABLE void pickCustomGradient();
     // Asks for a colour of one's own and draws with it
     Q_INVOKABLE void pickCustomColor();
 
@@ -163,7 +169,9 @@ private:
     int m_colorMode = White;
     bool m_miniDismissed = false;
     QColor m_customColor = QColor(0x4f, 0xc3, 0xf7);
+    QColor m_customColor2 = QColor(0xe0, 0x40, 0xfb);
     QColor m_coverColor;
+    QList<QColor> m_coverColors;   // the main ones, the most telling first
     QUrl m_coverUrl;
 };
 
@@ -174,6 +182,9 @@ class AudioVisualizer : public QQuickItem
     Q_PROPERTY(int style READ style WRITE setStyle NOTIFY styleChanged FINAL)
     Q_PROPERTY(QColor color READ color WRITE setColor NOTIFY colorChanged FINAL)
     Q_PROPERTY(QColor color2 READ color2 WRITE setColor2 NOTIFY colorChanged FINAL)
+    // Colours along the drawing (left to right, or from the top of the
+    // ring both ways); fewer than two: color and color2 alone
+    Q_PROPERTY(QVariantList gradient READ gradient WRITE setGradient NOTIFY colorChanged FINAL)
     // The cover image: the ring goes around it
     Q_PROPERTY(QQuickItem *cover READ cover WRITE setCover NOTIFY coverChanged FINAL)
     Q_PROPERTY(qreal level READ level NOTIFY levelChanged FINAL)
@@ -193,6 +204,8 @@ public:
     void setColor(const QColor &color);
     QColor color2() const { return m_color2; }
     void setColor2(const QColor &color);
+    QVariantList gradient() const;
+    void setGradient(const QVariantList &gradient);
     QQuickItem *cover() const { return m_cover; }
     void setCover(QQuickItem *cover);
     qreal level() const { return m_level; }
@@ -220,6 +233,10 @@ private:
     int m_style = 0;
     QColor m_color = QColor(255, 136, 0);
     QColor m_color2 = QColor(255, 220, 160);
+    QVector<QColor> m_stops;
+    /* The colour at t (0..1) along the gradient, and its paler one */
+    QColor tint(qreal t) const;
+    QColor paleTint(qreal t) const;
     QPointer<QQuickItem> m_cover;
     QRectF m_coverRect;
     qreal m_level = 0;
