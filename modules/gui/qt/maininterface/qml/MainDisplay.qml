@@ -67,9 +67,9 @@ FocusScope {
         if (!found)
             return
 
-        // Terrikon: no small video in a corner of the library (VLC's):
-        // leaving the player pauses the video, the bar at the bottom leads
-        // back to it, as for music
+        // Terrikon: the small video in a corner of the library is shown
+        // when the player is left (see Component.onCompleted), not on
+        // every page change
     }
 
     function loadCurrentHistoryView(focusReason) {
@@ -82,6 +82,9 @@ FocusScope {
                      && Player.playingState !== Player.PLAYING_STATE_STOPPED
         if (MainCtx.canShowVideoPIP) {
             pipPlayerComponent.createObject(this)
+            // Terrikon: a video left playing goes on in the small view
+            _showMiniPlayer = _leftVideo && MainCtx.backToPip && MainCtx.hasEmbededVideo
+                              && Player.playingState === Player.PLAYING_STATE_PLAYING
         } else {
             if (MainCtx.hasEmbededVideo)
                 MainPlaylistController.stop()

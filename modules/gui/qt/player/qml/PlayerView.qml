@@ -140,9 +140,11 @@ FocusScope {
                             || (MainCtx.canShowVideoPIP
                                 && (MainCtx.backToPip || MainCtx.playerFromPip))
         MainCtx.playerFromPip = false
-        // Terrikon: no video in the corner of the library: the video waits,
-        // paused, under the bar of the player, where it was left (the picture
-        // in picture window is the one to keep it playing)
+        // Terrikon: the video goes on in the small view over the library
+        // (on by default); otherwise it waits, paused, under the bar of the
+        // player, where it was left
+        if (keepPlaying && !audioOnly && MainCtx.hasEmbededVideo && !CompactPlayer.active)
+            return
         if (!_pauseVideoLeft() && MainCtx.hasEmbededVideo && !keepPlaying)
             MainPlaylistController.stop()
     }
@@ -150,6 +152,9 @@ FocusScope {
     function _pauseVideoLeft() {
         if (!MainCtx.hasEmbededVideo || Player.videoTracks.count === 0 || CompactPlayer.active)
             return false
+        // goes on in the small view over the library
+        if (MainCtx.canShowVideoPIP && MainCtx.backToPip)
+            return true
         if (Player.playingState === Player.PLAYING_STATE_PLAYING)
             MainPlaylistController.pause()
         return true

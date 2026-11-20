@@ -507,7 +507,7 @@ vlc_module_begin ()
 
     add_bool( "qt-pip-rounded", true, PIP_ROUNDED_TEXT, PIP_ROUNDED_LONGTEXT )
 
-    add_bool( "qt-back-to-pip", false, BACK_TO_PIP_TEXT, BACK_TO_PIP_LONGTEXT )
+    add_bool( "qt-back-to-pip", true, BACK_TO_PIP_TEXT, BACK_TO_PIP_LONGTEXT )
 
     add_float_with_range( "qt-safe-area", 0, 0, 100.0, SAFE_AREA_TEXT, SAFE_AREA_LONGTEXT )
 
