@@ -127,7 +127,16 @@ T.ProgressBar {
 
         // Let playback start before ffmpeg competes for the disk
         interval: 1500
+        property int _tries: 0
         onTriggered: {
+            // The quick thumbnails (frames sought one by one) need the
+            // length: a file on a slow share may take a while to give it
+            const length = Player.length.valid() ? Player.length.toSeconds() : 0
+            if (length <= 0 && ++_tries < 40) {
+                restart()
+                return
+            }
+            thumbnailStrip.duration = Math.max(0, length)
             thumbnailStrip.loadUrl(Player.url)
             waveformLoader.loadUrl(Player.url)
         }
@@ -138,6 +147,7 @@ T.ProgressBar {
         MomentMarks.loadUrl(Player.url)
         thumbnailStrip.clear()
         waveformLoader.clear()
+        mediaToolsDelay._tries = 0
         mediaToolsDelay.restart()
     }
 
