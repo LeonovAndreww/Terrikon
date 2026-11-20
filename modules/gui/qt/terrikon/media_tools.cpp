@@ -1209,8 +1209,7 @@ void WaveformLoader::clear()
 }
 
 /* A big file on a network drive (or not a file at all): reading it through
- * to draw the waves or every key frame takes the bandwidth the playback
- * needs; on a slow share the video stalled, the sound dropped and a new file
+ * for every key frame takes the bandwidth the playback needs; on a slow share the video stalled, the sound dropped and a new file
  * took half a minute to open. Asked off the GUI thread. */
 static bool slowToReadThrough(const QString &path)
 {
@@ -1256,10 +1255,9 @@ void WaveformLoader::load(const QString &path)
         return;
     m_path = path;
     const quint64 load = ++m_loads;
-    offThread(this, [path] {
-                  return slowToReadThrough(path) ? QString()
-                                                 : cacheDirFor(path, QStringLiteral("waveforms"));
-              },
+    /* Cheap even on a slow share: the other streams are seeked over
+     * (1 MB read out of 140 for a phone video) */
+    offThread(this, [path] { return cacheDirFor(path, QStringLiteral("waveforms")); },
               [this, load](const QString &dir) {
         if (load != m_loads || dir.isEmpty())
             return;
