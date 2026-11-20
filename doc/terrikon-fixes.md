@@ -242,6 +242,7 @@ build, or by reading when the path is taken.
 | Back from a video: it paused under the bar instead of going on in the small view | it goes on there, by default |
 | Sound and tracks popovers hard to read: the opacity of the overlays on the picture | the panels' opacity |
 | Clip export: a black square around the progress | the bar's own background removed |
+| Main area transparency | A grey band behind the title of a page, and the rounded top-left corner fading away (the header painted opaque; the corner blended over the side bar colour) | headers left out when the main area is translucent; the corner drawn unblended by a shader |
 ## Known upstream issues, not fixed yet
 
 - `ListViewExt.qml`: the footer's height depends on its own position ("Binding loop detected for property implicitHeight"). Harmless.
