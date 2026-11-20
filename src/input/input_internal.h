@@ -23,6 +23,7 @@
 #ifndef LIBVLC_INPUT_INTERNAL_H
 #define LIBVLC_INPUT_INTERNAL_H 1
 
+#include <stdatomic.h>
 #include <vlc_demux.h>
 #include <vlc_input.h>
 #include <vlc_mouse.h>
@@ -528,6 +529,9 @@ typedef struct input_thread_private_t
 
     /* Delays */
     bool        b_low_delay;
+    /* Terrikon: when the demuxer was last called, VLC_TICK_INVALID out of
+     * it; read by the es_out stall watch */
+    _Atomic vlc_tick_t demux_start;
     vlc_tick_t  i_jitter_max;
 
     /* Output */

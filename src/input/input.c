@@ -422,6 +422,7 @@ input_thread_t * input_Create( vlc_object_t *p_parent, input_item_t *p_item,
                                true);
 
     priv->b_low_delay = var_InheritBool( p_input, "low-delay" );
+    atomic_init( &priv->demux_start, VLC_TICK_INVALID );
     priv->i_jitter_max = VLC_TICK_FROM_MS(var_InheritInteger( p_input, "clock-jitter" ));
 
     /* Remove 'Now playing' info as it is probably outdated */
@@ -607,7 +608,13 @@ static void MainLoopDemux( input_thread_t *p_input, bool *pb_changed )
     }
 
     if( i_ret == VLC_DEMUXER_SUCCESS )
+    {
+        atomic_store_explicit( &p_priv->demux_start, vlc_tick_now(),
+                               memory_order_relaxed );
         i_ret = demux_Demux( p_demux );
+        atomic_store_explicit( &p_priv->demux_start, VLC_TICK_INVALID,
+                               memory_order_relaxed );
+    }
 
     if( i_ret != VLC_DEMUXER_BUFFERING )
         i_ret = i_ret > 0 ? VLC_DEMUXER_SUCCESS : ( i_ret < 0 ? VLC_DEMUXER_EGENERIC : VLC_DEMUXER_EOF);

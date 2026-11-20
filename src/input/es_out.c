@@ -222,6 +222,14 @@ typedef struct
     /* */
     bool        b_paused;
     bool        b_rebuffering;
+    /* Terrikon: the outputs ran dry while the demuxer waited for data */
+    bool        b_stalled;
+    vlc_tick_t  i_stall_pcr;      /* the last PCR when it stalled */
+    vlc_tick_t  i_stall_resume;   /* how much to gather before going on */
+    unsigned    i_stall_checks;
+    bool        b_stall_seen;     /* since the last seek */
+    vlc_timer_t stall_timer;
+    bool        b_stall_timer;
     es_out_id_t *p_next_frame_es;
     vlc_tick_t  i_pause_date;
 
@@ -265,6 +273,8 @@ static void EsOutUnselectEs(es_out_sys_t *out, es_out_id_t *es, bool b_update);
 static void EsOutDecoderChangeDelay(es_out_sys_t *out, es_out_id_t *p_es);
 static void EsOutDecodersChangePause(es_out_sys_t *out, bool b_paused, vlc_tick_t i_date);
 static void EsOutChangePosition(es_out_sys_t *out, es_out_id_t *p_next_frame_es);
+static void EsOutStallReset(es_out_sys_t *p_sys);
+static void EsOutChangeStall(es_out_sys_t *p_sys, bool b_stalled, vlc_tick_t i_date);
 static void EsOutProgramChangePause(es_out_sys_t *out, bool b_paused, vlc_tick_t i_date);
 static void EsOutProgramsChangeRate(es_out_sys_t *out);
 static void EsOutDecodersStopBuffering(es_out_sys_t *out, bool b_forced);
@@ -292,12 +302,12 @@ static es_out_sys_t *PRIV(es_out_t *out)
 
 static bool EsOutIsPaused(const es_out_sys_t *p_sys)
 {
-    return p_sys->b_paused || p_sys->b_rebuffering;
+    return p_sys->b_paused || p_sys->b_rebuffering || p_sys->b_stalled;
 }
 
 static bool EsOutIsBuffering(const es_out_sys_t *p_sys)
 {
-    return p_sys->b_buffering || p_sys->b_rebuffering;
+    return p_sys->b_buffering || p_sys->b_rebuffering || p_sys->b_stalled;
 }
 
 struct clock_source_mapping
@@ -802,6 +812,8 @@ static void EsOutDelete(es_out_t *out)
 {
     es_out_sys_t *p_sys = PRIV(out);
 
+    if( p_sys->b_stall_timer )
+        vlc_timer_destroy( p_sys->stall_timer );
     assert(vlc_list_is_empty(&p_sys->es));
     assert(vlc_list_is_empty(&p_sys->es_slaves));
     assert(vlc_list_is_empty(&p_sys->programs));
@@ -908,6 +920,9 @@ static int EsOutDrain(es_out_sys_t *p_sys)
         if( p_sys->b_buffering )
             return VLC_EGENERIC;
     }
+
+    if( p_sys->b_stalled )
+        EsOutChangeStall(p_sys, false, vlc_tick_now());
 
     if( !p_sys->b_draining )
     {
@@ -1158,6 +1173,90 @@ static void EsOutChangeRebuffer(es_out_sys_t *p_sys, bool b_rebuffering, vlc_tic
         input_SendEventCache(p_sys->p_input, b_rebuffering ? 0.0 : 1.0);
 }
 
+/* Terrikon: a file read over a slow network does not keep up with the
+ * playback. The demuxer then blocks in its read while the decoders and the
+ * outputs run dry; the clock went on regardless: the time kept running over
+ * a frozen picture, the sound was dropped as late, and the PCR that finally
+ * came was late, flushing everything. Like the rebuffering of the adaptive
+ * demuxers, pause the outputs until some data is gathered again. */
+static void EsOutChangeStall(es_out_sys_t *p_sys, bool b_stalled, vlc_tick_t i_date)
+{
+    if( p_sys->b_stalled == b_stalled )
+        return;
+
+    const bool b_was_paused = EsOutIsPaused(p_sys);
+    p_sys->b_stalled = b_stalled;
+    const bool b_is_paused = EsOutIsPaused(p_sys);
+
+    if( b_was_paused != b_is_paused )
+        EsOutChangeOutputPause(p_sys, b_is_paused, i_date);
+
+    if( !p_sys->b_buffering && !p_sys->b_rebuffering )
+        input_SendEventCache(p_sys->p_input, b_stalled ? 0.0 : 1.0);
+}
+
+static bool EsOutDecodersAllEmpty(es_out_sys_t *p_sys)
+{
+    es_out_id_t *es;
+    bool any = false;
+    foreach_es_then_es_slaves(es)
+    {
+        if( es->p_dec == NULL )
+            continue;
+        any = true;
+        /* Not vlc_input_decoder_IsEmpty(): its audio check is about a
+         * drain asked for, never true while playing */
+        if( vlc_input_decoder_GetFifoSize( es->p_dec ) > 0 )
+            return false;
+    }
+    return any;
+}
+
+static void EsOutStallWatch(void *data)
+{
+    es_out_sys_t *p_sys = data;
+    input_thread_private_t *priv = input_priv(p_sys->p_input);
+
+    vlc_mutex_lock( &p_sys->lock );
+    const vlc_tick_t start = atomic_load_explicit( &priv->demux_start,
+                                                   memory_order_relaxed );
+    const vlc_tick_t now = vlc_tick_now();
+    if( p_sys->b_stalled || p_sys->p_pgrm == NULL || p_sys->b_paused
+     || p_sys->b_buffering || p_sys->b_rebuffering || p_sys->b_draining
+     || p_sys->p_next_frame_es != NULL || priv->p_sout != NULL
+     || priv->b_low_delay || !input_CanPaceControl(p_sys->p_input)
+     || start == VLC_TICK_INVALID || now - start < VLC_TICK_FROM_MS(150)
+     || !EsOutDecodersAllEmpty(p_sys) )
+    {
+        p_sys->i_stall_checks = 0;
+        vlc_mutex_unlock( &p_sys->lock );
+        return;
+    }
+    /* Twice in a row: not a moment between two blocks */
+    if( ++p_sys->i_stall_checks < 2 )
+    {
+        vlc_mutex_unlock( &p_sys->lock );
+        return;
+    }
+    p_sys->i_stall_checks = 0;
+    p_sys->i_stall_pcr = p_sys->p_pgrm->i_last_pcr;
+    p_sys->b_stall_seen = true;
+    msg_Warn( p_sys->p_input, "the outputs ran dry waiting for data: "
+              "pausing them until %d ms are gathered",
+              (int)MS_FROM_VLC_TICK(p_sys->i_stall_resume) );
+    EsOutChangeStall(p_sys, true, now);
+    vlc_mutex_unlock( &p_sys->lock );
+}
+
+static void EsOutStallReset(es_out_sys_t *p_sys)
+{
+    if( p_sys->b_stalled )
+        EsOutChangeStall(p_sys, false, vlc_tick_now());
+    p_sys->i_stall_resume = VLC_TICK_FROM_SEC(1);
+    p_sys->i_stall_checks = 0;
+    p_sys->b_stall_seen = false;
+}
+
 static void EsOutChangeRate(es_out_sys_t *p_sys, float rate)
 {
     es_out_id_t *es;
@@ -1206,6 +1305,7 @@ static void EsOutChangePosition(es_out_sys_t *p_sys,
         }
     }
 
+    EsOutStallReset(p_sys);
     p_sys->b_buffering = true;
     p_sys->i_buffering_extra_initial = 0;
     p_sys->i_buffering_extra_stream = 0;
@@ -3724,6 +3824,26 @@ static int EsOutVaControlLocked(es_out_sys_t *p_sys, input_source_t *source,
 
         p_pgrm->i_last_pcr = i_pcr;
 
+        /* The first PCR after a stall is ahead by all that was gathered:
+         * not a stream discontinuity for the clock */
+        bool stall_resumed = false;
+        if( p_sys->b_stalled && p_pgrm == p_sys->p_pgrm
+         && (p_sys->i_stall_pcr == VLC_TICK_INVALID
+          || i_pcr - p_sys->i_stall_pcr >= p_sys->i_stall_resume) )
+        {
+            msg_Dbg( p_sys->p_input, "enough data gathered, going on" );
+            EsOutChangeStall(p_sys, false, vlc_tick_now());
+            stall_resumed = true;
+            /* Each stall in a row asks for more, up to 8 s */
+            if( p_sys->i_stall_resume < VLC_TICK_FROM_SEC(8) )
+                p_sys->i_stall_resume *= 2;
+        }
+        /* While stalled the system date is frozen: a PCR given to the clock
+         * then reads as a stream discontinuity and resets it. Gathering
+         * goes on from the reference shifted by the pause when it resumes. */
+        if( p_sys->b_stalled )
+            return VLC_SUCCESS;
+
         struct vlc_tracer *tracer = vlc_object_get_tracer( &p_sys->p_input->obj );
         if ( tracer != NULL )
         {
@@ -3738,10 +3858,14 @@ static int EsOutVaControlLocked(es_out_sys_t *p_sys, input_source_t *source,
         /* TODO do not use vlc_tick_now() but proper stream acquisition date */
         const bool b_low_delay = priv->b_low_delay;
         bool b_extra_buffering_allowed = !b_low_delay && EsOutIsExtraBufferingAllowed(p_sys);
-        bool buffering = EsOutIsBuffering(p_sys) || p_sys->p_next_frame_es != NULL;
+        bool buffering = EsOutIsBuffering(p_sys) || p_sys->p_next_frame_es != NULL
+                      /* After a stall the data comes in bursts, ahead of
+                       * the clock by more than its 300 ms gap: not a
+                       * discontinuity either */
+                      || stall_resumed || p_sys->b_stall_seen;
         /* Do not account the download stall as clock lateness. The input
          * clock will shift this frozen system date when rebuffering ends. */
-        const vlc_tick_t system_now = p_sys->b_rebuffering
+        const vlc_tick_t system_now = (p_sys->b_rebuffering || p_sys->b_stalled)
                                     ? p_sys->i_pause_date : vlc_tick_now();
         vlc_tick_t i_late = input_clock_Update(
                             p_pgrm->p_input_clock,
@@ -3768,7 +3892,7 @@ static int EsOutVaControlLocked(es_out_sys_t *p_sys, input_source_t *source,
             return VLC_SUCCESS;
         }
 
-        if( p_sys->b_rebuffering )
+        if( p_sys->b_rebuffering || p_sys->b_stalled )
             return VLC_SUCCESS;
 
         if (p_pgrm != p_sys->p_pgrm || p_sys->p_next_frame_es != NULL)
@@ -4495,6 +4619,16 @@ input_EsOutNew(input_thread_t *p_input, input_source_t *main_source, float rate,
     p_sys->rate = rate;
     p_sys->b_paused = false;
     p_sys->b_rebuffering = false;
+    p_sys->b_stalled = false;
+    p_sys->i_stall_pcr = VLC_TICK_INVALID;
+    p_sys->i_stall_resume = VLC_TICK_FROM_SEC(1);
+    p_sys->i_stall_checks = 0;
+    p_sys->b_stall_seen = false;
+    p_sys->b_stall_timer = input_type == INPUT_TYPE_PLAYBACK
+        && vlc_timer_create(&p_sys->stall_timer, EsOutStallWatch, p_sys) == 0;
+    if( p_sys->b_stall_timer )
+        vlc_timer_schedule(p_sys->stall_timer, false, VLC_TICK_FROM_MS(100),
+                           VLC_TICK_FROM_MS(100));
 
     p_sys->b_buffering = true;
     p_sys->i_buffering_extra_initial = p_sys->i_buffering_extra_stream
