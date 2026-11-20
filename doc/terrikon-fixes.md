@@ -128,6 +128,8 @@ build, or by reading when the path is taken.
 | Qt | Leaving the services page while the add-ons were still looked for froze the window: the add-ons manager was let go of on the interface thread, which waited for the finder held by a name lookup or a slow server | let go of on a thread of its own; its late answers dropped |
 | Qt | A page without a list (none of its own initialIndex) given the place in a list kept for it: "Cannot assign to non-existent property" | given only to a page having it |
 | Linux X11, the Qt X11 compositor: the video stayed black under the interface (Linux Mint 22 Cinnamon, Mesa radeonsi). With Qt's default GLX integration the interface surface came out opaque; upstream at the same commit behaves the same | QT_XCB_GL_INTEGRATION=xcb_egl unless the user set it: EGL keeps the alpha |
+| Input | A file read over a slow network (an SMB share giving 1 MB/s to a 6 MB/s video): the demuxer blocked in its read while the outputs ran dry, and the clock went on: the time ran over a frozen picture, the sound was dropped as late, then the late PCR reset the clock and the time jumped back | a stall watch: the outputs paused while the demuxer waits with the decoders empty, on again once 1 s is gathered (2, 4, 8 s for the next stalls); the PCRs met meanwhile and the bursts after it are not taken for discontinuities |
+| Qt, Windows | A maximized window that stayed a popup the size of the screen (back from full screen) lost 8 px on each side for a sizing frame it does not have: the desktop showed unblurred all around, and the acrylic layer was shifted by as much | the frame taken off only for a window with a sizing frame (WM_NCCALCSIZE and the acrylic surface) |
 ## 2. VLC 4's bugs brought out by Terrikon
 
 | Bug seen | VLC 4's cause | What brought it out | Fix |
@@ -225,7 +227,8 @@ build, or by reading when the path is taken.
 | Linux: with the automation on, quitting hung for good: closing a socket does not wake a thread blocked in accept() or recv() on Linux, and the interface waited for that thread | shutdown() on the sockets first |
 | Settings, Components: yt-dlp's version stayed blank on a busy machine (yt-dlp, a Python program, took 8 s; it was killed at 4 s), and the process was destroyed while still running (a Qt warning) | 30 s, nothing waits for it; the process deleted only once it has ended |
 | Automation on Linux: no interface window found (`at`, `items`...), as the X11 compositor renders it offscreen, neither top-level nor visible | also take a window rendered for another one (QQuickRenderControl::renderWindowFor) |
-| Player: the transparency sliders (and speed, sound waves) could only be found in the menu of the subtitles button | a player settings button (gear) with them and Effects and filters; it takes the effects button's place in the bars, saved bars included |
+| Player: the transparency sliders (and speed, sound waves) could only be found in the menu of the subtitles button | a player settings button (gear) with them and Effects and filters; it takes the effects button's place in the bars, saved bars included || Seek bar waves and thumbnails: ffmpeg read a whole big file on a network drive (up to three times: waves, key frames, every frame) beside the playback; on a slow share the video stalled and the next file took half a minute to open | for a file over 48 MB on a network drive, the quick thumbnails only (16 seeks) and no waves |
+
 ## Known upstream issues, not fixed yet
 
 - `ListViewExt.qml`: the footer's height depends on its own position ("Binding loop detected for property implicitHeight"). Harmless.
