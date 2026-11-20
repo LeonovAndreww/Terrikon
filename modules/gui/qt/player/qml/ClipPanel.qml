@@ -466,6 +466,7 @@ FocusScope {
 
             Widgets.ProgressBarExt {
                 visible: root._running
+                background: null   // its own square of the window colour showed on the panel
                 Layout.preferredWidth: VLCStyle.dp(160, VLCStyle.scale)
                 from: 0
                 to: 1

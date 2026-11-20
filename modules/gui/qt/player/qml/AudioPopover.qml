@@ -110,7 +110,7 @@ T.Popup {
 
     background: Rectangle {
         radius: VLCStyle.dp(10, VLCStyle.scale)
-        color: Qt.rgba(0.09, 0.09, 0.09, MainCtx.overlayOpacity)
+        color: Qt.rgba(0.09, 0.09, 0.09, 0.94 * MainCtx.panelOpacity)   // a panel, as the clip one
         border.color: Qt.rgba(1, 1, 1, 0.1)
 
         HoverHandler {
