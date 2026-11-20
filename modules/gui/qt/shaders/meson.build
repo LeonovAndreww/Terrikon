@@ -16,6 +16,7 @@ shader_sources = [
     'DitheredTexture.frag',
     'FastBlend.frag',
     'CircleHole.frag',
+    'RoundCorner.frag',
     'FastBlend_additive.frag',
     'FastBlend_multiply.frag',
     'FastBlend_screen.frag',

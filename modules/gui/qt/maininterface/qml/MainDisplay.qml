@@ -506,37 +506,36 @@ FocusScope {
                 rightPadding: playlistLoader.shown ? 0 : VLCStyle.applicationHorizontalMargin
 
                 // Top-left corner rounding:
-                Widgets.AcrylicBackground {
+                // Terrikon: both colours drawn at once, not blended: the
+                // side bar and the main area may both let the desktop show
+                // through, the main area colour over the side bar one was
+                // neither, and the corner was lost
+                ShaderEffect {
                     id: topLeftCornerBackground
 
+                    readonly property real _r: VLCStyle.mainView_topLeftRadius
+                    readonly property color _out: sidebar.background.color
+                    readonly property color _in: stackViewParent.color
+
                     z: 99
-                    color: sidebar.background.color
-                    visible: sidebar.visible && (stackViewTopLeftRadiusRectangle.topLeftRadius !== undefined)
+                    visible: sidebar.visible && _r > 0
+                    blending: false
 
                     anchors.left: stackView.left
-                    anchors.leftMargin: -1
+                    anchors.leftMargin: -1   // to prevent seams
                     anchors.top: stackView.top
 
-                    // (-1) is to prevent seams
-                    width: stackViewTopLeftRadiusRectangle.width - 1
-                    height: stackViewTopLeftRadiusRectangle.height - 1
+                    width: _r + 1
+                    height: _r
 
-                    Rectangle {
-                        id: stackViewTopLeftRadiusRectangle
+                    // premultiplied
+                    property vector4d outer: Qt.vector4d(_out.r * _out.a, _out.g * _out.a, _out.b * _out.a, _out.a)
+                    property vector4d inner: Qt.vector4d(_in.r * _in.a, _in.g * _in.a, _in.b * _in.a, _in.a)
+                    property vector2d center: Qt.vector2d(_r + 1, _r)
+                    property vector2d size: Qt.vector2d(width, height)
+                    property real radius: _r
 
-                        width: (stackViewTopLeftRadiusRectangle.topLeftRadius * 2)
-                        height: (stackViewTopLeftRadiusRectangle.topLeftRadius * 2)
-
-                        anchors.top: parent.top
-                        anchors.left: parent.left
-                        anchors.leftMargin: 1
-
-                        color: stackViewParent.color
-
-                        property real implicitTopLeftRadius: VLCStyle.mainView_topLeftRadius
-
-                        topLeftRadius: implicitTopLeftRadius
-                    }
+                    fragmentShader: "qrc:///shaders/RoundCorner.frag.qsb"
                 }
 
                 onCurrentItemChanged: {
