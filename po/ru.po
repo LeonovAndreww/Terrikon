@@ -44780,3 +44780,23 @@ msgstr "Размытие:"
 #: modules/gui/qt/dialogs/preferences/simple_preferences.cpp
 msgid "How much the desktop behind the window is blurred"
 msgstr "Насколько размыт рабочий стол за окном"
+
+#: modules/gui/qt/widgets/qml/SearchBox.qml
+msgid "filter or link"
+msgstr "фильтр или ссылка"
+
+#: modules/gui/qt/terrikon/audio_visualizer.cpp
+msgid "Gradient of the cover"
+msgstr "градиент обложки"
+
+#: modules/gui/qt/terrikon/audio_visualizer.cpp
+msgid "My gradient"
+msgstr "мой градиент"
+
+#: modules/gui/qt/terrikon/audio_visualizer.cpp
+msgid "First colour of the gradient"
+msgstr "Первый цвет градиента"
+
+#: modules/gui/qt/terrikon/audio_visualizer.cpp
+msgid "Second colour of the gradient"
+msgstr "Второй цвет градиента"
