@@ -426,11 +426,6 @@ FocusScope {
                     onPicked: Visualizer.roundCover = !Visualizer.roundCover
                 }
                 Chip {
-                    label: qsTr("Over the video")
-                    on: Visualizer.overVideo
-                    onPicked: Visualizer.overVideo = !Visualizer.overVideo
-                }
-                Chip {
                     label: qsTr("Mini window over the others")
                     on: Visualizer.miniWindow
                     onPicked: Visualizer.miniWindow = !Visualizer.miniWindow
@@ -597,10 +592,10 @@ FocusScope {
 
                 focus: true
 
-                // Terrikon: the visualization over the video (off by
-                // default); the ring takes the video cut to a circle, made
-                // smaller to fit in it
-                readonly property bool _visOn: Visualizer.overVideo && Visualizer.style !== 0
+                // Terrikon: the visualization over the video, as for music;
+                // the ring takes the video cut to a circle, made smaller to
+                // fit in it, on the background chosen
+                readonly property bool _visOn: Visualizer.style !== 0
                 readonly property bool _ring: _visOn && Visualizer.style === 1
                 property size _videoSize: TerrikonActions.videoSize()
                 readonly property real _aspect: _videoSize.width > 0 && _videoSize.height > 0
@@ -779,7 +774,7 @@ FocusScope {
                 }
 
                 // Outside the circle: a black ring wide enough to hide the rest
-                // of the picture
+                // of the picture; the background chosen goes over it
                 Rectangle {
                     readonly property real band: Math.max(videoSurface.width, videoSurface.height)
                     visible: videoScope._ring
@@ -791,6 +786,47 @@ FocusScope {
                     border.color: "black"
                     border.width: band
                     scale: videoCircle.scale
+                }
+
+                // The video itself behind (a second player of the file,
+                // silent, kept in step), blurred or not, but for Black
+                readonly property bool _backdrop: _ring && Visualizer.background !== 1
+                VideoPreview {
+                    id: backdropVideo
+                    backdrop: true
+                    soft: Visualizer.background === 0
+                    anchors.fill: parent
+                    source: videoScope._backdrop ? Player.url : ""
+                    paused: Player.playingState !== Player.PLAYING_STATE_PLAYING
+                }
+                Timer {
+                    interval: 500
+                    repeat: true
+                    running: videoScope._backdrop
+                    onTriggered: {
+                        const t = Player.position * Player.length.toSeconds()
+                        if (Math.abs(backdropVideo.time - t) > 0.6)
+                            backdropVideo.seekTime(t + 0.15)
+                    }
+                }
+                ShaderEffectSource {
+                    id: backdropSource
+                    anchors.fill: backdropVideo
+                    sourceItem: backdropVideo
+                    hideSource: true
+                    live: true
+                    visible: false
+                }
+                ShaderEffect {
+                    anchors.fill: parent
+                    visible: videoScope._backdrop && backdropVideo.hasFrame
+                    property var source: backdropSource
+                    property point center: Qt.point((videoCircle.x + videoCircle.width / 2) / Math.max(1, width),
+                                                    (videoCircle.y + videoCircle.height / 2) / Math.max(1, height))
+                    property size size: Qt.size(width, height)
+                    property real radius: videoCircle.width / 2
+                    property real dim: Visualizer.background === 0 ? 0.45 : 0.6
+                    fragmentShader: "qrc:///shaders/CircleHole.frag.qsb"
                 }
 
                 AudioVisualizer {
@@ -1581,7 +1617,7 @@ FocusScope {
         id: topBar
 
         // Terrikon: the one visualization button, for any music
-        showVisualization: true   // a video too: "over the video" is turned on there
+        showVisualization: true   // a video too: drawn over it
         onVisualizationRequested: (globalPos) => rootPlayer.chooseVisualization(globalPos)
 
         anchors.top: parent.top

@@ -15,6 +15,7 @@ shader_sources = [
     'SDFAARoundedTexture_cropsupport_bordersupport.frag',
     'DitheredTexture.frag',
     'FastBlend.frag',
+    'CircleHole.frag',
     'FastBlend_additive.frag',
     'FastBlend_multiply.frag',
     'FastBlend_screen.frag',
