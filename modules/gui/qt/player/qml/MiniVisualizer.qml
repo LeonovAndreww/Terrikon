@@ -404,7 +404,7 @@ Window {
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
                 cache: false
-                sourceSize: Qt.size(width * 2, height * 2)
+                sourceSize: Qt.size(640, 640)   // fixed: not decoded again at each step of a resize
                 source: root.coverSource
             }
 
@@ -500,7 +500,7 @@ Window {
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
                 cache: false
-                sourceSize: Qt.size(width * 2, height * 2)
+                sourceSize: Qt.size(640, 640)   // fixed: not decoded again at each step of a resize
                 source: root.coverSource
             }
 
@@ -511,6 +511,7 @@ Window {
                 height: width
                 radius: width / 2
                 color: Qt.rgba(0, 0, 0, 0.55)
+                scale: roundCover.scale   // beating with the cover
                 opacity: root.hovered ? 1 : 0
                 visible: opacity > 0
                 Behavior on opacity { NumberAnimation { duration: 150 } }
@@ -559,7 +560,7 @@ Window {
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
                 cache: false
-                sourceSize: Qt.size(width * 2, height * 2)
+                sourceSize: Qt.size(640, 640)   // fixed: not decoded again at each step of a resize
                 source: root.coverSource
             }
             Controls {
