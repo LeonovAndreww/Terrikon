@@ -216,6 +216,8 @@ void PlayerControllerPrivate::UpdateMeta( input_item_t *p_item )
             m_title   = vlc_meta_Get(p_item->p_meta, vlc_meta_Title);
             m_artist  = vlc_meta_Get(p_item->p_meta, vlc_meta_Artist);
             m_album   = vlc_meta_Get(p_item->p_meta, vlc_meta_Album);
+            m_date    = vlc_meta_Get(p_item->p_meta, vlc_meta_Date);
+            m_genre   = vlc_meta_Get(p_item->p_meta, vlc_meta_Genre);
             m_artwork = vlc_meta_Get(p_item->p_meta, vlc_meta_ArtworkURL);
 
             /* Capture the raw sylt-data buffer; the entry list is built on
@@ -2375,6 +2377,8 @@ PRIMITIVETYPE_GETTER(bool, getTeletextTransparency, m_teletextTransparent)
 PRIMITIVETYPE_GETTER(QString, getTitle, m_title)
 PRIMITIVETYPE_GETTER(QString, getArtist, m_artist)
 PRIMITIVETYPE_GETTER(QString, getAlbum, m_album)
+PRIMITIVETYPE_GETTER(QString, getDate, m_date)
+PRIMITIVETYPE_GETTER(QString, getGenre, m_genre)
 PRIMITIVETYPE_GETTER(QUrl, getArtwork, m_artwork)
 PRIMITIVETYPE_GETTER(QUrl, getUrl, m_url)
 

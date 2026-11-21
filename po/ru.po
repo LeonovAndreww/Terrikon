@@ -44800,3 +44800,19 @@ msgstr "Первый цвет градиента"
 #: modules/gui/qt/terrikon/audio_visualizer.cpp
 msgid "Second colour of the gradient"
 msgstr "Второй цвет градиента"
+
+#: modules/gui/qt/player/qml/PlayerView.qml
+msgid "Year"
+msgstr "Год"
+
+#: modules/gui/qt/player/qml/PlayerView.qml
+msgid "No details in the file"
+msgstr "В файле нет сведений"
+
+#: modules/gui/qt/player/qml/PlayerView.qml
+msgid "Next in queue"
+msgstr "Далее в очереди"
+
+#: modules/gui/qt/player/qml/PlayerView.qml
+msgid "The queue ends here"
+msgstr "Дальше очередь пуста"

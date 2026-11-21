@@ -200,6 +200,8 @@ public:
     QString m_title;
     QString m_artist;
     QString m_album;
+    QString m_date;
+    QString m_genre;
     QUrl m_artwork;
     QUrl m_url;
 

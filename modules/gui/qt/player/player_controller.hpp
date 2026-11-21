@@ -156,6 +156,8 @@ public:
     Q_PROPERTY(QString title READ getTitle NOTIFY currentMetaChanged FINAL)
     Q_PROPERTY(QString artist READ getArtist NOTIFY currentMetaChanged FINAL)
     Q_PROPERTY(QString album READ getAlbum NOTIFY currentMetaChanged FINAL)
+    Q_PROPERTY(QString date READ getDate NOTIFY currentMetaChanged FINAL)
+    Q_PROPERTY(QString genre READ getGenre NOTIFY currentMetaChanged FINAL)
     Q_PROPERTY(QUrl artwork READ getArtwork NOTIFY currentMetaChanged FINAL)
 
     //tracks
@@ -431,6 +433,8 @@ public slots:
     QString getTitle() const;
     QString getArtist() const;
     QString getAlbum() const;
+    QString getDate() const;
+    QString getGenre() const;
     QUrl getArtwork() const;
     TimedText getCurrentLyric() const;
     bool hasLyrics() const;

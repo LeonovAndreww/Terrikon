@@ -1588,6 +1588,182 @@ FocusScope {
                                 function onChoicesReady() { LyricsFinder.showMenu() }
                             }
                         }
+
+                        // Terrikon: two cards under the cover, as in Spotify:
+                        // what the song is, and what comes next (a click plays)
+                        RowLayout {
+                            id: infoCards
+
+                            readonly property int cardWidth: Math.min(VLCStyle.dp(320, VLCStyle.scale),
+                                                                      (centerContent.width - VLCStyle.margin_xlarge * 3) / 2)
+                            readonly property var details: {
+                                var d = []
+                                if (Player.artist) d.push([qsTr("Artist"), Player.artist])
+                                if (Player.album) d.push([qsTr("Album"), Player.album])
+                                if (Player.date) d.push([qsTr("Year"), Player.date.substring(0, 4)])
+                                if (Player.genre) d.push([qsTr("Genre"), Player.genre])
+                                return d
+                            }
+
+                            Layout.alignment: Qt.AlignHCenter
+                            Layout.topMargin: VLCStyle.margin_large
+                            spacing: VLCStyle.margin_normal
+
+                            visible: false
+                            Binding on visible {
+                                delayed: true
+                                when: infoCards.componentCompleted
+                                value: !audioFocusScope.lyricsLayoutActive
+                                       && Player.videoTracks.count === 0
+                                       && infoCards.cardWidth > VLCStyle.dp(160, VLCStyle.scale)
+                                       && centerContent.height > (infoCards.y + infoCards.implicitHeight)
+                            }
+                            property bool componentCompleted: false
+                            Component.onCompleted: componentCompleted = true
+
+                            // "Details"
+                            Rectangle {
+                                Layout.preferredWidth: infoCards.cardWidth
+                                Layout.alignment: Qt.AlignTop
+                                implicitHeight: Math.max(detailsColumn.implicitHeight, queueColumn.implicitHeight) + VLCStyle.margin_normal * 2
+                                radius: VLCStyle.dp(10, VLCStyle.scale)
+                                color: Qt.rgba(centerTheme.fg.primary.r, centerTheme.fg.primary.g, centerTheme.fg.primary.b, 0.08)
+
+                                ColumnLayout {
+                                    id: detailsColumn
+                                    anchors.fill: parent
+                                    anchors.margins: VLCStyle.margin_normal
+                                    spacing: VLCStyle.margin_xxsmall
+
+                                    Widgets.MenuLabel {
+                                        Layout.fillWidth: true
+                                        text: qsTr("Details")
+                                        font.weight: Font.Bold
+                                        color: centerTheme.fg.primary
+                                    }
+                                    Repeater {
+                                        model: infoCards.details
+                                        delegate: RowLayout {
+                                            required property var modelData
+                                            Layout.fillWidth: true
+                                            spacing: VLCStyle.margin_small
+                                            Text {
+                                                text: modelData[0]
+                                                color: centerTheme.fg.primary
+                                                opacity: 0.6
+                                                font.pixelSize: VLCStyle.fontSize_normal
+                                                Layout.preferredWidth: VLCStyle.dp(96, VLCStyle.scale)
+                                            }
+                                            Text {
+                                                text: modelData[1]
+                                                color: centerTheme.fg.primary
+                                                font.pixelSize: VLCStyle.fontSize_normal
+                                                elide: Text.ElideRight
+                                                Layout.fillWidth: true
+                                            }
+                                        }
+                                    }
+                                    Item { Layout.fillHeight: true }
+                                    Text {
+                                        visible: infoCards.details.length === 0
+                                        text: qsTr("No details in the file")
+                                        color: centerTheme.fg.primary
+                                        opacity: 0.6
+                                        font.pixelSize: VLCStyle.fontSize_normal
+                                    }
+                                }
+                            }
+
+                            // "Next in queue"
+                            Rectangle {
+                                id: queueCard
+
+                                readonly property int shown: 3
+                                readonly property int cur: MainPlaylistController.currentIndex
+
+                                Layout.preferredWidth: infoCards.cardWidth
+                                Layout.alignment: Qt.AlignTop
+                                implicitHeight: Math.max(detailsColumn.implicitHeight, queueColumn.implicitHeight) + VLCStyle.margin_normal * 2
+                                radius: VLCStyle.dp(10, VLCStyle.scale)
+                                color: Qt.rgba(centerTheme.fg.primary.r, centerTheme.fg.primary.g, centerTheme.fg.primary.b, 0.08)
+
+                                PlaylistListModel {
+                                    id: queueModel
+                                    playlist: MainPlaylistController.playlist
+                                }
+
+                                ColumnLayout {
+                                    id: queueColumn
+                                    anchors.fill: parent
+                                    anchors.margins: VLCStyle.margin_normal
+                                    spacing: VLCStyle.margin_xxsmall
+
+                                    Widgets.MenuLabel {
+                                        Layout.fillWidth: true
+                                        text: qsTr("Next in queue")
+                                        font.weight: Font.Bold
+                                        color: centerTheme.fg.primary
+                                    }
+                                    Repeater {
+                                        model: queueModel
+                                        delegate: Item {
+                                            id: queueRow
+                                            required property int index
+                                            required property string title
+                                            required property string artist
+                                            required property vlcDuration duration
+
+                                            readonly property bool inRange: index > queueCard.cur
+                                                                            && index <= queueCard.cur + queueCard.shown
+                                            visible: inRange
+                                            Layout.fillWidth: true
+                                            Layout.preferredHeight: inRange ? rowText.implicitHeight + VLCStyle.margin_xxsmall * 2 : 0
+
+                                            Rectangle {
+                                                anchors.fill: parent
+                                                radius: VLCStyle.dp(6, VLCStyle.scale)
+                                                color: centerTheme.fg.primary
+                                                opacity: rowMouse.containsMouse ? 0.12 : 0
+                                            }
+                                            RowLayout {
+                                                id: rowText
+                                                anchors.fill: parent
+                                                anchors.leftMargin: VLCStyle.margin_xxsmall
+                                                anchors.rightMargin: VLCStyle.margin_xxsmall
+                                                spacing: VLCStyle.margin_small
+                                                Text {
+                                                    text: queueRow.title + (queueRow.artist ? " — " + queueRow.artist : "")
+                                                    color: centerTheme.fg.primary
+                                                    font.pixelSize: VLCStyle.fontSize_normal
+                                                    elide: Text.ElideRight
+                                                    Layout.fillWidth: true
+                                                }
+                                                Text {
+                                                    text: queueRow.duration.formatHMS()
+                                                    color: centerTheme.fg.primary
+                                                    opacity: 0.6
+                                                    font.pixelSize: VLCStyle.fontSize_normal
+                                                }
+                                            }
+                                            MouseArea {
+                                                id: rowMouse
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: VLCStyle.pointerCursor
+                                                onClicked: MainPlaylistController.goTo(queueRow.index, true)
+                                            }
+                                        }
+                                    }
+                                    Text {
+                                        visible: queueCard.cur >= MainPlaylistController.count - 1
+                                        text: qsTr("The queue ends here")
+                                        color: centerTheme.fg.primary
+                                        opacity: 0.6
+                                        font.pixelSize: VLCStyle.fontSize_normal
+                                    }
+                                }
+                            }
+                        }
                     }
 
                     Widgets.SubtitleLabel {
