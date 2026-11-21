@@ -66,12 +66,23 @@ const QList<Spec> &specs()
 {
     static const QList<Spec> list = {
         { "ffmpeg", "FFmpeg", N_("Clips, waveforms and the frames of the seek bar"),
+#ifdef _WIN32
           /* the "essentials" release build, LGPL/GPL, about 90 MB */
           "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip", true,
           { QStringLiteral("ffmpeg.exe"), QStringLiteral("ffprobe.exe") } },
+#else
+          /* a static build, one folder with ffmpeg and ffprobe (tar.xz) */
+          "https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz", true,
+          { QStringLiteral("ffmpeg"), QStringLiteral("ffprobe") } },
+#endif
         { "yt-dlp", "yt-dlp", N_("Links to YouTube, TikTok, Bilibili and other sites"),
+#ifdef _WIN32
           "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe", false,
           { QStringLiteral("yt-dlp.exe") } },
+#else
+          "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux", false,
+          { QStringLiteral("yt-dlp") } },
+#endif
     };
     return list;
 }
@@ -86,6 +97,10 @@ const Spec *specOf(const QString &id)
 
 QString systemTool(const char *name)
 {
+#ifndef _WIN32
+    /* on Linux they are found on the PATH (the distribution's packages) */
+    return QStandardPaths::findExecutable(QLatin1String(name));
+#endif
     /* curl and tar come with Windows 10 and later */
     return QDir(qEnvironmentVariable("SystemRoot", QStringLiteral("C:\\Windows")))
         .filePath(QStringLiteral("System32/%1.exe").arg(QLatin1String(name)));
@@ -256,7 +271,7 @@ void Components::install(const QString &id)
 
     QDir().mkpath(toolsDir());
     const QString download = QDir(toolsDir()).filePath(
-        QStringLiteral("%1.download%2").arg(id, spec->zip ? QStringLiteral(".zip") : QStringLiteral(".exe")));
+        QStringLiteral("%1.download%2").arg(id, spec->zip ? QStringLiteral(".archive") : QStringLiteral(".bin")));
     QFile::remove(download);
 
     auto curl = new QProcess(this);
@@ -290,7 +305,11 @@ void Components::install(const QString &id)
         if (e != QProcess::FailedToStart)
             return;
         curl->deleteLater();
+#ifdef _WIN32
         finish(id, qtr("curl, which comes with Windows, could not be started."));
+#else
+        finish(id, qtr("curl could not be started; install the curl package."));
+#endif
     });
     connect(curl, &QProcess::finished, this, [this, id, spec, curl, download](int code, QProcess::ExitStatus status) {
         /* the message, not the meter */
@@ -310,6 +329,8 @@ void Components::install(const QString &id)
         {
             /* replaced only once complete: a running copy keeps working */
             const QString target = QDir(toolsDir()).filePath(spec->exes.first());
+            /* a program downloaded has no execute bit on Unix */
+            QFile(download).setPermissions(QFile::permissions(download) | QFile::ExeOwner | QFile::ExeGroup | QFile::ExeOther);
             const bool placed = replaceFiles({ { download, target } });
             if (!placed)
                 QFile::remove(download);
@@ -330,7 +351,11 @@ void Components::install(const QString &id)
             tar->deleteLater();
             QFile::remove(download);
             QDir(unpacked).removeRecursively();
+#ifdef _WIN32
             finish(id, qtr("tar, which comes with Windows, could not be started."));
+#else
+            finish(id, qtr("tar could not be started; install the tar and xz packages."));
+#endif
         });
         connect(tar, &QProcess::finished, this, [this, id, spec, tar, download, unpacked](int code, QProcess::ExitStatus status) {
             tar->deleteLater();
@@ -429,7 +454,7 @@ void Components::updateYtdlpInBackground()
 {
     if (!autoUpdate())
         return;
-    const QString ytdlp = QDir(toolsDir()).filePath(QStringLiteral("yt-dlp.exe"));
+    const QString ytdlp = QDir(toolsDir()).filePath(specOf(QStringLiteral("yt-dlp"))->exes.first());
     if (!QFileInfo::exists(ytdlp) || m_busy.contains(QStringLiteral("yt-dlp")))
         return;
     QSettings settings(QSettings::IniFormat, QSettings::UserScope, QStringLiteral("terrikon"), QStringLiteral("library"));
