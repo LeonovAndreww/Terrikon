@@ -1,3 +1,62 @@
+# Terrikon
+
+**Terrikon** is a personal fork of VLC 4 (the `master` branch) with a new Qt/QML
+interface, built for Windows first; Linux builds and plays too. The name is
+the cone-shaped spoil heap of a coal mine, like the VLC cone. Free, never sold.
+
+## What differs from VLC 4
+
+- **Several audio tracks at once**, each with its own volume (and above 100%
+  on Windows). The fork began here, for game replays with separate tracks.
+- **Clips**: loop, size, save and copy, tracks mixed, vertical 9:16 with a crop.
+- **Seek bar**: previews, per-track waveforms, moment marks, chapters, jump hints ("+10 s").
+- **Picture in picture**: in the window or in a window of its own; a mini window for music.
+- **Music player**: round cover, a big cover with "Details" and "Next in queue"
+  cards, synced lyrics (LRCLIB or `.lrc`), own visualizer (ring, bars, wave,
+  hills, mirror, line) that can also sit over a video.
+- **Home**: folder chips, "Continue watching", a search that takes links.
+- **Videos**: folder tree, grouped cards, hover previews.
+- **Window transparency**: acrylic, frosted, clear glass.
+- **Full Russian translation**, dark dialogs, Fluent menu icons.
+- **Network drives that do not answer** no longer freeze the window or playback.
+- **One player per install**; a queue made from the folder in the Explorer's order.
+
+## Bugs of VLC 4 fixed
+
+The full table (more than 200 entries, with the cause and the file of each) is in
+[`doc/terrikon-fixes.md`](doc/terrikon-fixes.md). In short, group 1 (bugs VLC 4
+shows as it is) and group 2 (bugs of VLC 4 that Terrikon brought out):
+
+- **Player and clock**: after a seek the time stood still for a second; a seek
+  while paused put the audio out of sync; "play and pause" stuck at the end;
+  playback stopped for good after a seek (hardware decoder waited with no
+  limit); a USB drive that powered down made the file "end" early; a slow
+  network share made the time run over a frozen picture.
+- **Hangs on dead network drives**: 20 to 50 s freezes of the window when a
+  grid showed a file on a host that does not answer, and a 40 s stop of such a file.
+- **Crashes and memory safety**: use after free and out-of-bounds writes in audio
+  filters (stereo widener, delay, SoXR, mono, spatializer, normvol, scaletempo,
+  equalizer), demuxers and packetizers (FLAC, PNG, H.264, MP4, Matroska), the old
+  HTTP access, cookies, playlist export; random crashes from Qt's PCRE2 JIT
+  stack under MinGW.
+- **Single instance (Windows)**: a second VLC hung at start (same pipe names in
+  every process); files opened from the Explorer made two players.
+- **Direct3D11 / video output**: a leak of about 12 MB per close (and 5 to 15 MB
+  per picture-in-picture round); HDR10 metadata passed with the wrong size.
+- **Interface**: lists ran from Z to A by default; sort arrow upside down;
+  names sorted by code points ("Episode 10" before "Episode 2"); hotkeys dead
+  on a non-Latin layout; about 1450 strings missing from the Russian
+  translation; service names untranslated; drives without a label unnamed;
+  "-1 ms" for media of unknown length; radio stations without flags and logos.
+- **Media library**: nested model resets in bookmarks, media gone since the list
+  was made crashing the playlist, files opened directly staying in the history
+  after deletion, a folder added right after another missing from the list.
+- **Audio output**: WASAPI channel order for 5.1/7.1 applied twice; empty
+  blocks from a sub-sample silence; a crash when a filter chain could not be made.
+- **Linux X11**: the video stayed black under the interface with Qt's default GLX integration.
+
+---
+
 # VLC media player
 
 **VLC** is a libre and open source **media player** and **multimedia engine**,
