@@ -1155,7 +1155,14 @@ FocusScope {
 
                         Item {
                             id: coverItem
-                            Layout.preferredHeight: rootPlayer.height / sizeConstant
+                            // Terrikon: the cover grows (up to half of the player)
+                            // while the labels and the cards under it still fit
+                            readonly property real belowCover: albumLabel.implicitHeight + artistLabel.implicitHeight
+                                + infoCards.implicitHeight + lyricsLabel.height
+                                + VLCStyle.margin_xxlarge + VLCStyle.margin_small + VLCStyle.margin_large * 2
+                            Layout.preferredHeight: Math.max(rootPlayer.height / sizeConstant,
+                                                             Math.min(rootPlayer.height / 2,
+                                                                      centerContent.height - belowCover))
                             Layout.preferredWidth: cover.paintedWidth
                             Layout.maximumHeight: centerContent.height
                             Layout.alignment: Qt.AlignHCenter
