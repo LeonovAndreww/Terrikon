@@ -105,6 +105,11 @@ Components::Components(qt_intf_t *intf, QObject *parent)
  * downloaded at the first start, with the window showing how far */
 void Components::installAskedByInstaller()
 {
+#ifndef _WIN32
+    /* the installer's registry key exists only on Windows; elsewhere
+     * QSettings would make a file named after it in the profile */
+    return;
+#else
     QSettings installer(QStringLiteral("HKEY_CURRENT_USER\\Software\\Terrikon"), QSettings::NativeFormat);
     if (installer.value(QStringLiteral("InstallComponents")).toString() != QLatin1String("1"))
         return;
@@ -121,6 +126,7 @@ void Components::installAskedByInstaller()
     }
     if (any)
         showDialog();
+#endif
 }
 
 Components *Components::instance()
