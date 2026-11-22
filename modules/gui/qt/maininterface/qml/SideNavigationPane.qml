@@ -22,6 +22,7 @@ import QtQml.Models
 
 import VLC.Style
 import VLC.Widgets as Widgets
+import VLC.MediaLibrary
 
 import VLC.MainInterface
 import VLC.Dialogs
@@ -239,6 +240,98 @@ T.Pane {
                             delegate.height = Qt.binding(() => delegate.preferredHeight)
                             heightBehavior.enabled = false
                         }
+                    }
+                }
+            }
+
+            // Terrikon: what a wider panel brings: the folders of the media
+            // library, one click each (the folder opens in Videos)
+            ColumnLayout {
+                id: foldersBox
+
+                Layout.fillWidth: true
+                Layout.leftMargin: root.safeAreaLeftMargin + VLCStyle.margin_xsmall
+                Layout.rightMargin: root.safeAreaRightMargin + VLCStyle.margin_xsmall
+                spacing: 0
+
+                visible: root.delegateShowText && root.width >= root.minimumWidth * 1.2
+                         && foldersRepeater.count > 0
+                         && root.height > VLCStyle.dp(380, VLCStyle.scale)
+
+                MLFolderModel {
+                    id: sideFolders
+                    ctx: MainCtx
+                }
+
+                Text {
+                    text: qsTr("Folders")
+                    color: theme.fg.secondary
+                    font.pixelSize: VLCStyle.fontSize_small
+                    font.weight: Font.DemiBold
+                    Layout.leftMargin: VLCStyle.margin_xsmall
+                    Layout.bottomMargin: VLCStyle.margin_xxsmall
+                }
+
+                Repeater {
+                    id: foldersRepeater
+
+                    model: sideFolders
+
+                    delegate: Item {
+                        id: folderRow
+
+                        required property int index
+                        required property var display_url
+                        required property var url
+                        required property bool banned
+
+                        readonly property string _name: decodeURIComponent(String(display_url))
+                            .replace(/[\\\/]+$/, "").split(/[\\\/]/).pop()
+
+                        visible: !banned && index < 6
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: visible ? VLCStyle.dp(30, VLCStyle.scale) : 0
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: VLCStyle.dp(6, VLCStyle.scale)
+                            color: theme.fg.primary
+                            opacity: folderMouse.containsMouse ? 0.12 : 0
+                        }
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: VLCStyle.margin_xsmall
+                            anchors.rightMargin: VLCStyle.margin_xsmall
+                            spacing: VLCStyle.margin_xsmall
+
+                            Widgets.IconLabel {
+                                text: VLCIcons.ic_fluent_folder_open_24_regular
+                                color: theme.fg.secondary
+                                font.pixelSize: VLCStyle.icon_small
+                            }
+
+                            Text {
+                                Layout.fillWidth: true
+                                text: folderRow._name
+                                elide: Text.ElideRight
+                                color: theme.fg.primary
+                                font.pixelSize: VLCStyle.fontSize_normal
+                            }
+                        }
+
+                        MouseArea {
+                            id: folderMouse
+
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: MainCtx.mediaLibrary.lookUpFolder(folderRow.url)
+                        }
+
+                        T.ToolTip.visible: folderMouse.containsMouse
+                        T.ToolTip.text: decodeURIComponent(String(display_url)).replace(/^file:\/\//, "")
+                        T.ToolTip.delay: 600
                     }
                 }
             }
