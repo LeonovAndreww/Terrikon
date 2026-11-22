@@ -374,6 +374,10 @@ void TerrikonActions::run(int action)
         break;
     }
 
+    case ACTIONID_STATS_TOGGLE:
+        emit statsToggleRequested();
+        break;
+
     case ACTIONID_PIP_TOGGLE:
         if (player->hasVideoOutput() || m_compact->active())
             m_compact->toggle();

@@ -26,6 +26,7 @@
 #include "../qt.hpp"
 #include <vlc_cxx_helpers.hpp>
 #include <QObject>
+#include <QVariantMap>
 #include <QEvent>
 #include <QScopedPointer>
 #include <QUrl>
@@ -174,6 +175,8 @@ public:
     Q_PROPERTY(float subtitleFPS READ getSubtitleFPS WRITE setSubtitleFPS NOTIFY subtitleFPSChanged FINAL)
     Q_PROPERTY(TimedText currentLyric READ getCurrentLyric NOTIFY currentLyricChanged FINAL)
     Q_PROPERTY(bool hasLyrics READ hasLyrics NOTIFY hasLyricsChanged FINAL)
+    // Terrikon: the input's counters, for the statistics overlay (key I)
+    Q_PROPERTY(QVariantMap stats READ getStats NOTIFY statsChanged FINAL)
     Q_PROPERTY(QList<TimedText> syltLyrics READ getSyltLyrics NOTIFY syltLyricsChanged FINAL)
     Q_PROPERTY(int currentLyricIndex READ getCurrentLyricIndex NOTIFY currentLyricIndexChanged FINAL)
 
@@ -438,6 +441,7 @@ public slots:
     QUrl getArtwork() const;
     TimedText getCurrentLyric() const;
     bool hasLyrics() const;
+    QVariantMap getStats() const;
     QList<TimedText> getSyltLyrics() const;
     /* Terrikon: lyrics from elsewhere than the file (a .lrc file, the web),
      * as "ms\x1Ftext" parts apart by \x1E; kept until the media changes */
@@ -524,6 +528,7 @@ signals:
     void currentMetaChanged( input_item_t* );
     void currentLyricChanged();
     void hasLyricsChanged( bool );
+    void statsChanged();
     void syltLyricsChanged();
     void currentLyricIndexChanged( int );
     void metaChanged( input_item_t *);

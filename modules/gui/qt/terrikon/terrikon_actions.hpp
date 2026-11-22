@@ -71,6 +71,7 @@ public:
 signals:
     /* The clip panel owns the export settings, so it does the export */
     void clipExportRequested();
+    void statsToggleRequested();
     /* A short message to show over the video for a key press: how far a
      * jump went, which track is on, a mark set... */
     void osd(const QString &text);

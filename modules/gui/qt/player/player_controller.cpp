@@ -838,6 +838,7 @@ static void on_player_stats_changed(vlc_player_t *, const struct input_stats_t *
     that->callAsync([that,stats_tmp] () {
         that->m_stats = stats_tmp;
         emit that->q_func()->statisticsUpdated( that->m_stats );
+        emit that->q_func()->statsChanged();
     });
 }
 
@@ -2405,6 +2406,26 @@ void PlayerController::setExternalLyrics(const QByteArray &raw)
     emit syltLyricsChanged();
     emit currentLyricIndexChanged(-1);
     emit currentLyricChanged();
+}
+
+QVariantMap PlayerController::getStats() const
+{
+    Q_D(const PlayerController);
+    const input_stats_t &st = d->m_stats;
+    QVariantMap m;
+    m["inputBitrate"] = double(st.f_input_bitrate) * 8000.0;   // bit/s
+    m["demuxBitrate"] = double(st.f_demux_bitrate) * 8000.0;
+    m["readBytes"] = qulonglong(st.i_read_bytes);
+    m["corrupted"] = qulonglong(st.i_demux_corrupted);
+    m["discontinuity"] = qulonglong(st.i_demux_discontinuity);
+    m["decodedVideo"] = qulonglong(st.i_decoded_video);
+    m["displayed"] = qulonglong(st.i_displayed_pictures);
+    m["late"] = qulonglong(st.i_late_pictures);
+    m["lost"] = qulonglong(st.i_lost_pictures);
+    m["decodedAudio"] = qulonglong(st.i_decoded_audio);
+    m["played"] = qulonglong(st.i_played_abuffers);
+    m["lostAudio"] = qulonglong(st.i_lost_abuffers);
+    return m;
 }
 
 bool PlayerController::hasLyrics() const

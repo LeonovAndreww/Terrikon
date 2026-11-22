@@ -379,6 +379,7 @@ static const struct name2action
     { "set-bookmark9", ACTIONID_SET_BOOKMARK9, },
     { "slower", ACTIONID_RATE_SLOWER, },
     { "snapshot", ACTIONID_SNAPSHOT, },
+    { "stats-toggle", ACTIONID_STATS_TOGGLE, },
     { "stop", ACTIONID_STOP, },
     { "subdelay-down", ACTIONID_SUBDELAY_DOWN, },
     { "subdelay-up", ACTIONID_SUBDELAY_UP, },

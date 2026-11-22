@@ -64,6 +64,9 @@ FocusScope {
 
     property bool _keyPressed: false
 
+    // Terrikon: the counters of the input over the player, key Alt+I
+    property bool statsVisible: false
+
     // Settings
 
     Accessible.role: Accessible.Client
@@ -2224,6 +2227,70 @@ FocusScope {
         }
     }
 
+    // Counters of the input (key Alt+I): rates, decoded and lost frames. Hidden
+    // by default, no setting.
+    Rectangle {
+        id: statsCard
+
+        function _rate(v) {
+            return v >= 1e6 ? (v / 1e6).toFixed(2) + " Mb/s" : Math.round(v / 1e3) + " kb/s"
+        }
+
+        readonly property var _s: Player.stats
+        readonly property var _rows: [
+            [qsTr("Input"), _rate(_s.inputBitrate || 0)],
+            [qsTr("Stream"), _rate(_s.demuxBitrate || 0)],
+            [qsTr("Video decoded"), "" + (_s.decodedVideo || 0)],
+            [qsTr("Shown"), "" + (_s.displayed || 0)],
+            [qsTr("Late"), "" + (_s.late || 0)],
+            [qsTr("Lost frames"), "" + (_s.lost || 0)],
+            [qsTr("Audio decoded"), "" + (_s.decodedAudio || 0)],
+            [qsTr("Lost audio"), "" + (_s.lostAudio || 0)],
+            [qsTr("Corrupted"), "" + (_s.corrupted || 0)]
+        ]
+
+        objectName: "statsCard"
+        visible: rootPlayer.statsVisible
+        z: 10
+        anchors.left: parent.left
+        anchors.top: parent.top
+        anchors.leftMargin: VLCStyle.margin_large
+        anchors.topMargin: VLCStyle.dp(72, VLCStyle.scale)
+
+        width: statsColumn.implicitWidth + VLCStyle.margin_normal * 2
+        height: statsColumn.implicitHeight + VLCStyle.margin_normal * 2
+        radius: VLCStyle.dp(8, VLCStyle.scale)
+        color: Qt.rgba(0, 0, 0, 0.73 * MainCtx.overlayOpacity)
+
+        Column {
+            id: statsColumn
+            anchors.centerIn: parent
+            spacing: VLCStyle.margin_xxxsmall
+
+            Repeater {
+                model: statsCard._rows
+                delegate: Row {
+                    required property var modelData
+                    spacing: VLCStyle.margin_normal
+                    Text {
+                        width: VLCStyle.dp(110, VLCStyle.scale)
+                        text: modelData[0]
+                        color: Qt.rgba(1, 1, 1, 0.65)
+                        font.pixelSize: VLCStyle.fontSize_normal
+                    }
+                    Text {
+                        width: VLCStyle.dp(90, VLCStyle.scale)
+                        horizontalAlignment: Text.AlignRight
+                        text: modelData[1]
+                        color: "white"
+                        font.pixelSize: VLCStyle.fontSize_normal
+                        font.weight: Font.DemiBold
+                    }
+                }
+            }
+        }
+    }
+
     // A jump by a key, on the side it goes, as video sites show it: arrows
     // running that way and how far; jumps in a row add up
     Rectangle {
@@ -2315,6 +2382,11 @@ FocusScope {
         target: TerrikonActions
         function onOsd(text) { osdToast.show(text) }
         function onJumped(seconds) { seekHint.show(seconds) }
+    }
+
+    Connections {
+        target: TerrikonActions
+        function onStatsToggleRequested() { rootPlayer.statsVisible = !rootPlayer.statsVisible }
     }
 
     // The player sets volume and speed while starting: no message then

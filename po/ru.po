@@ -44816,3 +44816,27 @@ msgstr "Далее в очереди"
 #: modules/gui/qt/player/qml/PlayerView.qml
 msgid "The queue ends here"
 msgstr "Дальше очередь пуста"
+
+#: modules/gui/qt/player/qml/PlayerView.qml
+msgid "Video decoded"
+msgstr "Видео декодировано"
+
+#: modules/gui/qt/player/qml/PlayerView.qml
+msgid "Shown"
+msgstr "Показано"
+
+#: modules/gui/qt/player/qml/PlayerView.qml
+msgid "Audio decoded"
+msgstr "Звук декодирован"
+
+#: modules/gui/qt/player/qml/PlayerView.qml
+msgid "Lost audio"
+msgstr "Звук потерян"
+
+#: src/libvlc-module.c
+msgid "Playback statistics"
+msgstr "Статистика воспроизведения"
+
+#: src/libvlc-module.c
+msgid "Show or hide the card with the bitrate and the decoded and lost frames over the player."
+msgstr "Показать или скрыть карточку с битрейтом и числом декодированных и потерянных кадров поверх плеера."

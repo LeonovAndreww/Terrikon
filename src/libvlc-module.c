@@ -1544,6 +1544,9 @@ static const char *const mouse_wheel_texts[] = {
 #define PIP_TOGGLE_KEY_TEXT N_("Picture in picture")
 #define PIP_TOGGLE_KEY_LONGTEXT N_("Shrink the player to a small always-on-top video in a corner of the screen, or bring it back.")
 
+#define STATS_TOGGLE_KEY_TEXT N_("Playback statistics")
+#define STATS_TOGGLE_KEY_LONGTEXT N_("Show or hide the card with the bitrate and the decoded and lost frames over the player.")
+
 #define RECORD_KEY_TEXT N_("Record")
 #define RECORD_KEY_LONGTEXT N_("Record access filter start/stop.")
 
@@ -2639,6 +2642,7 @@ vlc_module_begin ()
     add_key("key-mark-next", "Alt+.", MARK_NEXT_KEY_TEXT, MARK_NEXT_KEY_LONGTEXT)
     add_key("key-mark-prev", "Alt+,", MARK_PREV_KEY_TEXT, MARK_PREV_KEY_LONGTEXT)
     add_key("key-pip-toggle", "Alt+p", PIP_TOGGLE_KEY_TEXT, PIP_TOGGLE_KEY_LONGTEXT)
+    add_key("key-stats-toggle", "Alt+i", STATS_TOGGLE_KEY_TEXT, STATS_TOGGLE_KEY_LONGTEXT)
     add_key("key-stop", KEY_STOP, STOP_KEY_TEXT, STOP_KEY_LONGTEXT)
     add_key("key-position", KEY_POSITION, POSITION_KEY_TEXT,
              POSITION_KEY_LONGTEXT)
