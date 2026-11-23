@@ -2262,7 +2262,9 @@ FocusScope {
         property string nextTitle: ""
 
         objectName: "nextCard"
-        visible: atEnd && MainPlaylistController.hasNext && nextTitle !== ""
+        // with random order next() does not play index+1, so the name would lie
+        visible: atEnd && MainPlaylistController.hasNext && !MainPlaylistController.random
+                 && nextTitle !== ""
         z: 10
         anchors.right: parent.right
         anchors.bottom: parent.bottom
