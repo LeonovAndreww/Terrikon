@@ -1690,12 +1690,25 @@ FocusScope {
 
                                 readonly property int shown: 3
                                 readonly property int cur: MainPlaylistController.currentIndex
+                                // the wheel over the card scrolls the list of upcoming tracks
+                                property int scrollOffset: 0
+                                readonly property int first: cur + 1 + scrollOffset
+                                onCurChanged: scrollOffset = 0
 
                                 Layout.preferredWidth: infoCards.cardWidth
                                 Layout.alignment: Qt.AlignTop
                                 implicitHeight: Math.max(detailsColumn.implicitHeight, queueColumn.implicitHeight) + VLCStyle.margin_normal * 2
                                 radius: VLCStyle.dp(10, VLCStyle.scale)
                                 color: Qt.rgba(centerTheme.fg.primary.r, centerTheme.fg.primary.g, centerTheme.fg.primary.b, 0.08)
+
+                                WheelHandler {
+                                    acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+                                    onWheel: (event) => {
+                                        const maxOff = Math.max(0, MainPlaylistController.count - 1 - queueCard.cur - queueCard.shown)
+                                        const step = event.angleDelta.y < 0 ? 1 : -1
+                                        queueCard.scrollOffset = Math.max(0, Math.min(maxOff, queueCard.scrollOffset + step))
+                                    }
+                                }
 
                                 PlaylistListModel {
                                     id: queueModel
@@ -1723,8 +1736,8 @@ FocusScope {
                                             required property string artist
                                             required property vlcDuration duration
 
-                                            readonly property bool inRange: index > queueCard.cur
-                                                                            && index <= queueCard.cur + queueCard.shown
+                                            readonly property bool inRange: index >= queueCard.first
+                                                                            && index < queueCard.first + queueCard.shown
                                             visible: inRange
                                             Layout.fillWidth: true
                                             Layout.preferredHeight: inRange ? rowText.implicitHeight + VLCStyle.margin_xxsmall * 2 : 0
