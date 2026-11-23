@@ -44530,6 +44530,10 @@ msgid "Next in queue"
 msgstr "Далее в очереди"
 
 #: modules/gui/qt/player/qml/PlayerView.qml
+msgid "Up next"
+msgstr "Далее"
+
+#: modules/gui/qt/player/qml/PlayerView.qml
 msgid "The queue ends here"
 msgstr "Дальше очередь пуста"
 

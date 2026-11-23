@@ -2248,6 +2248,75 @@ FocusScope {
         }
     }
 
+    // At the end of a video that stays on its last frame (autoplay off), a
+    // card names the next video in the queue; a click plays it. Nothing is
+    // started by itself.
+    Rectangle {
+        id: nextCard
+
+        readonly property int nextIndex: MainPlaylistController.currentIndex + 1
+        readonly property bool atEnd: Player.hasVideoOutput
+                                      && Player.playingState === Player.PLAYING_STATE_PAUSED
+                                      && Player.length.toSeconds() > 0
+                                      && Player.position >= 0.995
+        property string nextTitle: ""
+
+        objectName: "nextCard"
+        visible: atEnd && MainPlaylistController.hasNext && nextTitle !== ""
+        z: 10
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.rightMargin: VLCStyle.margin_large
+        anchors.bottomMargin: VLCStyle.dp(110, VLCStyle.scale)
+
+        width: Math.min(VLCStyle.dp(360, VLCStyle.scale), rootPlayer.width - VLCStyle.margin_large * 2)
+        height: nextColumn.implicitHeight + VLCStyle.margin_normal * 2
+        radius: VLCStyle.dp(8, VLCStyle.scale)
+        color: Qt.rgba(0, 0, 0, 0.73 * MainCtx.overlayOpacity)
+
+        PlaylistListModel {
+            id: nextModel
+            playlist: MainPlaylistController.playlist
+        }
+        Repeater {
+            model: nextModel
+            delegate: Item {
+                required property int index
+                required property string title
+                readonly property bool isNext: index === nextCard.nextIndex
+                visible: false
+                onTitleChanged: if (isNext) nextCard.nextTitle = title
+                onIsNextChanged: if (isNext) nextCard.nextTitle = title
+                Component.onCompleted: if (isNext) nextCard.nextTitle = title
+            }
+        }
+
+        Column {
+            id: nextColumn
+            anchors.fill: parent
+            anchors.margins: VLCStyle.margin_normal
+            spacing: VLCStyle.margin_xxxsmall
+            Text {
+                text: qsTr("Up next")
+                color: Qt.rgba(1, 1, 1, 0.65)
+                font.pixelSize: VLCStyle.fontSize_normal
+            }
+            Text {
+                width: parent.width
+                text: nextCard.nextTitle
+                color: "white"
+                font.pixelSize: VLCStyle.fontSize_large
+                font.weight: Font.DemiBold
+                elide: Text.ElideRight
+            }
+        }
+        MouseArea {
+            anchors.fill: parent
+            cursorShape: VLCStyle.pointerCursor
+            onClicked: MainPlaylistController.next()
+        }
+    }
+
     // Counters of the input (key Alt+I): rates, decoded and lost frames. Hidden
     // by default, no setting.
     Rectangle {
