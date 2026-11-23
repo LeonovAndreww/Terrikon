@@ -1391,6 +1391,14 @@ FocusScope {
                                     Behavior on opacity {
                                         NumberAnimation { duration: VLCStyle.duration_long }
                                     }
+
+                                    // a click on a line seeks to its time
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        enabled: Player.seekable
+                                        cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                        onClicked: Player.setTime(modelData.time)
+                                    }
                                 }
                             }
 
