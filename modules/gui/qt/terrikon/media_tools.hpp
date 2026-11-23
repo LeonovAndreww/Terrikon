@@ -84,6 +84,8 @@ class ClipExporter : public QObject
     Q_OBJECT
     Q_PROPERTY(bool running READ running NOTIFY runningChanged FINAL)
     Q_PROPERTY(double progress READ progress NOTIFY progressChanged FINAL)
+    /* Seconds into the clip the encoder has reached in the current pass */
+    Q_PROPERTY(double encoderTime READ encoderTime NOTIFY encoderTimeChanged FINAL)
     /* Size of the clip measure() was last asked about, in bytes; 0 while
      * unknown */
     Q_PROPERTY(double measuredBytes READ measuredBytes NOTIFY measuredChanged FINAL)
@@ -136,6 +138,7 @@ public:
     bool running() const { return m_process != nullptr || m_starting; }
     int sourceRevision() const { return m_sourceRevision; }
     double progress() const { return m_progress; }
+    double encoderTime() const { return m_encoderTime; }
     double measuredBytes() const { return m_measuredBytes; }
     bool measuring() const { return m_meter != nullptr || m_measureWaiting; }
     double secondsLeft() const { return m_secondsLeft; }
@@ -154,6 +157,7 @@ public:
 signals:
     void runningChanged();
     void progressChanged();
+    void encoderTimeChanged();
     void measuredChanged();
     void secondsLeftChanged();
     void finished(bool ok, const QString &output, const QString &error);
@@ -183,6 +187,7 @@ private:
     int m_pass = 0;
     double m_length = 0.;
     double m_progress = 0.;
+    double m_encoderTime = 0.;
     bool m_copyToClipboard = false;
     QByteArray m_errors;
     QByteArray m_progressLine;

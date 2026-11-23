@@ -185,6 +185,22 @@ FocusScope {
         }
     }
 
+    // While the clip is made, the player shows where the encoder is
+    // (at most twice a second, so that the seeks do not pile up)
+    Connections {
+        target: exporter
+        enabled: root._running && ClipSelection.mediaLength > 0
+
+        function onEncoderTimeChanged() {
+            const now = Date.now()
+            if (now - root._lastFollow < 500)
+                return
+            root._lastFollow = now
+            Player.position = Math.min(1, (ClipSelection.start + exporter.encoderTime) / ClipSelection.mediaLength)
+        }
+    }
+    property double _lastFollow: 0
+
     // Loop the range: past its end, back to its start. A seek far beyond the
     // end (on purpose, on the seek bar) is left alone.
     Connections {

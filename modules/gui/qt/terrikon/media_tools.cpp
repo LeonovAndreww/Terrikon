@@ -687,6 +687,7 @@ void ClipExporter::started(const Plan &plan)
                   ? params.value(QStringLiteral("targetBytes")).toDouble() : 0.;
     m_copyToClipboard = params.value(QStringLiteral("copyToClipboard")).toBool();
     m_pass = 0;
+    m_encoderTime = 0.;
     m_errors.clear();
     setProgress(0.);
     runPass();
@@ -1056,6 +1057,8 @@ void ClipExporter::onOutput()
 
     const double passes = m_plan.passes.size();
     setProgress((m_pass + std::clamp(reached / m_length, 0., 1.)) / passes);
+    m_encoderTime = std::clamp(reached, 0., m_length);
+    emit encoderTimeChanged();
 
     /* Time left at the pace so far, once there is a pace to go by */
     const double elapsed = m_elapsed.elapsed() / 1000.;
