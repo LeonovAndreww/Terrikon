@@ -99,7 +99,7 @@ RendererMenu::RendererMenu( QMenu* parent, qt_intf_t* intf, PlayerController* pl
         }
         QProgressBar::chunk:horizontal {
             background: qlineargradient(x1: 0, y1: 0.5, x2: 1, y2: 0.5,
-                        stop: 0 white, stop: 0.4 orange, stop: 0.6 orange, stop: 1 white);
+                        stop: 0 palette(base), stop: 0.4 palette(highlight), stop: 0.6 palette(highlight), stop: 1 palette(base));
         })RAW") );
     m_statusProgressBar->setRange( 0, 0 );
     m_statusProgressBar->setSizePolicy( QSizePolicy::MinimumExpanding, QSizePolicy::Maximum );
