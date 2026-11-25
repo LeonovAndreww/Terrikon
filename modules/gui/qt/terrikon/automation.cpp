@@ -38,6 +38,8 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QGuiApplication>
+#include <QScreen>
+#include <QPixmap>
 #include <QImage>
 #include <QJSValue>
 #include <QJsonArray>
@@ -678,7 +680,21 @@ private:
             && !qobject_cast<QQuickWindow *>(active->windowHandle()))
             image = active->grab().toImage();
         else if (QQuickWindow *w = targetWindow())
+        {
             image = w->grabWindow();
+            /* The X11 compositor renders the interface offscreen through a
+             * render control, where grabWindow() gives nothing: take what
+             * the screen shows of the real top-level window instead. */
+            if (image.isNull())
+                for (QWindow *top : QGuiApplication::topLevelWindows())
+                    if (top->isVisible() && !qobject_cast<QQuickWindow *>(top) && top->screen()
+                        && top->width() > 1 && top->height() > 1)
+                    {
+                        const QPixmap pm = top->screen()->grabWindow(top->winId());
+                        if (!pm.isNull() && pm.width() * pm.height() > image.width() * image.height())
+                            image = pm.toImage();
+                    }
+        }
         if (image.isNull())
             return error(QStringLiteral("nothing to grab"));
         if (scale > 0. && scale < 1.)
