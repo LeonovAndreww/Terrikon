@@ -313,6 +313,11 @@ void TerrikonActions::report(int action)
     case ACTIONID_AUDIO_TRACK:
         emit osd(qtr("Audio: %1").arg(selectedTrackName(AUDIO_ES)));
         break;
+    case ACTIONID_LEAVE_FULLSCREEN:
+        /* Esc in the small picture-in-picture window goes back to the player */
+        if (m_compact->active())
+            m_compact->leave();
+        break;
     default:
         break;
     }
