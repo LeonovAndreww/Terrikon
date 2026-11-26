@@ -44560,3 +44560,11 @@ msgstr "Статистика воспроизведения"
 #: src/libvlc-module.c
 msgid "Show or hide the card with the bitrate and the decoded and lost frames over the player."
 msgstr "Показать или скрыть карточку с битрейтом и числом декодированных и потерянных кадров поверх плеера."
+
+#: modules/gui/qt/player/qml/PlayerView.qml
+msgid "Audio delay %1"
+msgstr "Задержка звука %1"
+
+#: modules/gui/qt/player/qml/PlayerView.qml
+msgid "Subtitle delay %1"
+msgstr "Задержка субтитров %1"

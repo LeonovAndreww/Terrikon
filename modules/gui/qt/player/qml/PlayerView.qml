@@ -2388,6 +2388,10 @@ FocusScope {
         }
     }
 
+    function _delayText(ms) {
+        return (ms > 0 ? "+" : ms < 0 ? "−" : "") + qsTr("%1 s").arg((Math.abs(ms) / 1000).toFixed(1))
+    }
+
     // A jump by a key, on the side it goes, as video sites show it: arrows
     // running that way and how far; jumps in a row add up
     Rectangle {
@@ -2509,6 +2513,12 @@ FocusScope {
             if (rootPlayer._heldRate > 0 || Date.now() - rootPlayer._holdEndedAt < 600)
                 return
             osdToast.show(qsTr("Speed %1×").arg(+Player.rate.toFixed(2)))
+        }
+        function onAudioDelayChanged() {
+            osdToast.show(qsTr("Audio delay %1").arg(rootPlayer._delayText(Player.audioDelayMS)))
+        }
+        function onSubtitleDelayChanged() {
+            osdToast.show(qsTr("Subtitle delay %1").arg(rootPlayer._delayText(Player.subtitleDelayMS)))
         }
         function onInputChanged() { osdArmTimer.restart() }
     }
