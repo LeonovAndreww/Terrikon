@@ -67,6 +67,8 @@ public:
     /* Displayed size of the playing video (pixel aspect applied), empty
      * without video */
     Q_INVOKABLE QSizeF videoSize() const;
+    /* Skip by the short jump step (double click on a video edge) and show it */
+    Q_INVOKABLE void skip(bool forward);
 
 signals:
     /* The clip panel owns the export settings, so it does the export */

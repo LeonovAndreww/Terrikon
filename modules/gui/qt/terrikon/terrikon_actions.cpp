@@ -279,6 +279,16 @@ QString TerrikonActions::selectedTrackName(int category) const
     return names.join(QStringLiteral(", "));
 }
 
+void TerrikonActions::skip(bool forward)
+{
+    const int seconds = int(var_InheritInteger(vlc_object_instance(m_intf), "short-jump-size"));
+    if (forward)
+        m_intf->p_mainPlayerController->jumpFwd();
+    else
+        m_intf->p_mainPlayerController->jumpBwd();
+    emit jumped(forward ? seconds : -seconds);
+}
+
 void TerrikonActions::report(int action)
 {
     /* How far a jump goes, from the same settings the core uses */

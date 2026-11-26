@@ -688,6 +688,11 @@ FocusScope {
                     }
                     // A double click is a full screen toggle, not a hold
                     onMouseDblClicked: holdTimer.stop()
+                    // Double click on the left/right edge skips back/forward (seekHint shows it)
+                    onEdgeDoubleClicked: (forward) => {
+                        holdTimer.stop()
+                        TerrikonActions.skip(forward)
+                    }
 
                     Timer {
                         id: holdTimer

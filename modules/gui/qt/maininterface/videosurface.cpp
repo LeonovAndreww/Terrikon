@@ -230,6 +230,17 @@ void VideoSurface::mouseDoubleClickEvent(QMouseEvent* event)
     int vlc_button = qtMouseButton2VLC( event->button() );
     if( vlc_button >= 0 )
     {
+        const qreal w = width();
+        if( event->button() == Qt::LeftButton && w > 0 )
+        {
+            const qreal x = event->position().x();
+            if( x < w * 0.3 || x > w * 0.7 )
+            {
+                emit edgeDoubleClicked( x > w * 0.5 );
+                event->accept();
+                return;
+            }
+        }
         emit mouseDblClicked(vlc_button);
         event->accept();
     }

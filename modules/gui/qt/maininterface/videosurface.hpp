@@ -129,6 +129,8 @@ signals:
     void mousePressed( int vlcButton );
     void mouseReleased( int vlcButton );
     void mouseDblClicked( int vlcButton );
+    // Left button double click in the outer thirds: skip, not full screen
+    void edgeDoubleClicked( bool forward );
     void mouseMoved( float x, float y );
     void keyPressed(int key, Qt::KeyboardModifiers modifier);
     void hoveredChanged(bool);
