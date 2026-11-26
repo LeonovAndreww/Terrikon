@@ -1786,7 +1786,14 @@ FocusScope {
                                                 anchors.fill: parent
                                                 hoverEnabled: true
                                                 cursorShape: VLCStyle.pointerCursor
-                                                onClicked: MainPlaylistController.goTo(queueRow.index, true)
+                                                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                                // right click removes the track from the queue
+                                                onClicked: (mouse) => {
+                                                    if (mouse.button === Qt.RightButton)
+                                                        queueModel.removeItems([queueRow.index])
+                                                    else
+                                                        MainPlaylistController.goTo(queueRow.index, true)
+                                                }
                                             }
                                         }
                                     }
