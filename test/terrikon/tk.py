@@ -32,9 +32,14 @@ def send(cmd, port=4213, host="127.0.0.1", timeout=15.0):
 def shot(args):
     import os, subprocess
     if not args:
-        print("tk.py: shot PATH [scale-percent]", file=sys.stderr); return 2
+        print("tk.py: shot PATH [scale-percent, 50 = half size]", file=sys.stderr); return 2
     disp = os.environ.get("DISPLAY", ":99")
-    scale = args[1] if len(args) > 1 else "100"
+    scale = args[1].rstrip("%") if len(args) > 1 else "100"
+    try:
+        if float(scale) <= 0:
+            raise ValueError
+    except ValueError:
+        print("tk.py: scale is a percent, e.g. 50", file=sys.stderr); return 2
     x = subprocess.run(["xwd", "-root", "-display", disp, "-silent"], capture_output=True)
     if x.returncode:
         print("tk.py: xwd failed", file=sys.stderr); return 2
