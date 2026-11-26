@@ -2389,7 +2389,7 @@ FocusScope {
     }
 
     function _delayText(ms) {
-        return (ms > 0 ? "+" : ms < 0 ? "−" : "") + qsTr("%1 s").arg((Math.abs(ms) / 1000).toFixed(1))
+        return (ms > 0 ? "+" : ms < 0 ? "−" : "") + qsTr("%1 s").arg((Math.abs(ms) / 1000).toLocaleString(Qt.locale(Qt.locale().name), "f", 1))
     }
 
     // A jump by a key, on the side it goes, as video sites show it: arrows
