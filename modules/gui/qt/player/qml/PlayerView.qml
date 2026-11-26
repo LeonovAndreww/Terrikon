@@ -1752,6 +1752,9 @@ FocusScope {
                                             readonly property bool inRange: index >= queueCard.first
                                                                             && index < queueCard.first + queueCard.shown
                                             visible: inRange
+                                            property real dragDy: 0
+                                            z: dragDy !== 0 ? 10 : 0
+                                            transform: Translate { y: queueRow.dragDy }
                                             Layout.fillWidth: true
                                             Layout.preferredHeight: inRange ? rowText.implicitHeight + VLCStyle.margin_xxsmall * 2 : 0
 
@@ -1787,11 +1790,42 @@ FocusScope {
                                                 hoverEnabled: true
                                                 cursorShape: VLCStyle.pointerCursor
                                                 acceptedButtons: Qt.LeftButton | Qt.RightButton
-                                                // right click removes the track from the queue
+                                                // right click removes the track from the queue;
+                                                // dragging a row up or down moves it
+                                                property real pressY: 0
+                                                property bool dragging: false
+                                                property bool wasDrag: false
+                                                // the row itself moves while dragged: measure in the card, not in the row
+                                                function stableY(mouse) { return rowMouse.mapToItem(queueColumn, mouse.x, mouse.y).y }
+                                                readonly property real rowStep: queueRow.height + VLCStyle.margin_xxsmall
+                                                onPressed: (mouse) => { pressY = stableY(mouse); dragging = false; wasDrag = false }
+                                                onPositionChanged: (mouse) => {
+                                                    if (!pressed || !(pressedButtons & Qt.LeftButton))
+                                                        return
+                                                    if (Math.abs(stableY(mouse) - pressY) > VLCStyle.dp(6, VLCStyle.scale))
+                                                        dragging = true
+                                                    if (dragging)
+                                                        queueRow.dragDy = stableY(mouse) - pressY
+                                                }
+                                                onCanceled: { dragging = false; queueRow.dragDy = 0 }
+                                                onReleased: (mouse) => {
+                                                    const wasDragging = dragging
+                                                    // before the row snaps back: mouse is in its moved frame
+                                                    const n = Math.round((stableY(mouse) - pressY) / rowStep)
+                                                    dragging = false
+                                                    wasDrag = wasDragging
+                                                    queueRow.dragDy = 0
+                                                    if (!wasDragging || mouse.button !== Qt.LeftButton)
+                                                        return
+                                                    const target = Math.max(queueCard.cur + 1,
+                                                                            Math.min(MainPlaylistController.count - 1, queueRow.index + n))
+                                                    if (target !== queueRow.index)
+                                                        queueModel.moveItemsPost([queueRow.index], target)
+                                                }
                                                 onClicked: (mouse) => {
                                                     if (mouse.button === Qt.RightButton)
                                                         queueModel.removeItems([queueRow.index])
-                                                    else
+                                                    else if (!rowMouse.wasDrag)
                                                         MainPlaylistController.goTo(queueRow.index, true)
                                                 }
                                             }
