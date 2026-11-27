@@ -525,6 +525,8 @@ void MainCtx::loadPrefs(const bool callSignals)
 
     loadFromVLCOption(m_smoothScroll, "qt-smooth-scrolling", &MainCtx::smoothScrollChanged);
 
+    loadFromVLCOption(m_glassEffects, "qt-glass-effects", &MainCtx::glassEffectsChanged);
+
     loadFromVLCOption(m_maxVolume, "qt-max-volume", &MainCtx::maxVolumeChanged);
 
     loadFromVLCOption(m_pinVideoControls, "qt-pin-controls", &MainCtx::pinVideoControlsChanged);

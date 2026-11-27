@@ -24202,6 +24202,19 @@ msgstr "Способ вывода видео в Qt. Осторожно: с не�
 msgid "Use smooth scrolling in Flickable based views"
 msgstr "Плавная прокрутка"
 
+#: modules/gui/qt/qt.cpp:277
+msgid "Use \"liquid glass\" effects"
+msgstr "Эффект «жидкого стекла»"
+
+#: modules/gui/qt/qt.cpp:278
+msgid ""
+"Draw the cards on the music page as refracting glass. Deactivating this "
+"option draws plain tinted panels instead (cheaper on slow graphics)."
+msgstr ""
+"Рисовать карточки на странице музыки как преломляющее стекло. Если "
+"отключить, вместо этого будут простые тонированные панели (быстрее на "
+"слабой графике)."
+
 #: modules/gui/qt/qt.cpp:275
 msgid ""
 "Deactivating this option will disable smooth scrolling in Flickable based "

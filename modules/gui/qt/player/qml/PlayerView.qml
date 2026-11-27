@@ -886,7 +886,15 @@ FocusScope {
     anchors.fill: parent
     z: -1
     blending: true
-    visible: backdrop !== null && width > 0 && height > 0
+    visible: MainCtx.glassEffects && backdrop !== null && width > 0 && height > 0
+
+    // option "qt-glass-effects" off: a plain tinted panel
+    Rectangle {
+        anchors.fill: parent
+        visible: !MainCtx.glassEffects
+        radius: root.radius
+        color: Qt.rgba(root.tint.r, root.tint.g, root.tint.b, Math.max(root.tint.a, 0.2))
+    }
 
     // where the panel is in the backdrop; the bindings do not see the panel
     // move, so ask again when something changes

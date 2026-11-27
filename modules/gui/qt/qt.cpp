@@ -276,6 +276,9 @@ static void ShowDialog   ( intf_thread_t *, int, int, intf_dialog_args_t * );
 #define SMOOTH_SCROLLING_LONGTEXT N_( "Deactivating this option will disable smooth scrolling in Flickable based views (such as the Play Queue). " \
                                       "This option is only respected with a scroll handler, see option `qt-use-scroll-handler`." )
 
+#define GLASS_EFFECTS_TEXT N_( "Use \"liquid glass\" effects" )
+#define GLASS_EFFECTS_LONGTEXT N_( "Draw the cards on the music page as refracting glass. Deactivating this option draws plain tinted panels instead (cheaper on slow graphics)." )
+
 #define SCROLL_HANDLER_TEXT N_( "Use Kirigami scroll handler for Flickable based views" )
 #define SCROLL_HANDLER_LONGTEXT N_( "Using Kirigami scroll handler may improve scrolling behavior." )
 
@@ -494,6 +497,7 @@ vlc_module_begin ()
             change_integer_list( i_raise_list, psz_raise_list_text )
 
     add_bool( "qt-smooth-scrolling", true, SMOOTH_SCROLLING_TEXT, SMOOTH_SCROLLING_LONGTEXT )
+    add_bool( "qt-glass-effects", true, GLASS_EFFECTS_TEXT, GLASS_EFFECTS_LONGTEXT )
 
     add_bool( "qt-use-scroll-handler", true, SCROLL_HANDLER_TEXT, SCROLL_HANDLER_LONGTEXT )
 

@@ -148,6 +148,7 @@ class MainCtx : public QObject
     Q_PROPERTY(ControlbarProfileModel* controlbarProfileModel READ controlbarProfileModel CONSTANT FINAL)
     Q_PROPERTY(bool hasAcrylicSurface READ hasAcrylicSurface NOTIFY hasAcrylicSurfaceChanged FINAL)
     Q_PROPERTY(bool smoothScroll READ smoothScroll NOTIFY smoothScrollChanged FINAL)
+    Q_PROPERTY(bool glassEffects READ glassEffects NOTIFY glassEffectsChanged FINAL)
     Q_PROPERTY(QWindow* intfMainWindow READ intfMainWindow CONSTANT FINAL)
     Q_PROPERTY(bool videoSurfaceCanHaveFractionalPosition READ videoSurfaceCanHaveFractionalPosition CONSTANT FINAL)
     Q_PROPERTY(bool useGlobalShortcuts READ getUseGlobalShortcuts WRITE setUseGlobalShortcuts NOTIFY useGlobalShortcutsChanged FINAL)
@@ -203,6 +204,7 @@ public:
     inline qt_intf_t* getIntf() const { return p_intf; }
     inline vlc_preparser_t *getNetworkPreparser() const { return m_network_preparser; };
     bool smoothScroll() const { return m_smoothScroll; }
+    bool glassEffects() const { return m_glassEffects; }
 
     VLCSystray* getSysTray() { return m_systray.get(); }
 
@@ -541,6 +543,7 @@ protected:
     bool m_acrylicActive = false;
 
     bool m_smoothScroll = true;
+    bool m_glassEffects = true;
 
     bool m_preferHotkeys = false;
 
@@ -674,6 +677,7 @@ signals:
     void acrylicActiveChanged();
 
     void smoothScrollChanged();
+    void glassEffectsChanged();
 
     void preferHotkeysChanged();
 
