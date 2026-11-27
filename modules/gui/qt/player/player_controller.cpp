@@ -2413,8 +2413,8 @@ QVariantMap PlayerController::getStats() const
     Q_D(const PlayerController);
     const input_stats_t &st = d->m_stats;
     QVariantMap m;
-    m["inputBitrate"] = double(st.f_input_bitrate) * 8000.0;   // bit/s
-    m["demuxBitrate"] = double(st.f_demux_bitrate) * 8000.0;
+    m["inputBitrate"] = double(st.f_input_bitrate) * 8000000.0;   // bit/s (the field is bytes per microsecond)
+    m["demuxBitrate"] = double(st.f_demux_bitrate) * 8000000.0;
     m["readBytes"] = qulonglong(st.i_read_bytes);
     m["corrupted"] = qulonglong(st.i_demux_corrupted);
     m["discontinuity"] = qulonglong(st.i_demux_discontinuity);
