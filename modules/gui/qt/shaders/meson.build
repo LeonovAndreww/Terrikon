@@ -17,6 +17,7 @@ shader_sources = [
     'FastBlend.frag',
     'CircleHole.frag',
     'RoundCorner.frag',
+    'GlassPanel.frag',
     'FastBlend_additive.frag',
     'FastBlend_multiply.frag',
     'FastBlend_screen.frag',

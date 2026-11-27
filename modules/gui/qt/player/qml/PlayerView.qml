@@ -867,6 +867,71 @@ FocusScope {
             }
         }
 
+    // Terrikon: "liquid glass" background (see shaders/GlassPanel.frag): put it in a
+    // rounded item behind the content, `backdrop` is what shows through
+    component GlassPanel: ShaderEffect {
+    id: root
+
+    // what shows through the glass
+    property Item backdrop: null
+    // colour laid over it (text stays readable); the alpha is the strength
+    property color tint: Qt.rgba(0, 0, 0, 0.25)
+    property real radius: parent ? (parent.radius ?? 0) : 0
+    // how strong the rim is: 0 = flat tinted panel
+    property real light: 1.0
+
+    property real bevel: Math.min(width, height) * 0.25
+    property real refraction: bevel * 0.8
+
+    anchors.fill: parent
+    z: -1
+    blending: true
+    visible: backdrop !== null && width > 0 && height > 0
+
+    // where the panel is in the backdrop; the bindings do not see the panel
+    // move, so ask again when something changes
+    property point _origin: Qt.point(0, 0)
+    function update() {
+        if (!backdrop)
+            return
+        _origin = root.mapToItem(backdrop, 0, 0)
+    }
+    onBackdropChanged: update()
+    onWidthChanged: update()
+    onHeightChanged: update()
+    Component.onCompleted: update()
+    Connections {
+        target: root.backdrop
+        function onWidthChanged() { root.update() }
+        function onHeightChanged() { root.update() }
+        function onXChanged() { root.update() }
+        function onYChanged() { root.update() }
+    }
+    Timer {
+        // the layout around settles late (animations, window resizes)
+        interval: 250
+        running: root.visible
+        repeat: true
+        onTriggered: root.update()
+    }
+
+    ShaderEffectSource {
+        id: backdropTexture
+        sourceItem: root.backdrop
+        live: true
+        visible: false
+        smooth: true
+    }
+    property var source: backdropTexture
+    property vector2d size: Qt.vector2d(width, height)
+    property vector2d srcOrigin: backdrop ? Qt.vector2d(_origin.x / backdrop.width, _origin.y / backdrop.height)
+                                          : Qt.vector2d(0, 0)
+    property vector2d srcScale: backdrop ? Qt.vector2d(1 / backdrop.width, 1 / backdrop.height)
+                                         : Qt.vector2d(0, 0)
+
+    fragmentShader: "qrc:///shaders/GlassPanel.frag.qsb"
+    }
+
         Component {
             id: audioComponent
 
@@ -1650,7 +1715,18 @@ FocusScope {
                                 Layout.alignment: Qt.AlignTop
                                 implicitHeight: Math.max(detailsColumn.implicitHeight, queueColumn.implicitHeight) + VLCStyle.margin_normal * 2
                                 radius: VLCStyle.dp(10, VLCStyle.scale)
-                                color: Qt.rgba(centerTheme.fg.primary.r, centerTheme.fg.primary.g, centerTheme.fg.primary.b, 0.08)
+                                color: glass.visible ? "transparent"
+                                                     : Qt.rgba(centerTheme.fg.primary.r, centerTheme.fg.primary.g, centerTheme.fg.primary.b, 0.08)
+
+                                // liquid glass over the blurred cover
+                                GlassPanel {
+                                    id: glass
+                                    backdrop: blurredBackground
+                                    // the glass is the opposite of the text on it, so the text stays readable
+                                    tint: (0.299 * centerTheme.fg.primary.r + 0.587 * centerTheme.fg.primary.g
+                                           + 0.114 * centerTheme.fg.primary.b) > 0.5
+                                          ? Qt.rgba(0, 0, 0, 0.30) : Qt.rgba(1, 1, 1, 0.35)
+                                }
 
                                 ColumnLayout {
                                     id: detailsColumn
@@ -1712,7 +1788,18 @@ FocusScope {
                                 Layout.alignment: Qt.AlignTop
                                 implicitHeight: Math.max(detailsColumn.implicitHeight, queueColumn.implicitHeight) + VLCStyle.margin_normal * 2
                                 radius: VLCStyle.dp(10, VLCStyle.scale)
-                                color: Qt.rgba(centerTheme.fg.primary.r, centerTheme.fg.primary.g, centerTheme.fg.primary.b, 0.08)
+                                color: glass2.visible ? "transparent"
+                                                     : Qt.rgba(centerTheme.fg.primary.r, centerTheme.fg.primary.g, centerTheme.fg.primary.b, 0.08)
+
+                                // liquid glass over the blurred cover
+                                GlassPanel {
+                                    id: glass2
+                                    backdrop: blurredBackground
+                                    // the glass is the opposite of the text on it, so the text stays readable
+                                    tint: (0.299 * centerTheme.fg.primary.r + 0.587 * centerTheme.fg.primary.g
+                                           + 0.114 * centerTheme.fg.primary.b) > 0.5
+                                          ? Qt.rgba(0, 0, 0, 0.30) : Qt.rgba(1, 1, 1, 0.35)
+                                }
 
                                 WheelHandler {
                                     acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
