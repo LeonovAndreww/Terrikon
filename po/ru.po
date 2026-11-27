@@ -23634,6 +23634,10 @@ msgstr "Кнопка закладок"
 msgid "Volume Widget"
 msgstr "Громкость"
 
+#: modules/gui/qt/player/qml/PlayerControlbarControls.qml:64
+msgid "Volume Widget (Legacy)"
+msgstr "Громкость (старый вид)"
+
 #: modules/gui/qt/player/qml/PlayerControlbarControls.qml:62
 msgid "Navigation Box"
 msgstr "Навигация"
