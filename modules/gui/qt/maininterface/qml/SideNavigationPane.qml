@@ -100,6 +100,25 @@ T.Pane {
     background: Widgets.AcrylicBackground {
         enabled: root.useAcrylic
         tintColor: theme.bg.primary
+
+        // Terrikon: liquid glass — soft light sheen and a hairline edge
+        // (children stay inside the background so `root.background.color`
+        // users, e.g. the fading edge, keep working)
+        Rectangle {
+            anchors.fill: parent
+            visible: MainCtx.glassEffects
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: Qt.alpha(theme.fg.primary, 0.07) }
+                GradientStop { position: 1.0; color: Qt.alpha(theme.fg.primary, 0.0) }
+            }
+        }
+
+        Rectangle {
+            anchors { top: parent.top; bottom: parent.bottom; right: parent.right }
+            width: Math.max(1, Math.round(VLCStyle.dp(1, VLCStyle.scale)))
+            visible: MainCtx.glassEffects
+            color: Qt.alpha(theme.fg.primary, 0.18)
+        }
     }
 
     contentItem:  Item {
