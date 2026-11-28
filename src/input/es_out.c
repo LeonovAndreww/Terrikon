@@ -872,6 +872,8 @@ static void EsOutTerminate(es_out_sys_t *p_sys)
     input_SendEventMetaEpg( p_sys->p_input );
 }
 
+#define EsOutMaxWakeupDelay VLC_TICK_FROM_SEC(5)
+
 static vlc_tick_t EsOutGetWakeup(es_out_sys_t *p_sys)
 {
     input_thread_t *p_input = p_sys->p_input;
@@ -889,7 +891,16 @@ static vlc_tick_t EsOutGetWakeup(es_out_sys_t *p_sys)
         EsOutIsBuffering(p_sys) )
         return 0;
 
-    return input_clock_GetWakeup( p_sys->p_pgrm->p_input_clock );
+    vlc_tick_t wakeup = input_clock_GetWakeup( p_sys->p_pgrm->p_input_clock );
+
+    /* A corrupted timestamp (or a clock jump we did not detect) can put the
+     * wake-up date years ahead; the input thread would then sleep until the
+     * user stops playback. Waking up too early is harmless: demuxing simply
+     * resumes and the clock gap logic gets another chance to resync. */
+    const vlc_tick_t limit = vlc_tick_now() + EsOutMaxWakeupDelay;
+    if( wakeup > limit )
+        wakeup = limit;
+    return wakeup;
 }
 
 
