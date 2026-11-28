@@ -271,6 +271,38 @@ ReuseVideoContext(vlc_video_context *vctx, AVBufferRef *hwframes_ref_new)
     return vctx;
 }
 
+static bool ProbeHwFramesParameters(vlc_va_t *va, const AVCodecContext *ctx,
+                                    AVBufferRef *hwdev_ref,
+                                    enum AVPixelFormat hwfmt)
+{
+    bool ok = false;
+    AVCodecContext *tmp = avcodec_alloc_context3(ctx->codec);
+    AVCodecParameters *par = avcodec_parameters_alloc();
+    AVBufferRef *frames_ref = NULL;
+
+    if (tmp != NULL && par != NULL &&
+        avcodec_parameters_from_context(par, ctx) >= 0 &&
+        avcodec_parameters_to_context(tmp, par) >= 0)
+    {
+        tmp->thread_count = 1;
+        tmp->sw_pix_fmt = ctx->sw_pix_fmt;
+        tmp->coded_width = ctx->coded_width;
+        tmp->coded_height = ctx->coded_height;
+        if (avcodec_open2(tmp, ctx->codec, NULL) >= 0)
+        {
+            int ret = avcodec_get_hw_frames_parameters(tmp, hwdev_ref, hwfmt,
+                                                       &frames_ref);
+            ok = ret >= 0;
+            if (!ok)
+                msg_Dbg(va, "hw frames parameters not supported: %d", ret);
+        }
+    }
+    av_buffer_unref(&frames_ref);
+    avcodec_parameters_free(&par);
+    avcodec_free_context(&tmp);
+    return ok;
+}
+
 static int Create(vlc_va_t *va, struct vlc_va_cfg *cfg)
 {
     AVCodecContext *ctx = cfg->avctx;
@@ -311,6 +343,17 @@ static int Create(vlc_va_t *va, struct vlc_va_cfg *cfg)
     vadev_ctx->display = va_dpy;
 
     if (av_hwdevice_ctx_init(hwdev_ref) < 0)
+    {
+        av_buffer_unref(&hwdev_ref);
+        return VLC_EGENERIC;
+    }
+
+    /* On a failure avcodec_get_hw_frames_parameters() leaves a half-set hwaccel
+     * in the context; a frame-threaded context then aborts in lavc
+     * (pthread_frame.c, "hwaccel_threadsafe" assertion) on the next packet.
+     * That happens with any file the VA driver can't decode, e.g. every VP9 on
+     * a GPU without VP9 (found by fuzzing). So ask a throw-away copy first. */
+    if (ctx->thread_count > 1 && !ProbeHwFramesParameters(va, ctx, hwdev_ref, hwfmt))
     {
         av_buffer_unref(&hwdev_ref);
         return VLC_EGENERIC;
