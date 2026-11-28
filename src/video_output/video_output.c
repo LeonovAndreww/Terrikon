@@ -1631,8 +1631,17 @@ static bool UpdateCurrentPicture(vout_thread_sys_t *sys)
                                   sys->displayed.current->date, sys->rate, NULL);
     vlc_clock_Unlock(sys->clock);
 
+    /* A corrupt timestamp can put the current picture hours ahead of the
+     * clock: the vout would wait for it forever and, at EOF, the input would
+     * wait for the decoder fifos to drain forever. Pictures further ahead than
+     * any sane buffering delay (scaled by the playback rate) are not waited
+     * for; the next picture of the fifo is looked up instead. */
+    const vlc_tick_t max_ahead = sys->rate > 0.f && sys->rate < 1.f
+        ? (vlc_tick_t)(VLC_TICK_FROM_SEC(10) / sys->rate)
+        : VLC_TICK_FROM_SEC(10);
     vlc_tick_t system_prepare_current = system_swap_current - GetRenderDelay(sys);
-    if (unlikely(system_prepare_current > system_now))
+    if (unlikely(system_prepare_current > system_now)
+     && system_swap_current - system_now < max_ahead)
         // the current frame is not late, we still have time to display it
         // no need to get a new picture
         return true;
