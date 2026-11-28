@@ -83,8 +83,16 @@ Dialog {
         }
     }
 
+    // Terrikon: "liquid glass" dialog: the panel is translucent (the blurred
+    // window shows through) with a light rim; option qt-glass-effects off
+    // restores the opaque panel
+    readonly property bool glass: MainCtx.glassEffects
+
     background: Rectangle {
-        color: theme.bg.primary
+        color: control.glass ? Qt.alpha(theme.bg.primary, 0.78) : theme.bg.primary
+        radius: control.glass ? VLCStyle.dp(12, VLCStyle.scale) : 0
+        border.width: control.glass ? 1 : 0
+        border.color: Qt.alpha(theme.fg.primary, 0.28)
 
         Widgets.RoundedRectangleShadow {
             yOffset: VLCStyle.dp(4, VLCStyle.scale)
@@ -110,7 +118,7 @@ Dialog {
             x: 1; y: 1
             width: parent.width - 2
             height: parent.height - 1
-            color: theme.bg.primary
+            color: control.glass ? "transparent" : theme.bg.primary
         }
     }
 
